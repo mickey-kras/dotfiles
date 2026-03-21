@@ -43,5 +43,36 @@
   },
   "env": {
     "EDITOR": "code --wait"
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$HOME/dotfiles-claude/claude/hooks/scripts/security-audit.sh",
+            "timeout": 15
+          },
+          {
+            "type": "command",
+            "command": "$HOME/dotfiles-claude/claude/hooks/scripts/startup-sync.sh",
+            "timeout": 30
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit|Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$HOME/dotfiles-claude/claude/hooks/scripts/auto-commit-config.sh",
+            "timeout": 30
+          }
+        ]
+      }
+    ]
   }
 }
