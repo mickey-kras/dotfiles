@@ -48,14 +48,41 @@ if [ ${#MISSING[@]} -gt 0 ]; then
       echo "  Install with: brew install ${MISSING[*]}"
       ;;
     linux|wsl)
+      # Map tool names to distro package names per package manager.
+      # Each manager has its own verified mapping.
+      map_pkgs() {
+        local mgr="$1"; shift
+        local pkgs=()
+        for dep in "$@"; do
+          case "$mgr" in
+            apt-get)
+              case "$dep" in
+                node|npx) pkgs+=("nodejs" "npm") ;;
+                *)        pkgs+=("$dep") ;;
+              esac ;;
+            dnf)
+              case "$dep" in
+                node|npx) pkgs+=("nodejs" "npm") ;;
+                *)        pkgs+=("$dep") ;;
+              esac ;;
+            pacman)
+              case "$dep" in
+                node|npx) pkgs+=("nodejs" "npm") ;;
+                *)        pkgs+=("$dep") ;;
+              esac ;;
+          esac
+        done
+        # Deduplicate
+        printf '%s\n' "${pkgs[@]}" | sort -u | tr '\n' ' '
+      }
       if command -v apt-get >/dev/null 2>&1; then
-        echo "  Install with: sudo apt-get install -y ${MISSING[*]}"
+        echo "  Install with: sudo apt-get install -y $(map_pkgs apt-get "${MISSING[@]}")"
       elif command -v dnf >/dev/null 2>&1; then
-        echo "  Install with: sudo dnf install -y ${MISSING[*]}"
+        echo "  Install with: sudo dnf install -y $(map_pkgs dnf "${MISSING[@]}")"
       elif command -v pacman >/dev/null 2>&1; then
-        echo "  Install with: sudo pacman -S ${MISSING[*]}"
+        echo "  Install with: sudo pacman -S $(map_pkgs pacman "${MISSING[@]}")"
       else
-        echo "  Install these packages using your system package manager."
+        echo "  Install these packages using your system package manager: ${MISSING[*]}"
       fi
       ;;
     windows)

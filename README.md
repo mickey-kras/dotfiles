@@ -100,6 +100,7 @@ Dependencies: `git`, `jq`, `node`, `npx`. The installer checks and tells you how
 |------|----------|
 | `~/.claude/settings.local.json` | API keys, machine-local env vars |
 | `~/.claude/.credentials.json` | Claude auth tokens |
+| `~/.claude/.connectors-enabled` | Cloud connectors enabled on this machine |
 | `~/.claude/projects/` | Auto-generated session memory |
 
 ## Useful commands
@@ -114,10 +115,10 @@ Dependencies: `git`, `jq`, `node`, `npx`. The installer checks and tells you how
 cd ~/dotfiles-claude && git pull
 
 # Manual security check
-echo '{}' | ~/dotfiles-claude/claude/hooks/scripts/security-audit.sh
+~/dotfiles-claude/claude/hooks/scripts/security-audit.sh
 
 # Check connector status
-~/dotfiles-claude/claude/hooks/scripts/check-connectors.sh < /dev/null
+~/dotfiles-claude/claude/hooks/scripts/check-connectors.sh
 ```
 
 ## Troubleshooting

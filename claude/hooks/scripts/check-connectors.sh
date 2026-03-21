@@ -6,6 +6,8 @@ set -euo pipefail
 # Also checks what it CAN check from shell: local MCPs, missing API keys.
 
 REPO_DIR="$HOME/dotfiles-claude"
+# shellcheck source=lib.sh
+source "$(dirname "$0")/lib.sh"
 MANIFEST="$REPO_DIR/claude/connectors.json"
 CLAUDE_DIR="$HOME/.claude"
 MCP_FILE="$CLAUDE_DIR/.mcp.json"
@@ -54,7 +56,7 @@ fi
 CLOUD_LIST=$(jq -r '.cloud | to_entries[] | "\(.key): \(.value.description)"' "$MANIFEST" 2>/dev/null)
 
 if [ -n "$CLOUD_LIST" ]; then
-  HOSTNAME=$(hostname -s 2>/dev/null || echo "unknown")
+  HOSTNAME=$(get_hostname)
   cat >&2 << PROMPT
 
 [CONNECTOR_SYNC] Check your available tools against ~/dotfiles-claude/claude/connectors.json.

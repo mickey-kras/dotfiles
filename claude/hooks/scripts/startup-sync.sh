@@ -6,6 +6,8 @@ set -euo pipefail
 
 REPO_DIR="$HOME/dotfiles-claude"
 CLAUDE_DIR="$HOME/.claude"
+# shellcheck source=lib.sh
+source "$(dirname "$0")/lib.sh"
 
 INPUT=$(cat)
 SOURCE=$(echo "$INPUT" | jq -r '.source // "startup"')
@@ -58,7 +60,7 @@ fi
 if ! git diff --quiet claude/ 2>/dev/null || [ -n "$(git ls-files --others --exclude-standard claude/ 2>/dev/null)" ]; then
   echo "dotfiles-claude: local config has uncommitted changes — auto-committing" >&2
   git add claude/
-  git commit -m "auto-sync: local config changes from $(hostname -s)" --quiet 2>/dev/null || true
+  git commit -m "auto-sync: local config changes from $(get_hostname)" --quiet 2>/dev/null || true
   git push origin main --quiet 2>/dev/null || {
     echo "dotfiles-claude: push failed — will retry next session" >&2
   }

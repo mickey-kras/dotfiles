@@ -2,6 +2,8 @@
 set -euo pipefail
 
 REPO_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+# shellcheck source=../claude/hooks/scripts/lib.sh
+source "$REPO_DIR/claude/hooks/scripts/lib.sh"
 LIVE="$HOME/.claude"
 REPO="$REPO_DIR/claude"
 
@@ -19,4 +21,4 @@ for f in ".mcp.json" "settings.json" "CLAUDE.md"; do
 done
 
 echo ""
-echo "Now commit: cd ~/dotfiles-claude && git add -A && git commit -m 'update config from $(hostname)' && git push"
+echo "Now commit: cd ~/dotfiles-claude && git add -A && git commit -m 'update config from $(get_hostname)' && git push"

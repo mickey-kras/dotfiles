@@ -5,6 +5,8 @@ set -euo pipefail
 # If anything in the repo's claude/ dir changed, auto-commits and pushes.
 
 REPO_DIR="$HOME/dotfiles-claude"
+# shellcheck source=lib.sh
+source "$(dirname "$0")/lib.sh"
 
 # Bail if repo doesn't exist
 [ -d "$REPO_DIR/.git" ] || exit 0
@@ -25,7 +27,7 @@ FILE_LIST=$(echo "$ALL_CHANGES" | head -3 | tr '\n' ', ' | sed 's/,$//')
 
 # Stage, commit, push
 git add claude/
-git commit -m "auto-sync: ${FILE_LIST} from $(hostname -s)" --quiet 2>/dev/null || exit 0
+git commit -m "auto-sync: ${FILE_LIST} from $(get_hostname)" --quiet 2>/dev/null || exit 0
 git push origin main --quiet 2>/dev/null || {
   echo "dotfiles-claude: auto-commit ok but push failed — will retry next session" >&2
   exit 0
