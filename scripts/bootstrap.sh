@@ -17,9 +17,9 @@ R='\033[0m'     # reset
 # --- Logo ---
 printf "${C}"
 printf '  __  __ _  __\n'
-printf ' |  \\/  | |/ /\n'
-printf ' | |\\/| |   < \n'
-printf ' |_|  |_|_|\\_\\\n'
+printf ' |  \/  | |/ /\n'
+printf ' | |\/| |   < \n'
+printf ' |_|  |_|_|\_\\\n'
 printf "${R}\n"
 printf "${B}  AI Toolchain Bootstrap${R}\n"
 printf "${D}  Claude Code · Cursor · Codex${R}\n\n"
@@ -52,10 +52,10 @@ command -v npx  >/dev/null 2>&1 || MISSING+=("npx")
 
 if [ ${#MISSING[@]} -gt 0 ]; then
   printf "\n${Y}⚠${R}  Missing: ${MISSING[*]}\n"
-  printf "   Some MCPs and hooks require node/npx.\n\n"
+  printf "   MCPs require node/npx.\n\n"
 fi
 
-# --- Check for AI tools ---
+# --- Detect AI tools ---
 printf "\n${B}Detected tools:${R}\n"
 command -v claude >/dev/null 2>&1 && printf "  ${G}✓${R} Claude Code\n" || printf "  ${D}✗ Claude Code (not found)${R}\n"
 { [ -d "$HOME/.cursor" ] || [ -d "/Applications/Cursor.app" ]; } && printf "  ${G}✓${R} Cursor\n" || printf "  ${D}✗ Cursor (not found)${R}\n"
@@ -64,32 +64,28 @@ printf "\n"
 
 # --- Init + apply ---
 printf "${B}Running chezmoi init + apply...${R}\n"
-printf "${D}You'll be prompted for: email, machine type, hook profile, API MCPs.${R}\n"
-printf "${D}No API keys needed for core setup — OAuth MCPs auth in browser on first use.${R}\n\n"
+printf "${D}You'll be prompted about optional API-key MCPs (exa, firecrawl, fal-ai).${R}\n"
+printf "${D}Core setup needs no API keys — OAuth MCPs auth in browser on first use.${R}\n\n"
 chezmoi init --apply "git@github.com:${REPO}.git"
 
 # --- Bitwarden check (if API MCPs enabled) ---
 if grep -q 'enable_api_mcps = true' ~/.config/chezmoi/chezmoi.toml 2>/dev/null; then
   if command -v bw >/dev/null 2>&1; then
-    printf "${Y}▸${R} API-key MCPs enabled. Make sure your Bitwarden vault is unlocked:\n"
+    printf "\n${Y}▸${R} API MCPs enabled. Unlock your Bitwarden vault:\n"
     printf "  ${C}export BW_SESSION=\$(bw unlock --raw)${R}\n"
     printf "  ${C}chezmoi apply${R}\n\n"
   else
-    printf "${Y}⚠${R}  API-key MCPs enabled but Bitwarden CLI not found.\n"
-    printf "  Install: ${C}npm install -g @bitwarden/cli${R}\n"
+    printf "\n${Y}⚠${R}  API MCPs enabled but Bitwarden CLI not found.\n"
+    printf "  Install: ${C}brew install bitwarden-cli${R}\n"
     printf "  Then: ${C}bw login && export BW_SESSION=\$(bw unlock --raw) && chezmoi apply${R}\n\n"
   fi
 fi
 
 # --- Done ---
 printf "\n${G}✓ Done!${R}\n\n"
-printf "  OAuth MCPs (Context7, GitHub, Vercel) will prompt in\n"
-printf "  your browser the first time you use them.\n\n"
 printf "${B}Verify:${R}\n"
 printf "  ${C}claude mcp list${R}            # Claude Code MCPs\n"
 printf "  ${C}cat ~/.cursor/mcp.json${R}     # Cursor MCPs\n"
 printf "  ${C}cat ~/.codex/config.toml${R}   # Codex config\n"
-printf "  ${C}ls ~/.claude/rules/${R}        # Rules\n"
-printf "  ${C}ls ~/.claude/agents/${R}       # Agents\n"
-printf "  ${C}ls ~/.claude/hooks/${R}        # Hooks\n\n"
+printf "  ${C}ls ~/.claude/agents/${R}       # Agents\n\n"
 printf "${D}Update later: chezmoi update${R}\n"

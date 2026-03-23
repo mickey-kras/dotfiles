@@ -1,7 +1,6 @@
 # chezmoi:template:left-delimiter="# {{" right-delimiter="}}"
 # Registers MCP servers in Claude Code via `claude mcp add --scope user`.
-# Idempotent: removes then re-adds each server independently.
-# OAuth MCPs trigger browser auth on first use — no keys needed.
+# Idempotent: removes then re-adds each server.
 # Re-runs only when template output changes (chezmoi run_onchange_).
 #
 # hash: # {{ include "dot_cursor/mcp.json.tmpl" | sha256sum }}
@@ -29,19 +28,9 @@ function Add-MCP {
     }
 }
 
-# Local MCPs (stdio, no auth)
-Add-MCP -Name "sequential-thinking" -Args @("sequential-thinking", "--", "npx", "-y", "@modelcontextprotocol/server-sequential-thinking")
+# Core MCPs (always installed)
 Add-MCP -Name "playwright" -Args @("playwright", "--", "npx", "-y", "@playwright/mcp@latest")
-Add-MCP -Name "magic-ui" -Args @("magic-ui", "--", "npx", "-y", "@magicuidesign/mcp@latest")
-Add-MCP -Name "bitwarden" -Args @("bitwarden", "--", "npx", "-y", "@bitwarden/mcp-server")
-Add-MCP -Name "memory" -Args @("memory", "--", "npx", "-y", "@modelcontextprotocol/server-memory")
-Add-MCP -Name "filesystem" -Args @("filesystem", "--", "npx", "-y", "@modelcontextprotocol/server-filesystem", "/Users")
-
-# Remote MCPs (HTTP, OAuth)
 Add-MCP -Name "context7" -Args @("--transport", "http", "context7", "https://mcp.context7.com/mcp")
-Add-MCP -Name "github" -Args @("--transport", "http", "github", "https://api.githubcopilot.com/mcp")
-Add-MCP -Name "cloudflare-docs" -Args @("--transport", "http", "cloudflare-docs", "https://docs.mcp.cloudflare.com/mcp")
-Add-MCP -Name "vercel" -Args @("--transport", "http", "vercel", "https://mcp.vercel.com")
 
 # {{ if .enable_api_mcps }}
 # API-key MCPs (keys from Bitwarden)
@@ -52,9 +41,9 @@ Add-MCP -Name "fal-ai" -Args @("-e", "FAL_KEY=# {{ (bitwarden "item" "fal-api-ke
 
 Write-Host ""
 if ($failed -eq 0) {
-    Write-Host "All MCPs configured. OAuth servers will prompt in browser on first use."
+    Write-Host "All MCPs configured."
 } else {
-    Write-Host "$failed MCP(s) failed to register."
+    Write-Host "$failed MCP(s) failed. Re-run 'chezmoi apply' or add manually."
 }
 
 exit 0

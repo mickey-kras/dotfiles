@@ -1,12 +1,6 @@
-{{- /* Chezmoi config — runs during `chezmoi init`. Re-run init to change values. */ -}}
+{{- /* Chezmoi config — runs during `chezmoi init`. Re-run init to change. */ -}}
 
-{{- $email := promptStringOnce . "email" "Email address" -}}
-{{- $machine := promptStringOnce . "machine" "Name for this machine (e.g. personal-mac, work-laptop)" -}}
-{{- $hookProfile := promptChoiceOnce . "hook_profile" "Hook profile" (list "minimal" "standard" "strict") -}}
-{{- $enableApiMcps := promptBoolOnce . "enable_api_mcps" "Enable API-key MCPs? (requires Bitwarden CLI)" -}}
+{{- $enableApiMcps := promptBoolOnce . "enable_api_mcps" "Enable API-key MCPs (exa, firecrawl, fal-ai)? Requires Bitwarden CLI" -}}
 
 [data]
-  email = {{ $email | quote }}
-  machine = {{ $machine | quote }}
-  hook_profile = {{ $hookProfile | quote }}
   enable_api_mcps = {{ $enableApiMcps }}

@@ -3,17 +3,10 @@ LICENSE
 scripts/
 .github/
 
-# Windows machines don't get shell run scripts
 {{ if eq .chezmoi.os "windows" }}
 install-claude-mcps.sh
 {{ end }}
 
-# Unix machines don't get PowerShell run scripts
 {{ if ne .chezmoi.os "windows" }}
 install-claude-mcps.ps1
-{{ end }}
-
-# Hook scripts need Node.js — skip on Windows
-{{ if eq .chezmoi.os "windows" }}
-dot_claude/hooks/
 {{ end }}

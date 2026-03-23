@@ -1,40 +1,11 @@
 {
   "mcpServers": {
-    "sequential-thinking": {
-      "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-sequential-thinking"]
-    },
     "playwright": {
       "command": "npx",
       "args": ["-y", "@playwright/mcp@latest"]
     },
     "context7": {
       "url": "https://mcp.context7.com/mcp"
-    },
-    "github": {
-      "url": "https://api.githubcopilot.com/mcp"
-    },
-    "cloudflare-docs": {
-      "url": "https://docs.mcp.cloudflare.com/mcp"
-    },
-    "vercel": {
-      "url": "https://mcp.vercel.com"
-    },
-    "magic-ui": {
-      "command": "npx",
-      "args": ["-y", "@magicuidesign/mcp@latest"]
-    },
-    "bitwarden": {
-      "command": "npx",
-      "args": ["-y", "@bitwarden/mcp-server"]
-    },
-    "memory": {
-      "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-memory"]
-    },
-    "filesystem": {
-      "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-filesystem", "/Users"]
     }
 {{- if .enable_api_mcps }},
     "exa": {

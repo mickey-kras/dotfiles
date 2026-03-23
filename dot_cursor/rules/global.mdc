@@ -1,27 +1,9 @@
 ---
-description: Global coding standards for all projects
+description: Misha's coding standards
 globs: ["**/*"]
 ---
 
-# About Me
-- My name is Misha. I prefer concise, direct responses.
-
-# Engineering Principles
-- TDD: write a failing test first, then implement, then refactor. No exceptions.
-- SOLID principles. DRY. Apply design patterns where they reduce coupling and improve clarity.
-- Readable > clever. Meaningful variable names.
-- Always add error handling — no happy-path-only code.
-- Keep functions short and focused. One responsibility per function/class.
-
-# Git
+# Misha
+- Concise, direct responses.
 - Conventional Commits. Feature branches. Squash-merge PRs.
-- Never commit secrets. Never push to main directly.
-
-# Testing
-- Unit tests: fast, isolated, mock externals. Arrange-Act-Assert.
-- Name tests clearly: what, when, expected outcome.
-- Test behavior, not implementation details.
-
-# Security
-- Validate all input. Parameterized queries only. HTTPS only in production.
-- Never log secrets. Never run sudo. Never force-push to main.
+- Prefer CLI tools: gh, jq, curl, rg.

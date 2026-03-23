@@ -6,10 +6,10 @@ $Repo = "mickey-kras/dotfiles-claude"
 
 # --- Logo ---
 Write-Host ""
-Write-Host "  ___  ___ _  __" -ForegroundColor Cyan
-Write-Host " |  \/  || |/ /" -ForegroundColor Cyan
-Write-Host " | .  . || |  \" -ForegroundColor Cyan
-Write-Host " |_|\/|_||_|\_\" -ForegroundColor Cyan
+Write-Host "  __  __ _  __" -ForegroundColor Cyan
+Write-Host " |  \/  | |/ /" -ForegroundColor Cyan
+Write-Host " | |\/| |   < " -ForegroundColor Cyan
+Write-Host " |_|  |_|_|\_\" -ForegroundColor Cyan
 Write-Host ""
 Write-Host "  AI Toolchain Bootstrap" -ForegroundColor White
 Write-Host "  Claude Code - Cursor - Codex" -ForegroundColor DarkGray
@@ -39,11 +39,11 @@ if (-not (Get-Command npx -ErrorAction SilentlyContinue)) { $missing += "npx" }
 if ($missing.Count -gt 0) {
     Write-Host ""
     Write-Host "! Missing: $($missing -join ', ')" -ForegroundColor Yellow
-    Write-Host "  Some MCPs and hooks require node/npx." -ForegroundColor DarkGray
+    Write-Host "  MCPs require node/npx." -ForegroundColor DarkGray
     Write-Host ""
 }
 
-# --- Check for AI tools ---
+# --- Detect AI tools ---
 Write-Host ""
 Write-Host "Detected tools:" -ForegroundColor White
 if (Get-Command claude -ErrorAction SilentlyContinue) { Write-Host "  + Claude Code" -ForegroundColor Green } else { Write-Host "  - Claude Code (not found)" -ForegroundColor DarkGray }
@@ -53,8 +53,8 @@ Write-Host ""
 
 # --- Init + apply ---
 Write-Host "Running chezmoi init + apply..." -ForegroundColor White
-Write-Host "You'll be prompted for: email, machine type, hook profile, API MCPs." -ForegroundColor DarkGray
-Write-Host "No API keys needed for core setup - OAuth MCPs auth in browser on first use." -ForegroundColor DarkGray
+Write-Host "You'll be prompted about optional API-key MCPs (exa, firecrawl, fal-ai)." -ForegroundColor DarkGray
+Write-Host "Core setup needs no API keys - OAuth MCPs auth in browser on first use." -ForegroundColor DarkGray
 Write-Host ""
 chezmoi init --apply "git@github.com:${Repo}.git"
 
@@ -62,12 +62,14 @@ chezmoi init --apply "git@github.com:${Repo}.git"
 $chezmoiConfig = Get-Content "$env:USERPROFILE\.config\chezmoi\chezmoi.toml" -ErrorAction SilentlyContinue
 if ($chezmoiConfig -match 'enable_api_mcps = true') {
     if (Get-Command bw -ErrorAction SilentlyContinue) {
-        Write-Host "* API-key MCPs enabled. Make sure your Bitwarden vault is unlocked:" -ForegroundColor Yellow
+        Write-Host ""
+        Write-Host "* API MCPs enabled. Unlock your Bitwarden vault:" -ForegroundColor Yellow
         Write-Host '  $env:BW_SESSION = $(bw unlock --raw)' -ForegroundColor Cyan
         Write-Host "  chezmoi apply" -ForegroundColor Cyan
         Write-Host ""
     } else {
-        Write-Host "! API-key MCPs enabled but Bitwarden CLI not found." -ForegroundColor Yellow
+        Write-Host ""
+        Write-Host "! API MCPs enabled but Bitwarden CLI not found." -ForegroundColor Yellow
         Write-Host "  Install: npm install -g @bitwarden/cli" -ForegroundColor Cyan
         Write-Host '  Then: bw login; $env:BW_SESSION = $(bw unlock --raw); chezmoi apply' -ForegroundColor Cyan
         Write-Host ""
@@ -78,15 +80,10 @@ if ($chezmoiConfig -match 'enable_api_mcps = true') {
 Write-Host ""
 Write-Host "+ Done!" -ForegroundColor Green
 Write-Host ""
-Write-Host "  OAuth MCPs (Context7, GitHub, Vercel) will prompt in"
-Write-Host "  your browser the first time you use them."
-Write-Host ""
 Write-Host "Verify:" -ForegroundColor White
 Write-Host "  claude mcp list            # Claude Code MCPs" -ForegroundColor Cyan
 Write-Host "  Get-Content ~/.cursor/mcp.json   # Cursor MCPs" -ForegroundColor Cyan
 Write-Host "  Get-Content ~/.codex/config.toml # Codex config" -ForegroundColor Cyan
-Write-Host "  ls ~/.claude/rules/        # Rules" -ForegroundColor Cyan
 Write-Host "  ls ~/.claude/agents/       # Agents" -ForegroundColor Cyan
-Write-Host "  ls ~/.claude/hooks/        # Hooks" -ForegroundColor Cyan
 Write-Host ""
 Write-Host "Update later: chezmoi update" -ForegroundColor DarkGray

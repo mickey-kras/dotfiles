@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 # chezmoi:template:left-delimiter="# {{" right-delimiter="}}"
 # Registers MCP servers in Claude Code via `claude mcp add --scope user`.
-# Idempotent: removes then re-adds each server independently.
-# OAuth MCPs trigger browser auth on first use — no keys needed.
+# Idempotent: removes then re-adds each server.
 # Re-runs only when template output changes (chezmoi run_onchange_).
 #
 # hash: # {{ include "dot_cursor/mcp.json.tmpl" | sha256sum }}
@@ -21,24 +20,14 @@ add_mcp() {
   if claude mcp add --scope user "$@" 2>/dev/null; then
     echo "  + $name"
   else
-    echo "  ! $name (failed — run 'claude mcp add --scope user $*' manually)"
+    echo "  ! $name (failed)"
     FAILED=$((FAILED + 1))
   fi
 }
 
-# Local MCPs (stdio, no auth)
-add_mcp sequential-thinking sequential-thinking -- npx -y @modelcontextprotocol/server-sequential-thinking
+# Core MCPs (always installed)
 add_mcp playwright playwright -- npx -y @playwright/mcp@latest
-add_mcp magic-ui magic-ui -- npx -y @magicuidesign/mcp@latest
-add_mcp bitwarden bitwarden -- npx -y @bitwarden/mcp-server
-add_mcp memory memory -- npx -y @modelcontextprotocol/server-memory
-add_mcp filesystem filesystem -- npx -y @modelcontextprotocol/server-filesystem /Users
-
-# Remote MCPs (HTTP, OAuth — browser auth on first use)
 add_mcp context7 --transport http context7 "https://mcp.context7.com/mcp"
-add_mcp github --transport http github "https://api.githubcopilot.com/mcp"
-add_mcp cloudflare-docs --transport http cloudflare-docs "https://docs.mcp.cloudflare.com/mcp"
-add_mcp vercel --transport http vercel "https://mcp.vercel.com"
 
 # {{ if .enable_api_mcps }}
 # API-key MCPs (keys from Bitwarden)
@@ -49,9 +38,9 @@ add_mcp fal-ai -e "FAL_KEY=# {{ (bitwarden "item" "fal-api-key").login.password 
 
 echo ""
 if [ "$FAILED" -eq 0 ]; then
-  echo "All MCPs configured. OAuth servers will prompt in browser on first use."
+  echo "All MCPs configured."
 else
-  echo "$FAILED MCP(s) failed to register. See above for manual commands."
+  echo "$FAILED MCP(s) failed. Re-run 'chezmoi apply' or add manually."
 fi
 
 exit 0
