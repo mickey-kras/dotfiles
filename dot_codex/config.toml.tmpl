@@ -9,27 +9,35 @@ Conventional Commits for git messages. Feature branches only — never commit to
 
 [mcp_servers.playwright]
 command = "npx"
-args = ["-y", "@playwright/mcp@latest"]
+args = ["-y", "@playwright/mcp@0.0.68"]
 
 [mcp_servers.context7]
 type = "http"
 url = "https://mcp.context7.com/mcp"
+
+[mcp_servers.sentry]
+type = "http"
+url = "https://mcp.sentry.dev/mcp"
+
+[mcp_servers.figma]
+type = "http"
+url = "https://mcp.figma.com/mcp"
 {{ if .enable_api_mcps }}
 [mcp_servers.exa]
 command = "npx"
-args = ["-y", "exa-mcp-server"]
+args = ["-y", "exa-mcp-server@3.1.9"]
 [mcp_servers.exa.env]
 EXA_API_KEY = "{{ (bitwarden "item" "exa-api-key").login.password }}"
 
 [mcp_servers.firecrawl]
 command = "npx"
-args = ["-y", "firecrawl-mcp"]
+args = ["-y", "firecrawl-mcp@3.11.0"]
 [mcp_servers.firecrawl.env]
 FIRECRAWL_API_KEY = "{{ (bitwarden "item" "firecrawl-api-key").login.password }}"
 
 [mcp_servers.fal-ai]
 command = "npx"
-args = ["-y", "fal-ai-mcp-server"]
+args = ["-y", "fal-ai-mcp-server@2.1.4"]
 [mcp_servers.fal-ai.env]
 FAL_KEY = "{{ (bitwarden "item" "fal-api-key").login.password }}"
 {{ end }}

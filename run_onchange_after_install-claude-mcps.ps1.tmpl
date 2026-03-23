@@ -29,19 +29,21 @@ function Add-MCP {
 }
 
 # Core MCPs (always installed)
-Add-MCP -Name "playwright" -Args @("playwright", "--", "npx", "-y", "@playwright/mcp@latest")
+Add-MCP -Name "playwright" -Args @("playwright", "--", "npx", "-y", "@playwright/mcp@0.0.68")
 Add-MCP -Name "context7" -Args @("--transport", "http", "context7", "https://mcp.context7.com/mcp")
+Add-MCP -Name "sentry" -Args @("--transport", "http", "sentry", "https://mcp.sentry.dev/mcp")
+Add-MCP -Name "figma" -Args @("--transport", "http", "figma", "https://mcp.figma.com/mcp")
 
 # {{ if .enable_api_mcps }}
-# API-key MCPs (keys from Bitwarden)
-Add-MCP -Name "exa" -Args @("-e", "EXA_API_KEY=# {{ (bitwarden "item" "exa-api-key").login.password }}", "exa", "--", "npx", "-y", "exa-mcp-server")
-Add-MCP -Name "firecrawl" -Args @("-e", "FIRECRAWL_API_KEY=# {{ (bitwarden "item" "firecrawl-api-key").login.password }}", "firecrawl", "--", "npx", "-y", "firecrawl-mcp")
-Add-MCP -Name "fal-ai" -Args @("-e", "FAL_KEY=# {{ (bitwarden "item" "fal-api-key").login.password }}", "fal-ai", "--", "npx", "-y", "fal-ai-mcp-server")
+# API-key MCPs (keys from Bitwarden, versions pinned)
+Add-MCP -Name "exa" -Args @("-e", "EXA_API_KEY=# {{ (bitwarden "item" "exa-api-key").login.password }}", "exa", "--", "npx", "-y", "exa-mcp-server@3.1.9")
+Add-MCP -Name "firecrawl" -Args @("-e", "FIRECRAWL_API_KEY=# {{ (bitwarden "item" "firecrawl-api-key").login.password }}", "firecrawl", "--", "npx", "-y", "firecrawl-mcp@3.11.0")
+Add-MCP -Name "fal-ai" -Args @("-e", "FAL_KEY=# {{ (bitwarden "item" "fal-api-key").login.password }}", "fal-ai", "--", "npx", "-y", "fal-ai-mcp-server@2.1.4")
 # {{ end }}
 
 Write-Host ""
 if ($failed -eq 0) {
-    Write-Host "All MCPs configured."
+    Write-Host "All MCPs configured. OAuth servers will prompt in browser on first use."
 } else {
     Write-Host "$failed MCP(s) failed. Re-run 'chezmoi apply' or add manually."
 }

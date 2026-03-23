@@ -26,19 +26,21 @@ add_mcp() {
 }
 
 # Core MCPs (always installed)
-add_mcp playwright playwright -- npx -y @playwright/mcp@latest
+add_mcp playwright playwright -- npx -y @playwright/mcp@0.0.68
 add_mcp context7 --transport http context7 "https://mcp.context7.com/mcp"
+add_mcp sentry --transport http sentry "https://mcp.sentry.dev/mcp"
+add_mcp figma --transport http figma "https://mcp.figma.com/mcp"
 
 # {{ if .enable_api_mcps }}
-# API-key MCPs (keys from Bitwarden)
-add_mcp exa -e "EXA_API_KEY=# {{ (bitwarden "item" "exa-api-key").login.password }}" exa -- npx -y exa-mcp-server
-add_mcp firecrawl -e "FIRECRAWL_API_KEY=# {{ (bitwarden "item" "firecrawl-api-key").login.password }}" firecrawl -- npx -y firecrawl-mcp
-add_mcp fal-ai -e "FAL_KEY=# {{ (bitwarden "item" "fal-api-key").login.password }}" fal-ai -- npx -y fal-ai-mcp-server
+# API-key MCPs (keys from Bitwarden, versions pinned)
+add_mcp exa -e "EXA_API_KEY=# {{ (bitwarden "item" "exa-api-key").login.password }}" exa -- npx -y exa-mcp-server@3.1.9
+add_mcp firecrawl -e "FIRECRAWL_API_KEY=# {{ (bitwarden "item" "firecrawl-api-key").login.password }}" firecrawl -- npx -y firecrawl-mcp@3.11.0
+add_mcp fal-ai -e "FAL_KEY=# {{ (bitwarden "item" "fal-api-key").login.password }}" fal-ai -- npx -y fal-ai-mcp-server@2.1.4
 # {{ end }}
 
 echo ""
 if [ "$FAILED" -eq 0 ]; then
-  echo "All MCPs configured."
+  echo "All MCPs configured. OAuth servers will prompt in browser on first use."
 else
   echo "$FAILED MCP(s) failed. Re-run 'chezmoi apply' or add manually."
 fi

@@ -25,15 +25,19 @@ You'll get one prompt: whether to enable API-key MCPs (exa, firecrawl, fal-ai). 
 
 ### MCPs
 
-| Server | Transport | Always | What it does |
-|--------|-----------|--------|-------------|
-| Playwright | stdio (npx) | Yes | Browser automation and E2E testing |
-| Context7 | Remote HTTP | Yes | Up-to-date library docs and code examples |
-| Exa | stdio (npx) | API | AI-powered web search |
-| Firecrawl | stdio (npx) | API | Web scraping and crawling |
-| fal-ai | stdio (npx) | API | AI image generation |
+All versions are pinned for supply-chain safety. OAuth MCPs authenticate in the browser on first use.
 
-**API MCPs** require [Bitwarden CLI](https://bitwarden.com/help/cli/). Store keys as Login items named `exa-api-key`, `firecrawl-api-key`, `fal-api-key` (API key in the Password field). Then:
+| Server | Transport | Auth | What it does |
+|--------|-----------|------|-------------|
+| Playwright 0.0.68 | stdio (npx) | None | Browser automation and E2E testing |
+| Context7 | Remote HTTP | OAuth | Up-to-date library docs and code examples |
+| Sentry | Remote HTTP | OAuth | Error tracking: stack traces, breadcrumbs, release health |
+| Figma | Remote HTTP | OAuth | Design-to-code: layouts, tokens, component variants |
+| Exa 3.1.9 | stdio (npx) | API key | AI-powered web search |
+| Firecrawl 3.11.0 | stdio (npx) | API key | Web scraping and crawling |
+| fal-ai 2.1.4 | stdio (npx) | API key | AI image generation |
+
+**API MCPs** (last 3) require [Bitwarden CLI](https://bitwarden.com/help/cli/). Store keys as Login items named `exa-api-key`, `firecrawl-api-key`, `fal-api-key` (API key in the Password field). Then:
 ```bash
 bw login && export BW_SESSION=$(bw unlock --raw) && chezmoi apply
 ```
@@ -89,6 +93,13 @@ scripts/
   bootstrap.sh                        # macOS/Linux bootstrap
   bootstrap.ps1                       # Windows bootstrap
 ```
+
+## Security
+
+- **Pinned versions** — All stdio MCPs use exact version numbers to prevent supply-chain attacks via malicious updates.
+- **No secrets in repo** — API keys are fetched from Bitwarden at `chezmoi apply` time.
+- **OAuth MCPs** (Context7, Sentry, Figma) authenticate via browser — no tokens stored locally.
+- **Periodic audit** — Run `npx @anthropic-ai/mcp-scan` to scan installed MCPs for tool poisoning.
 
 ## Dependencies
 
