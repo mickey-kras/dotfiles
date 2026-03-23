@@ -150,6 +150,52 @@ if ($enableApiMcps) {
         $env:BW_SESSION = bw unlock --raw
         if ($env:BW_SESSION) {
             Write-Host "  + Vault unlocked" -ForegroundColor Green
+
+            # --- Ensure required Bitwarden items exist ---
+            $bwItems = @(
+                @{ Name = "exa-api-key"; Label = "Exa"; Url = "https://exa.ai" }
+                @{ Name = "firecrawl-api-key"; Label = "Firecrawl"; Url = "https://firecrawl.dev" }
+                @{ Name = "fal-api-key"; Label = "fal.ai"; Url = "https://fal.ai" }
+            )
+            $itemsMissing = $false
+            foreach ($item in $bwItems) {
+                $pw = bw get password $item.Name 2>$null
+                if (-not $pw) { $itemsMissing = $true; break }
+            }
+
+            if ($itemsMissing) {
+                Write-Host ""
+                Write-Host "API key setup" -ForegroundColor White
+                Write-Host "  Create free accounts and paste API keys below." -ForegroundColor DarkGray
+                Write-Host "  Press Enter to skip any service." -ForegroundColor DarkGray
+                Write-Host ""
+                foreach ($item in $bwItems) {
+                    $pw = bw get password $item.Name 2>$null
+                    if ($pw) {
+                        Write-Host "  + $($item.Label) - already configured" -ForegroundColor Green
+                    } else {
+                        Write-Host "  $($item.Label) ($($item.Url))" -ForegroundColor Cyan
+                        $apiKey = Read-Host "  API key"
+                        if ($apiKey) {
+                            $template = bw get template item | ConvertFrom-Json
+                            $template.name = $item.Name
+                            $template.type = 1
+                            $template.login.password = $apiKey
+                            $template | ConvertTo-Json -Compress | bw encode | bw create item 2>$null | Out-Null
+                            $check = bw get password $item.Name 2>$null
+                            if ($check) {
+                                Write-Host "  + $($item.Label) saved" -ForegroundColor Green
+                            } else {
+                                Write-Host "  ! Failed to save $($item.Label) - add manually later" -ForegroundColor Red
+                            }
+                        } else {
+                            Write-Host "  * Skipped $($item.Label)" -ForegroundColor Yellow
+                        }
+                    }
+                }
+                bw sync 2>$null | Out-Null
+            }
+
             Write-Host ""
             Write-Host "Re-applying dotfiles with API keys..." -ForegroundColor White
             chezmoi apply

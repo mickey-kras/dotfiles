@@ -158,6 +158,52 @@ if [ "$ENABLE_API_MCPS" = "true" ]; then
     export BW_SESSION=$(bw unlock --raw)
     if [ -n "$BW_SESSION" ]; then
       printf "  ${G}✓${R} Vault unlocked\n"
+
+      # --- Ensure required Bitwarden items exist ---
+      BW_ITEMS=("exa-api-key:Exa:https://exa.ai" "firecrawl-api-key:Firecrawl:https://firecrawl.dev" "fal-api-key:fal.ai:https://fal.ai")
+      ITEMS_MISSING=false
+      for entry in "${BW_ITEMS[@]}"; do
+        ITEM_NAME="${entry%%:*}"
+        if ! bw get password "$ITEM_NAME" >/dev/null 2>&1; then
+          ITEMS_MISSING=true
+          break
+        fi
+      done
+
+      if [ "$ITEMS_MISSING" = "true" ]; then
+        printf "\n${B}API key setup${R}\n"
+        printf "  ${D}Create free accounts and paste API keys below.${R}\n"
+        printf "  ${D}Press Enter to skip any service.${R}\n\n"
+        for entry in "${BW_ITEMS[@]}"; do
+          ITEM_NAME="${entry%%:*}"
+          REST="${entry#*:}"
+          ITEM_LABEL="${REST%%:*}"
+          ITEM_URL="${REST#*:}"
+          if bw get password "$ITEM_NAME" >/dev/null 2>&1; then
+            printf "  ${G}✓${R} %s — already configured\n" "$ITEM_LABEL"
+          else
+            printf "  ${C}%s${R} ${D}(%s)${R}\n" "$ITEM_LABEL" "$ITEM_URL"
+            printf "  API key: "
+            read -r API_KEY
+            if [ -n "$API_KEY" ]; then
+              TEMPLATE=$(bw get template item)
+              echo "$TEMPLATE" | \
+                jq --arg name "$ITEM_NAME" --arg pw "$API_KEY" \
+                  '.name = $name | .login.password = $pw | .type = 1' | \
+                bw encode | bw create item >/dev/null 2>&1
+              if bw get password "$ITEM_NAME" >/dev/null 2>&1; then
+                printf "  ${G}✓${R} %s saved\n" "$ITEM_LABEL"
+              else
+                printf "  ${RED}✗${R} Failed to save %s — add manually later\n" "$ITEM_LABEL"
+              fi
+            else
+              printf "  ${Y}▸${R} Skipped %s\n" "$ITEM_LABEL"
+            fi
+          fi
+        done
+        bw sync >/dev/null 2>&1
+      fi
+
       printf "\n${B}Re-applying dotfiles with API keys...${R}\n"
       chezmoi apply
       printf "  ${G}✓${R} API MCPs configured\n"
