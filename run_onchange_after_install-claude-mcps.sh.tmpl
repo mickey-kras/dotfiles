@@ -39,7 +39,7 @@ if command -v claude >/dev/null 2>&1; then
   add_mcp azure-devops azure-devops -- npx -y @azure-devops/mcp@2.5.0 # {{ .azure_devops_org }}
   # {{ end }}
 
-  # {{ if .enable_api_mcps }}
+  # {{ if and .enable_api_mcps (lookPath "bw") }}
   # API-key MCPs (keys from Bitwarden, versions pinned)
   add_mcp exa -e "EXA_API_KEY=# {{ (bitwarden "item" "exa-api-key").login.password }}" exa -- npx -y exa-mcp-server@3.1.9
   add_mcp firecrawl -e "FIRECRAWL_API_KEY=# {{ (bitwarden "item" "firecrawl-api-key").login.password }}" firecrawl -- npx -y firecrawl-mcp@3.11.0

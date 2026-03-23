@@ -19,7 +19,7 @@
       "args": ["-y", "@azure-devops/mcp@2.5.0", "{{ .azure_devops_org }}"]
     }
 {{- end }}
-{{- if .enable_api_mcps }},
+{{- if and .enable_api_mcps (lookPath "bw") }},
     "exa": {
       "command": "npx",
       "args": ["-y", "exa-mcp-server@3.1.9"],
