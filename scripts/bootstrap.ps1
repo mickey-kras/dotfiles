@@ -105,13 +105,12 @@ New-Item -ItemType Directory -Path $configDir -Force | Out-Null
 "@ | Set-Content "$configDir\chezmoi.toml"
 Write-Host "  + Config saved" -ForegroundColor Green
 
-# --- Clear stale chezmoi source to force a fresh clone ---
+# --- Clear stale chezmoi state and source for a clean init ---
 $chezmoiSrc = "$env:USERPROFILE\.local\share\chezmoi"
-if (Test-Path $chezmoiSrc) {
-    Write-Host ""
-    Write-Host "* Removing stale chezmoi source..." -ForegroundColor Yellow
-    Remove-Item $chezmoiSrc -Recurse -Force
-}
+if (Test-Path $chezmoiSrc) { Remove-Item $chezmoiSrc -Recurse -Force }
+# Remove cached promptOnce answers so our config values take effect
+Remove-Item "$configDir\chezmoistate.boltdb" -ErrorAction SilentlyContinue
+Remove-Item "$configDir\chezmoistate" -ErrorAction SilentlyContinue
 
 # --- Init + apply (fresh clone — no stale templates) ---
 Write-Host ""

@@ -116,12 +116,12 @@ cat > ~/.config/chezmoi/chezmoi.toml <<TOML
 TOML
 printf "  ${G}✓${R} Config saved to ~/.config/chezmoi/chezmoi.toml\n"
 
-# --- Clear stale chezmoi source to force a fresh clone ---
+# --- Clear stale chezmoi state and source for a clean init ---
 CHEZMOI_SRC="${HOME}/.local/share/chezmoi"
-if [ -d "$CHEZMOI_SRC" ]; then
-  printf "\n${Y}▸${R} Removing stale chezmoi source...\n"
-  rm -rf "$CHEZMOI_SRC"
-fi
+[ -d "$CHEZMOI_SRC" ] && rm -rf "$CHEZMOI_SRC"
+# Remove cached promptOnce answers so our config values take effect
+rm -f "${HOME}/.config/chezmoi/chezmoistate.boltdb"
+rm -f "${HOME}/.config/chezmoi/chezmoistate"
 
 # --- Init + apply (fresh clone — API MCPs deferred until Bitwarden is ready) ---
 printf "\n${B}Applying dotfiles...${R}\n"
