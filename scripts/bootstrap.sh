@@ -16,10 +16,10 @@ R='\033[0m'     # reset
 
 # --- Logo ---
 printf "${C}"
-printf '  ___  ___ _  __\n'
-printf ' |  \\/  || |/ /\n'
-printf ' | .  . || |  \\\n'
-printf ' |_|\\/|_||_|\\_\\\n'
+printf '  __  __ _  __\n'
+printf ' |  \\/  | |/ /\n'
+printf ' | |\\/| |   < \n'
+printf ' |_|  |_|_|\\_\\\n'
 printf "${R}\n"
 printf "${B}  AI Toolchain Bootstrap${R}\n"
 printf "${D}  Claude Code · Cursor · Codex${R}\n\n"

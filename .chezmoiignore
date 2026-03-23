@@ -5,12 +5,12 @@ scripts/
 
 # Windows machines don't get shell run scripts
 {{ if eq .chezmoi.os "windows" }}
-run_onchange_after_install-claude-mcps.sh.tmpl
+install-claude-mcps.sh
 {{ end }}
 
 # Unix machines don't get PowerShell run scripts
 {{ if ne .chezmoi.os "windows" }}
-run_onchange_after_install-claude-mcps.ps1.tmpl
+install-claude-mcps.ps1
 {{ end }}
 
 # Hook scripts need Node.js — skip on Windows
