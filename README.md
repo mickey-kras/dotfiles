@@ -63,7 +63,8 @@ bw login && export BW_SESSION=$(bw unlock --raw) && chezmoi apply
 
 | Tool | Config files |
 |------|-------------|
-| Claude Code | `~/.claude/CLAUDE.md`, `settings.json`, `agents/` + MCPs via `claude mcp add` |
+| Claude Code CLI | `~/.claude/CLAUDE.md`, `settings.json`, `agents/` + MCPs via `claude mcp add` |
+| Claude Desktop | MCPs merged into `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) |
 | Cursor | `~/.cursor/mcp.json`, `~/.cursor/rules/global.mdc` |
 | Codex | `~/.codex/config.toml` |
 
