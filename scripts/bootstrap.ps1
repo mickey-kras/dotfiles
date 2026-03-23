@@ -51,16 +51,66 @@ if (Test-Path "$env:LOCALAPPDATA\Programs\cursor") { Write-Host "  + Cursor" -Fo
 if (Get-Command codex -ErrorAction SilentlyContinue) { Write-Host "  + Codex" -ForegroundColor Green } else { Write-Host "  - Codex (not found)" -ForegroundColor DarkGray }
 Write-Host ""
 
-# --- Init + apply ---
-Write-Host "Running chezmoi init + apply..." -ForegroundColor White
-Write-Host "You'll be prompted about optional API-key MCPs (exa, firecrawl, fal-ai)." -ForegroundColor DarkGray
-Write-Host "Core setup needs no API keys - OAuth MCPs auth in browser on first use." -ForegroundColor DarkGray
+# --- MCP Selection ---
+Write-Host "MCP Configuration" -ForegroundColor White
 Write-Host ""
+Write-Host "  + Playwright        — Browser automation, E2E testing" -ForegroundColor Green
+Write-Host "  + Context7          — Up-to-date library docs" -ForegroundColor Green
+Write-Host "  + Sentry            — Error tracking, stack traces (OAuth)" -ForegroundColor Green
+Write-Host "  + Figma             — Design-to-code (OAuth)" -ForegroundColor Green
+Write-Host ""
+Write-Host "  Optional:" -ForegroundColor White
+Write-Host "  [1] Azure DevOps     — Work items, PRs, pipelines" -ForegroundColor Cyan
+Write-Host "  [2] API MCPs         — Exa, Firecrawl, fal-ai (requires Bitwarden)" -ForegroundColor Cyan
+Write-Host ""
+
+$enableAzureDevOps = $false
+$azureDevOpsOrg = ""
+$enableApiMcps = $false
+
+$choices = Read-Host "Enter numbers to enable (e.g. 1 2), or press Enter for core only"
+
+foreach ($choice in ($choices -split '\s+')) {
+    switch ($choice) {
+        "1" {
+            $azureDevOpsOrg = Read-Host "`nAzure DevOps org name"
+            if ($azureDevOpsOrg) {
+                $enableAzureDevOps = $true
+                Write-Host "  + Azure DevOps org: $azureDevOpsOrg" -ForegroundColor Green
+            } else {
+                Write-Host "  * No org name - skipping Azure DevOps" -ForegroundColor Yellow
+            }
+        }
+        "2" {
+            $enableApiMcps = $true
+            Write-Host "  + API MCPs enabled" -ForegroundColor Green
+        }
+        "" { }
+        default {
+            Write-Host "  * Unknown option: $choice (skipped)" -ForegroundColor Yellow
+        }
+    }
+}
+
+# --- Write chezmoi config ---
+Write-Host ""
+Write-Host "Writing chezmoi config..." -ForegroundColor DarkGray
+$configDir = "$env:USERPROFILE\.config\chezmoi"
+New-Item -ItemType Directory -Path $configDir -Force | Out-Null
+@"
+[data]
+  enable_api_mcps = $($enableApiMcps.ToString().ToLower())
+  azure_devops_org = "$azureDevOpsOrg"
+"@ | Set-Content "$configDir\chezmoi.toml"
+Write-Host "  + Config saved" -ForegroundColor Green
+
+# --- Init + apply (no prompts — config already written) ---
+Write-Host ""
+Write-Host "Applying dotfiles..." -ForegroundColor White
 chezmoi init --apply "git@github.com:${Repo}.git"
 
 # --- Bitwarden check (if API MCPs enabled) ---
-$chezmoiConfig = Get-Content "$env:USERPROFILE\.config\chezmoi\chezmoi.toml" -ErrorAction SilentlyContinue
-if ($chezmoiConfig -match 'enable_api_mcps = true') {
+if ($enableApiMcps) {
     if (Get-Command bw -ErrorAction SilentlyContinue) {
         Write-Host ""
         Write-Host "* API MCPs enabled. Unlock your Bitwarden vault:" -ForegroundColor Yellow

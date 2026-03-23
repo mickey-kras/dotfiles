@@ -62,14 +62,65 @@ command -v claude >/dev/null 2>&1 && printf "  ${G}✓${R} Claude Code\n" || pri
 command -v codex >/dev/null 2>&1 && printf "  ${G}✓${R} Codex\n" || printf "  ${D}✗ Codex (not found)${R}\n"
 printf "\n"
 
-# --- Init + apply ---
-printf "${B}Running chezmoi init + apply...${R}\n"
-printf "${D}You'll be prompted about optional API-key MCPs (exa, firecrawl, fal-ai).${R}\n"
-printf "${D}Core setup needs no API keys — OAuth MCPs auth in browser on first use.${R}\n\n"
+# --- MCP Selection ---
+printf "${B}MCP Configuration${R}\n\n"
+
+printf "  ${G}✓${R} Playwright        ${D}— Browser automation, E2E testing${R}\n"
+printf "  ${G}✓${R} Context7          ${D}— Up-to-date library docs${R}\n"
+printf "  ${G}✓${R} Sentry            ${D}— Error tracking, stack traces (OAuth)${R}\n"
+printf "  ${G}✓${R} Figma             ${D}— Design-to-code (OAuth)${R}\n"
+printf "\n"
+printf "  ${B}Optional:${R}\n"
+printf "  ${C}[1]${R} Azure DevOps     ${D}— Work items, PRs, pipelines${R}\n"
+printf "  ${C}[2]${R} API MCPs         ${D}— Exa, Firecrawl, fal-ai (requires Bitwarden)${R}\n"
+printf "\n"
+
+ENABLE_AZURE_DEVOPS=false
+AZURE_DEVOPS_ORG=""
+ENABLE_API_MCPS=false
+
+printf "${B}Enter numbers to enable (e.g. 1 2), or press Enter for core only: ${R}"
+read -r CHOICES
+
+for choice in $CHOICES; do
+  case "$choice" in
+    1)
+      ENABLE_AZURE_DEVOPS=true
+      printf "\n${B}Azure DevOps org name: ${R}"
+      read -r AZURE_DEVOPS_ORG
+      if [ -z "$AZURE_DEVOPS_ORG" ]; then
+        printf "  ${Y}▸${R} No org name — skipping Azure DevOps\n"
+        ENABLE_AZURE_DEVOPS=false
+      else
+        printf "  ${G}✓${R} Azure DevOps org: ${C}${AZURE_DEVOPS_ORG}${R}\n"
+      fi
+      ;;
+    2)
+      ENABLE_API_MCPS=true
+      printf "  ${G}✓${R} API MCPs enabled\n"
+      ;;
+    *)
+      printf "  ${Y}▸${R} Unknown option: $choice (skipped)\n"
+      ;;
+  esac
+done
+
+# --- Write chezmoi config ---
+printf "\n${D}Writing chezmoi config...${R}\n"
+mkdir -p ~/.config/chezmoi
+cat > ~/.config/chezmoi/chezmoi.toml <<TOML
+[data]
+  enable_api_mcps = ${ENABLE_API_MCPS}
+  azure_devops_org = "${AZURE_DEVOPS_ORG}"
+TOML
+printf "  ${G}✓${R} Config saved to ~/.config/chezmoi/chezmoi.toml\n"
+
+# --- Init + apply (no prompts — config already written) ---
+printf "\n${B}Applying dotfiles...${R}\n"
 chezmoi init --apply "git@github.com:${REPO}.git"
 
 # --- Bitwarden check (if API MCPs enabled) ---
-if grep -q 'enable_api_mcps = true' ~/.config/chezmoi/chezmoi.toml 2>/dev/null; then
+if [ "$ENABLE_API_MCPS" = "true" ]; then
   if command -v bw >/dev/null 2>&1; then
     printf "\n${Y}▸${R} API MCPs enabled. Unlock your Bitwarden vault:\n"
     printf "  ${C}export BW_SESSION=\$(bw unlock --raw)${R}\n"
