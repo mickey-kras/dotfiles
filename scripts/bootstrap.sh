@@ -127,16 +127,47 @@ fi
 printf "\n${B}Applying dotfiles...${R}\n"
 chezmoi init --apply "git@github.com:${REPO}.git"
 
-# --- Bitwarden check (if API MCPs enabled) ---
+# --- Bitwarden setup (if API MCPs enabled) ---
 if [ "$ENABLE_API_MCPS" = "true" ]; then
+  if ! command -v bw >/dev/null 2>&1; then
+    printf "\n${B}Bitwarden CLI required for API MCPs${R}\n"
+    printf "${B}Install now? [Y/n]: ${R}"
+    read -r BW_INSTALL
+    if [ "$BW_INSTALL" != "n" ] && [ "$BW_INSTALL" != "N" ]; then
+      if [[ "$(uname -s)" == "Darwin" ]] && command -v brew >/dev/null 2>&1; then
+        brew install bitwarden-cli
+      elif command -v npm >/dev/null 2>&1; then
+        npm install -g @bitwarden/cli
+      elif command -v apt-get >/dev/null 2>&1; then
+        sudo snap install bw
+      else
+        printf "  ${RED}✗${R} Could not detect a supported package manager.\n"
+        printf "  Install manually: ${C}https://bitwarden.com/help/cli/${R}\n\n"
+      fi
+    fi
+  fi
+
   if command -v bw >/dev/null 2>&1; then
-    printf "\n${Y}▸${R} API MCPs enabled. Unlock your Bitwarden vault:\n"
-    printf "  ${C}export BW_SESSION=\$(bw unlock --raw)${R}\n"
-    printf "  ${C}chezmoi apply${R}\n\n"
+    printf "\n${B}Bitwarden login & unlock${R}\n"
+    BW_STATUS=$(bw status 2>/dev/null | grep -o '"status":"[^"]*"' | cut -d'"' -f4)
+    if [ "$BW_STATUS" = "unauthenticated" ]; then
+      printf "  ${Y}▸${R} Not logged in. Running ${C}bw login${R}...\n"
+      bw login
+    fi
+    printf "  ${Y}▸${R} Unlocking vault...\n"
+    export BW_SESSION=$(bw unlock --raw)
+    if [ -n "$BW_SESSION" ]; then
+      printf "  ${G}✓${R} Vault unlocked\n"
+      printf "\n${B}Re-applying dotfiles with API keys...${R}\n"
+      chezmoi apply
+      printf "  ${G}✓${R} API MCPs configured\n"
+    else
+      printf "  ${RED}✗${R} Failed to unlock vault.\n"
+      printf "  Run manually: ${C}export BW_SESSION=\$(bw unlock --raw) && chezmoi apply${R}\n\n"
+    fi
   else
-    printf "\n${Y}⚠${R}  API MCPs enabled but Bitwarden CLI not found.\n"
-    printf "  Install: ${C}brew install bitwarden-cli${R}\n"
-    printf "  Then: ${C}bw login && export BW_SESSION=\$(bw unlock --raw) && chezmoi apply${R}\n\n"
+    printf "\n${Y}⚠${R}  Skipping API MCPs — install Bitwarden CLI later and run:\n"
+    printf "  ${C}bw login && export BW_SESSION=\$(bw unlock --raw) && chezmoi apply${R}\n\n"
   fi
 fi
 

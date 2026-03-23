@@ -118,19 +118,50 @@ Write-Host ""
 Write-Host "Applying dotfiles..." -ForegroundColor White
 chezmoi init --apply "git@github.com:${Repo}.git"
 
-# --- Bitwarden check (if API MCPs enabled) ---
+# --- Bitwarden setup (if API MCPs enabled) ---
 if ($enableApiMcps) {
+    if (-not (Get-Command bw -ErrorAction SilentlyContinue)) {
+        Write-Host ""
+        Write-Host "Bitwarden CLI required for API MCPs" -ForegroundColor White
+        $bwInstall = Read-Host "Install now? [Y/n]"
+        if ($bwInstall -ne "n" -and $bwInstall -ne "N") {
+            if (Get-Command winget -ErrorAction SilentlyContinue) {
+                winget install Bitwarden.CLI --accept-package-agreements --accept-source-agreements
+            } elseif (Get-Command choco -ErrorAction SilentlyContinue) {
+                choco install bitwarden-cli -y
+            } elseif (Get-Command npm -ErrorAction SilentlyContinue) {
+                npm install -g @bitwarden/cli
+            } else {
+                Write-Host "  ! Could not detect a supported package manager." -ForegroundColor Red
+                Write-Host "  Install manually: https://bitwarden.com/help/cli/" -ForegroundColor Cyan
+            }
+        }
+    }
+
     if (Get-Command bw -ErrorAction SilentlyContinue) {
         Write-Host ""
-        Write-Host "* API MCPs enabled. Unlock your Bitwarden vault:" -ForegroundColor Yellow
-        Write-Host '  $env:BW_SESSION = $(bw unlock --raw)' -ForegroundColor Cyan
-        Write-Host "  chezmoi apply" -ForegroundColor Cyan
-        Write-Host ""
+        Write-Host "Bitwarden login & unlock" -ForegroundColor White
+        $bwStatus = (bw status 2>$null | ConvertFrom-Json).status
+        if ($bwStatus -eq "unauthenticated") {
+            Write-Host "  * Not logged in. Running bw login..." -ForegroundColor Yellow
+            bw login
+        }
+        Write-Host "  * Unlocking vault..." -ForegroundColor Yellow
+        $env:BW_SESSION = bw unlock --raw
+        if ($env:BW_SESSION) {
+            Write-Host "  + Vault unlocked" -ForegroundColor Green
+            Write-Host ""
+            Write-Host "Re-applying dotfiles with API keys..." -ForegroundColor White
+            chezmoi apply
+            Write-Host "  + API MCPs configured" -ForegroundColor Green
+        } else {
+            Write-Host "  ! Failed to unlock vault." -ForegroundColor Red
+            Write-Host '  Run manually: $env:BW_SESSION = $(bw unlock --raw); chezmoi apply' -ForegroundColor Cyan
+        }
     } else {
         Write-Host ""
-        Write-Host "! API MCPs enabled but Bitwarden CLI not found." -ForegroundColor Yellow
-        Write-Host "  Install: npm install -g @bitwarden/cli" -ForegroundColor Cyan
-        Write-Host '  Then: bw login; $env:BW_SESSION = $(bw unlock --raw); chezmoi apply' -ForegroundColor Cyan
+        Write-Host "! Skipping API MCPs - install Bitwarden CLI later and run:" -ForegroundColor Yellow
+        Write-Host '  bw login; $env:BW_SESSION = $(bw unlock --raw); chezmoi apply' -ForegroundColor Cyan
         Write-Host ""
     }
 }
