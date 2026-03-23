@@ -68,6 +68,19 @@ printf "${D}You'll be prompted for: email, machine type, hook profile, API MCPs.
 printf "${D}No API keys needed for core setup — OAuth MCPs auth in browser on first use.${R}\n\n"
 chezmoi init --apply "git@github.com:${REPO}.git"
 
+# --- Bitwarden check (if API MCPs enabled) ---
+if grep -q 'enable_api_mcps = true' ~/.config/chezmoi/chezmoi.toml 2>/dev/null; then
+  if command -v bw >/dev/null 2>&1; then
+    printf "${Y}▸${R} API-key MCPs enabled. Make sure your Bitwarden vault is unlocked:\n"
+    printf "  ${C}export BW_SESSION=\$(bw unlock --raw)${R}\n"
+    printf "  ${C}chezmoi apply${R}\n\n"
+  else
+    printf "${Y}⚠${R}  API-key MCPs enabled but Bitwarden CLI not found.\n"
+    printf "  Install: ${C}npm install -g @bitwarden/cli${R}\n"
+    printf "  Then: ${C}bw login && export BW_SESSION=\$(bw unlock --raw) && chezmoi apply${R}\n\n"
+  fi
+fi
+
 # --- Done ---
 printf "\n${G}✓ Done!${R}\n\n"
 printf "  OAuth MCPs (Context7, GitHub, Vercel) will prompt in\n"

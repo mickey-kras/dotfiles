@@ -55,6 +55,10 @@
           {
             "type": "command",
             "command": "node ~/.claude/hooks/scripts/block-no-verify.js"
+          },
+          {
+            "type": "command",
+            "command": "node ~/.claude/hooks/scripts/governance-capture.js"
           }
         ]
       }
@@ -77,6 +81,19 @@
           {
             "type": "command",
             "command": "node ~/.claude/hooks/scripts/suggest-compact.js"
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node ~/.claude/hooks/scripts/post-edit-format.js"
+          },
+          {
+            "type": "command",
+            "command": "node ~/.claude/hooks/scripts/quality-gate.js"
           }
         ]
       }
@@ -103,6 +120,10 @@
           {
             "type": "command",
             "command": "node ~/.claude/hooks/scripts/session-end.js"
+          },
+          {
+            "type": "command",
+            "command": "node ~/.claude/hooks/scripts/check-console-log.js"
           }
         ]
       }

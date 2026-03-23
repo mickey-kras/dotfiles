@@ -33,6 +33,9 @@ function Add-MCP {
 Add-MCP -Name "sequential-thinking" -Args @("sequential-thinking", "--", "npx", "-y", "@modelcontextprotocol/server-sequential-thinking")
 Add-MCP -Name "playwright" -Args @("playwright", "--", "npx", "-y", "@playwright/mcp@latest")
 Add-MCP -Name "magic-ui" -Args @("magic-ui", "--", "npx", "-y", "@magicuidesign/mcp@latest")
+Add-MCP -Name "bitwarden" -Args @("bitwarden", "--", "npx", "-y", "@bitwarden/mcp-server")
+Add-MCP -Name "memory" -Args @("memory", "--", "npx", "-y", "@modelcontextprotocol/server-memory")
+Add-MCP -Name "filesystem" -Args @("filesystem", "--", "npx", "-y", "@modelcontextprotocol/server-filesystem", "/Users")
 
 # Remote MCPs (HTTP, OAuth)
 Add-MCP -Name "context7" -Args @("--transport", "http", "context7", "https://mcp.context7.com/mcp")

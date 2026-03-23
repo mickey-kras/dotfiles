@@ -38,6 +38,18 @@ url = "https://mcp.vercel.com"
 [mcp_servers.magic-ui]
 command = "npx"
 args = ["-y", "@magicuidesign/mcp@latest"]
+
+[mcp_servers.bitwarden]
+command = "npx"
+args = ["-y", "@bitwarden/mcp-server"]
+
+[mcp_servers.memory]
+command = "npx"
+args = ["-y", "@modelcontextprotocol/server-memory"]
+
+[mcp_servers.filesystem]
+command = "npx"
+args = ["-y", "@modelcontextprotocol/server-filesystem", "/Users"]
 {{ if .enable_api_mcps }}
 [mcp_servers.exa]
 command = "npx"

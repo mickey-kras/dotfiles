@@ -30,6 +30,9 @@ add_mcp() {
 add_mcp sequential-thinking sequential-thinking -- npx -y @modelcontextprotocol/server-sequential-thinking
 add_mcp playwright playwright -- npx -y @playwright/mcp@latest
 add_mcp magic-ui magic-ui -- npx -y @magicuidesign/mcp@latest
+add_mcp bitwarden bitwarden -- npx -y @bitwarden/mcp-server
+add_mcp memory memory -- npx -y @modelcontextprotocol/server-memory
+add_mcp filesystem filesystem -- npx -y @modelcontextprotocol/server-filesystem /Users
 
 # Remote MCPs (HTTP, OAuth — browser auth on first use)
 add_mcp context7 --transport http context7 "https://mcp.context7.com/mcp"

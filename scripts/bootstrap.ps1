@@ -58,6 +58,22 @@ Write-Host "No API keys needed for core setup - OAuth MCPs auth in browser on fi
 Write-Host ""
 chezmoi init --apply "git@github.com:${Repo}.git"
 
+# --- Bitwarden check (if API MCPs enabled) ---
+$chezmoiConfig = Get-Content "$env:USERPROFILE\.config\chezmoi\chezmoi.toml" -ErrorAction SilentlyContinue
+if ($chezmoiConfig -match 'enable_api_mcps = true') {
+    if (Get-Command bw -ErrorAction SilentlyContinue) {
+        Write-Host "* API-key MCPs enabled. Make sure your Bitwarden vault is unlocked:" -ForegroundColor Yellow
+        Write-Host '  $env:BW_SESSION = $(bw unlock --raw)' -ForegroundColor Cyan
+        Write-Host "  chezmoi apply" -ForegroundColor Cyan
+        Write-Host ""
+    } else {
+        Write-Host "! API-key MCPs enabled but Bitwarden CLI not found." -ForegroundColor Yellow
+        Write-Host "  Install: npm install -g @bitwarden/cli" -ForegroundColor Cyan
+        Write-Host '  Then: bw login; $env:BW_SESSION = $(bw unlock --raw); chezmoi apply' -ForegroundColor Cyan
+        Write-Host ""
+    }
+}
+
 # --- Done ---
 Write-Host ""
 Write-Host "+ Done!" -ForegroundColor Green
