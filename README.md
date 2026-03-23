@@ -45,6 +45,9 @@ chezmoi init --apply git@github.com:mickey-kras/dotfiles-claude.git
 | Cloudflare Docs | Remote HTTP | None | Cloudflare documentation lookup |
 | Vercel | Remote HTTP | OAuth | Vercel deployments and projects |
 | Magic UI | stdio (npx) | None | UI component generation |
+| Bitwarden | stdio (npx) | Local vault | Secure access to vault items |
+| Memory | stdio (npx) | None | Persistent cross-session memory |
+| Filesystem | stdio (npx) | None | Safe read-only file operations |
 
 ### Optional (API keys via Bitwarden)
 
@@ -65,11 +68,15 @@ Hooks are Node.js scripts that run at specific points in the Claude Code lifecyc
 | Hook | Event | What it does | Profile |
 |------|-------|-------------|---------|
 | block-no-verify | PreToolUse | Blocks `--no-verify` on git commands | standard+ |
+| governance-capture | PreToolUse | Blocks secrets and destructive commands in Bash | standard+ |
 | config-protection | PreToolUse | Blocks edits to linter/formatter configs | strict |
 | suggest-compact | PostToolUse | Suggests `/compact` after 50 tool calls | standard+ |
+| post-edit-format | PostToolUse | Auto-formats JS/TS/JSON after edits (Biome/Prettier) | standard+ |
+| quality-gate | PostToolUse | Runs lightweight linting on edited files | standard+ |
 | cost-tracker | Stop | Logs token usage to `~/.claude/metrics/costs.jsonl` | standard+ |
 | session-start | SessionStart | Loads previous session summary for context | standard+ |
 | session-end | Stop | Saves session summary for next time | standard+ |
+| check-console-log | Stop | Warns about console.log in modified JS/TS files | standard+ |
 
 **Profiles:**
 - `minimal` — No hooks. Clean slate.
@@ -88,6 +95,7 @@ Deployed to `~/.claude/rules/`. Applied automatically based on file globs.
 | development-workflow | Research-first: search GitHub → read docs → then code |
 | performance | Model routing (Haiku/Sonnet/Opus), context management |
 | git-workflow | Conventional commits, branch naming, PR workflow |
+| bitwarden-setup | How to configure Bitwarden CLI for API-key MCPs |
 
 ## Agents
 
@@ -113,12 +121,12 @@ Templates use chezmoi variables (`.chezmoi.os`, `.machine`, `.hook_profile`, `.e
 ## Verifying the setup
 
 ```bash
-claude mcp list                     # Should show 7+ MCPs
-cat ~/.cursor/mcp.json | jq .       # Valid JSON with 7 servers
-cat ~/.codex/config.toml            # Model, instructions, 7 MCP blocks
-ls ~/.claude/rules/                 # 6 rule files
+claude mcp list                     # Should show 10 keyless MCPs
+cat ~/.cursor/mcp.json | jq .       # Valid JSON with 10 servers
+cat ~/.codex/config.toml            # Model, instructions, 10 MCP blocks
+ls ~/.claude/rules/                 # 7 rule files
 ls ~/.claude/agents/                # 3 agent files
-ls ~/.claude/hooks/scripts/         # 6 hook scripts
+ls ~/.claude/hooks/scripts/         # 10 hook scripts
 cat ~/.claude/settings.json | jq .hooks   # Hooks config (unless minimal)
 ```
 
@@ -170,17 +178,22 @@ dot_claude/
     development-workflow.md           # Research-first workflow
     performance.md                    # Model routing guidance
     git-workflow.md                   # Git conventions
+    bitwarden-setup.md                # API-key MCP setup guide
   agents/
     planner.md                        # Planning agent
     code-reviewer.md                  # Code review agent
     tdd-guide.md                      # TDD coaching agent
   hooks/scripts/
     block-no-verify.js                # Blocks --no-verify
-    config-protection.js              # Protects linter configs
+    governance-capture.js             # Blocks secrets/destructive commands
+    config-protection.js              # Protects linter configs (strict)
     suggest-compact.js                # Suggests /compact
+    post-edit-format.js               # Auto-formats JS/TS/JSON
+    quality-gate.js                   # Post-edit linting
     cost-tracker.js                   # Token usage tracking
     session-start.js                  # Cross-session memory (load)
     session-end.js                    # Cross-session memory (save)
+    check-console-log.js              # Catches console.log
 run_onchange_after_install-claude-mcps.sh.tmpl   # Unix: claude mcp add
 run_onchange_after_install-claude-mcps.ps1.tmpl  # Windows: claude mcp add
 scripts/
