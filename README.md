@@ -11,7 +11,7 @@ bash <(curl -sL https://raw.githubusercontent.com/mickey-kras/dotfiles-claude/ma
 
 **Windows (PowerShell):**
 ```powershell
-irm https://raw.githubusercontent.com/mickey-kras/dotfiles-claude/main/scripts/bootstrap.ps1 | iex
+irm https://raw.githubusercontent.com/mickey-kras/dotfiles-claude/main/scripts/bootstrap.ps1 -OutFile bootstrap.ps1; .\bootstrap.ps1
 ```
 
 **Already have chezmoi?**

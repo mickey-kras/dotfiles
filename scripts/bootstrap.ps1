@@ -1,5 +1,5 @@
 # One-command bootstrap for Windows
-# Usage: irm https://raw.githubusercontent.com/mickey-kras/dotfiles-claude/main/scripts/bootstrap.ps1 | iex
+# Usage: irm https://raw.githubusercontent.com/mickey-kras/dotfiles-claude/main/scripts/bootstrap.ps1 -OutFile bootstrap.ps1; .\bootstrap.ps1
 
 $ErrorActionPreference = "Stop"
 $Repo = "mickey-kras/dotfiles-claude"
