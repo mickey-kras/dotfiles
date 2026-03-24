@@ -151,6 +151,7 @@ fi
 
 if command -v codex >/dev/null 2>&1; then
   [ -f "$HOME/.codex/config.toml" ] && ok "codex/config.toml" || fail "codex/config.toml — missing"
+  [ -f "$HOME/.codex/AGENTS.md" ] && ok "codex/AGENTS.md" || fail "codex/AGENTS.md — missing"
 fi
 
 # --- Summary ---

@@ -59,6 +59,8 @@ bw login && export BW_SESSION=$(bw unlock --raw) && chezmoi apply
 
 `~/.claude/CLAUDE.md` contains lightweight global preferences (Conventional Commits, feature branches, CLI-first workflow).
 
+`~/.codex/AGENTS.md` mirrors those same global preferences for Codex, so both tools behave consistently across machines.
+
 ## What gets configured
 
 | Tool | Config files |
@@ -66,7 +68,7 @@ bw login && export BW_SESSION=$(bw unlock --raw) && chezmoi apply
 | Claude Code CLI | `~/.claude/CLAUDE.md`, `settings.json`, `agents/` + MCPs via `claude mcp add` |
 | Claude Desktop | MCPs merged into `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) |
 | Cursor | `~/.cursor/mcp.json`, `~/.cursor/rules/global.mdc` |
-| Codex | `~/.codex/config.toml` |
+| Codex | `~/.codex/config.toml`, `~/.codex/AGENTS.md` |
 
 ## Updating
 
@@ -95,6 +97,7 @@ dot_cursor/
   rules/global.mdc                    # → ~/.cursor/rules/global.mdc
 dot_codex/
   config.toml.tmpl                    # → ~/.codex/config.toml
+  AGENTS.md                           # → ~/.codex/AGENTS.md
 dot_local/
   bin/
     executable_dotfiles-update        # → ~/.local/bin/dotfiles-update

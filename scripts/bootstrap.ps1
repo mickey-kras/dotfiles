@@ -226,6 +226,7 @@ Write-Host "Verify:" -ForegroundColor White
 Write-Host "  claude mcp list            # Claude Code MCPs" -ForegroundColor Cyan
 Write-Host "  Get-Content ~/.cursor/mcp.json   # Cursor MCPs" -ForegroundColor Cyan
 Write-Host "  Get-Content ~/.codex/config.toml # Codex config" -ForegroundColor Cyan
+Write-Host "  Get-Content ~/.codex/AGENTS.md  # Codex global instructions" -ForegroundColor Cyan
 Write-Host "  ls ~/.claude/agents/       # Agents" -ForegroundColor Cyan
 Write-Host ""
 Write-Host "Update later: dotfiles-update" -ForegroundColor DarkGray
