@@ -118,6 +118,9 @@ printf "  ${G}✓${R} Config saved to ~/.config/chezmoi/chezmoi.toml\n"
 
 # --- Clear stale chezmoi state and source for a clean init ---
 CHEZMOI_SRC="${HOME}/.local/share/chezmoi"
+DOTFILES_DIR="${HOME}/dotfiles-claude"
+# Remove symlink or stale clone so chezmoi init starts fresh
+[ -L "$CHEZMOI_SRC" ] && rm -f "$CHEZMOI_SRC"
 [ -d "$CHEZMOI_SRC" ] && rm -rf "$CHEZMOI_SRC"
 # Remove cached promptOnce answers so our config values take effect
 rm -f "${HOME}/.config/chezmoi/chezmoistate.boltdb"
@@ -126,6 +129,18 @@ rm -f "${HOME}/.config/chezmoi/chezmoistate"
 # --- Init + apply (fresh clone — API MCPs deferred until Bitwarden is ready) ---
 printf "\n${B}Applying dotfiles...${R}\n"
 chezmoi init --apply "git@github.com:${REPO}.git"
+
+# --- Consolidate source: ~/dotfiles-claude + symlink ---
+if [ -d "$CHEZMOI_SRC" ] && [ ! -L "$CHEZMOI_SRC" ]; then
+  if [ -d "$DOTFILES_DIR" ]; then
+    # User already has a working copy — point chezmoi at it
+    rm -rf "$CHEZMOI_SRC"
+  else
+    mv "$CHEZMOI_SRC" "$DOTFILES_DIR"
+  fi
+  ln -s "$DOTFILES_DIR" "$CHEZMOI_SRC"
+  printf "  ${G}✓${R} Source linked: %s → %s\n" "$CHEZMOI_SRC" "$DOTFILES_DIR"
+fi
 
 # --- Bitwarden setup (if API MCPs enabled) ---
 if [ "$ENABLE_API_MCPS" = "true" ]; then

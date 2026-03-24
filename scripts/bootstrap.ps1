@@ -107,6 +107,11 @@ Write-Host "  + Config saved" -ForegroundColor Green
 
 # --- Clear stale chezmoi state and source for a clean init ---
 $chezmoiSrc = "$env:USERPROFILE\.local\share\chezmoi"
+$dotfilesDir = "$env:USERPROFILE\dotfiles-claude"
+# Remove symlink/junction or stale clone so chezmoi init starts fresh
+if ((Test-Path $chezmoiSrc) -and ((Get-Item $chezmoiSrc).Attributes -band [IO.FileAttributes]::ReparsePoint)) {
+    Remove-Item $chezmoiSrc -Force
+}
 if (Test-Path $chezmoiSrc) { Remove-Item $chezmoiSrc -Recurse -Force }
 # Remove cached promptOnce answers so our config values take effect
 Remove-Item "$configDir\chezmoistate.boltdb" -ErrorAction SilentlyContinue
@@ -116,6 +121,17 @@ Remove-Item "$configDir\chezmoistate" -ErrorAction SilentlyContinue
 Write-Host ""
 Write-Host "Applying dotfiles..." -ForegroundColor White
 chezmoi init --apply "git@github.com:${Repo}.git"
+
+# --- Consolidate source: ~/dotfiles-claude + junction ---
+if ((Test-Path $chezmoiSrc) -and -not ((Get-Item $chezmoiSrc).Attributes -band [IO.FileAttributes]::ReparsePoint)) {
+    if (Test-Path $dotfilesDir) {
+        Remove-Item $chezmoiSrc -Recurse -Force
+    } else {
+        Move-Item $chezmoiSrc $dotfilesDir
+    }
+    New-Item -ItemType Junction -Path $chezmoiSrc -Target $dotfilesDir | Out-Null
+    Write-Host "  + Source linked: $chezmoiSrc -> $dotfilesDir" -ForegroundColor Green
+}
 
 # --- Bitwarden setup (if API MCPs enabled) ---
 if ($enableApiMcps) {

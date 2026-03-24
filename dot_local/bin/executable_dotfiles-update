@@ -27,6 +27,17 @@ printf "${D}  dotfiles-claude update${R}\n\n"
 
 # --- 1. Pull + apply ---
 section "1. Updating dotfiles"
+CHEZMOI_SRC="${HOME}/.local/share/chezmoi"
+DOTFILES_DIR="${HOME}/dotfiles-claude"
+
+# Ensure chezmoi source is symlinked to ~/dotfiles-claude
+if [ -d "$DOTFILES_DIR/.git" ] && [ -d "$CHEZMOI_SRC" ] && [ ! -L "$CHEZMOI_SRC" ]; then
+  warn "chezmoi source is a separate clone — consolidating"
+  rm -rf "$CHEZMOI_SRC"
+  ln -s "$DOTFILES_DIR" "$CHEZMOI_SRC"
+  ok "Source linked: $CHEZMOI_SRC → $DOTFILES_DIR"
+fi
+
 if command -v chezmoi >/dev/null 2>&1; then
   if chezmoi update --force 2>&1; then
     ok "chezmoi update applied"
