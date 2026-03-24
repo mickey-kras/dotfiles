@@ -78,6 +78,8 @@ dotfiles-update   # Pull, apply, check versions, verify MCPs, security scan
 
 Installed at `~/.local/bin/dotfiles-update` by chezmoi. Make sure `~/.local/bin` is in your PATH.
 
+On Windows, a `.cmd` wrapper is installed alongside so `dotfiles-update` works from PowerShell and cmd. Requires Git Bash (`bash` in PATH) — included with [Git for Windows](https://gitforwindows.org).
+
 For a quick pull-only update: `chezmoi update`
 
 ## File structure
@@ -101,6 +103,7 @@ dot_codex/
 dot_local/
   bin/
     executable_dotfiles-update        # → ~/.local/bin/dotfiles-update
+    executable_dotfiles-update.cmd    # → ~/.local/bin/dotfiles-update.cmd (Windows only)
 run_onchange_after_install-claude-mcps.sh.tmpl   # Unix MCP registration
 run_onchange_after_install-claude-mcps.ps1.tmpl  # Windows MCP registration
 scripts/
@@ -117,7 +120,7 @@ scripts/
 
 ## Dependencies
 
-**Required:** git, chezmoi (auto-installed by bootstrap)
+**Required:** git, chezmoi (auto-installed by bootstrap), bash (Git Bash on Windows)
 
 **For MCPs:** node, npx
 

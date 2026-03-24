@@ -44,6 +44,15 @@ if ($missing.Count -gt 0) {
     Write-Host ""
 }
 
+# --- Check Git Bash (required for dotfiles-update on Windows) ---
+if (-not (Get-Command bash -ErrorAction SilentlyContinue)) {
+    Write-Host ""
+    Write-Host "! Git Bash not found in PATH." -ForegroundColor Yellow
+    Write-Host "  dotfiles-update requires bash. Install Git for Windows:" -ForegroundColor DarkGray
+    Write-Host "  winget install Git.Git" -ForegroundColor Cyan
+    Write-Host ""
+}
+
 # --- Detect AI tools ---
 Write-Host ""
 Write-Host "Detected tools:" -ForegroundColor White

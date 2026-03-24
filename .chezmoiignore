@@ -9,4 +9,5 @@ install-claude-mcps.sh
 
 {{ if ne .chezmoi.os "windows" }}
 install-claude-mcps.ps1
+dot_local/bin/executable_dotfiles-update.cmd
 {{ end }}
