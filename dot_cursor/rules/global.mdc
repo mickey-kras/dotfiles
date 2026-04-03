@@ -7,3 +7,6 @@ globs: ["**/*"]
 - Concise, direct responses.
 - Conventional Commits. Feature branches. Squash-merge PRs.
 - Prefer CLI tools: gh, jq, curl, rg.
+- Allowed output regex: `^[A-Za-zА-Яа-яЁё0-9 !"#$%&'()*+,\-./:;<=>?@[\\\]^_`{|}~\r\n\t]*$`
+- Before every response, verify the full output matches the regex.
+- If any character falls outside the regex, rewrite the output until it matches.
