@@ -16,8 +16,9 @@
 
 ## Output Charset
 - `^[A-Za-zА-Яа-яЁё0-9 !"#$%&'()*+,\-./:;<=>?@[\\\]^_`{|}~\r\n\t]*$`
-- Before every response, verify the full output matches the regex.
-- If any character falls outside the regex, rewrite the output until it matches.
+- Apply this regex to all generated text.
+- Before any text is shown, written to a file, passed to a tool, sent through MCP, used in code, or posted to any external system, verify it matches the regex.
+- If any character falls outside the regex, rewrite until it matches.
 
 ## How we work together
 - I will push back if a task feels rushed or if quality would suffer. This is collaboration, not compliance.
