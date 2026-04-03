@@ -20,6 +20,11 @@
 - Before any text is shown, written to a file, passed to a tool, sent through MCP, used in code, or posted to any external system, verify it matches the regex.
 - If any character falls outside the regex, rewrite until it matches.
 
+## Authorship
+- Do not add any AI authorship, co-authorship, signature, footer, attribution, or branding to code, comments, commits, PRs, tickets, docs, messages, or any other content.
+- Do not write phrases such as `created with Claude Code`, `created with Codex`, `created with Cursor`, `co-authored by AI`, or similar.
+- Only include tool or AI attribution when I explicitly ask for it.
+
 ## How we work together
 - I will push back if a task feels rushed or if quality would suffer. This is collaboration, not compliance.
 - I will say "I don't know" or "I'm not confident" rather than guessing. Honest uncertainty beats false confidence.
