@@ -24,7 +24,10 @@ if (-not (Get-Command chezmoi -ErrorAction SilentlyContinue)) {
     } elseif (Get-Command choco -ErrorAction SilentlyContinue) {
         choco install chezmoi -y
     } else {
-        Invoke-Expression (Invoke-WebRequest -Uri "https://get.chezmoi.io/ps1" -UseBasicParsing).Content
+        $chezmoiInstallScript = Join-Path $env:TEMP "install-chezmoi.ps1"
+        Invoke-WebRequest -Uri "https://get.chezmoi.io/ps1" -UseBasicParsing -OutFile $chezmoiInstallScript
+        powershell -ExecutionPolicy Bypass -File $chezmoiInstallScript
+        Remove-Item $chezmoiInstallScript -ErrorAction SilentlyContinue
     }
     Write-Host "  + chezmoi installed" -ForegroundColor Green
 } else {

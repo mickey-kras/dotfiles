@@ -8,6 +8,25 @@ model_reasoning_effort = "medium"
 command = "npx"
 args = ["-y", "@playwright/mcp@0.0.68"]
 
+[mcp_servers.github]
+type = "http"
+url = "https://api.githubcopilot.com/mcp/"
+
+[mcp_servers.github.headers]
+Authorization = "Bearer ${GITHUB_PERSONAL_ACCESS_TOKEN}"
+
+[mcp_servers.slack]
+type = "http"
+url = "https://mcp.slack.com/mcp"
+
+[mcp_servers.slack.oauth]
+clientId = "1601185624273.8899143856786"
+callbackPort = 3118
+
+[mcp_servers.atlassian]
+command = "npx"
+args = ["-y", "@atlassian/mcp"]
+
 [mcp_servers.context7]
 type = "http"
 url = "https://mcp.context7.com/mcp"
@@ -19,6 +38,12 @@ url = "https://mcp.sentry.dev/mcp"
 [mcp_servers.figma]
 type = "http"
 url = "https://mcp.figma.com/mcp"
+
+[plugins."github@openai-curated"]
+enabled = true
+
+[plugins."claude-import@misha-local"]
+enabled = true
 {{ if .azure_devops_org }}
 [mcp_servers.azure-devops]
 command = "npx"

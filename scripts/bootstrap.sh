@@ -12,6 +12,7 @@ G='\033[1;32m'  # green
 Y='\033[1;33m'  # yellow
 D='\033[0;90m'  # dim
 B='\033[1;37m'  # bold white
+RED='\033[1;31m' # red
 R='\033[0m'     # reset
 
 # --- Logo ---
