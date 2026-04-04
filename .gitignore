@@ -11,6 +11,8 @@ key.txt
 .DS_Store
 Thumbs.db
 desktop.ini
+__pycache__/
+*.pyc
 
 # chezmoi local state
 .chezmoistate.boltdb
