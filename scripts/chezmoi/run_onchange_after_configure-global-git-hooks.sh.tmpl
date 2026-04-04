@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# Global Git hooks path for policy enforcement.
+#
+# hash: {{ include "dot_config/git/hooks/executable__misha_git_policy.py" | sha256sum }}
+
+set -euo pipefail
+
+if command -v git >/dev/null 2>&1; then
+  git config --global core.hooksPath "~/.config/git/hooks"
+  echo "Configured global Git hooks: ~/.config/git/hooks"
+fi

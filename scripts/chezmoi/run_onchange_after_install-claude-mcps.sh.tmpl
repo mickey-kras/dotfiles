@@ -1,0 +1,124 @@
+#!/usr/bin/env bash
+# chezmoi:template:left-delimiter="# {{" right-delimiter="}}"
+# Registers MCP servers in Claude Code CLI and Claude Desktop App.
+# Idempotent: removes then re-adds each server.
+# Re-runs only when template output changes (chezmoi run_onchange_).
+#
+# hash: # {{ include "dot_cursor/mcp.json.tmpl" | sha256sum }}
+
+set -uo pipefail
+
+FAILED=0
+
+# ============================================================
+# 1. Claude Code CLI - via `claude mcp add`
+# ============================================================
+
+if command -v claude >/dev/null 2>&1; then
+  echo "Configuring Claude Code CLI MCPs..."
+
+  add_mcp() {
+    local name="$1"; shift
+    claude mcp remove --scope user "$name" 2>/dev/null || true
+    if claude mcp add --scope user "$@" 2>/dev/null; then
+      echo "  + $name"
+    else
+      echo "  ! $name (failed)"
+      FAILED=$((FAILED + 1))
+    fi
+  }
+
+  # Core MCPs (always installed)
+  add_mcp playwright playwright -- npx -y @playwright/mcp@0.0.68
+  add_mcp context7 --transport http context7 "https://mcp.context7.com/mcp"
+  add_mcp figma --transport http figma "https://mcp.figma.com/mcp"
+
+  # {{ if .azure_devops_org }}
+  # Azure DevOps (org-scoped)
+  add_mcp azure-devops azure-devops -- npx -y @azure-devops/mcp@2.5.0 # {{ .azure_devops_org }}
+  # {{ end }}
+
+  # {{ if and .enable_api_mcps (lookPath "bw") }}
+  # API-key MCPs (keys from Bitwarden, versions pinned)
+  add_mcp exa -e "EXA_API_KEY=# {{ (bitwarden "item" "exa-api-key").login.password }}" exa -- npx -y exa-mcp-server@3.1.9
+  add_mcp firecrawl -e "FIRECRAWL_API_KEY=# {{ (bitwarden "item" "firecrawl-api-key").login.password }}" firecrawl -- npx -y firecrawl-mcp@3.11.0
+  add_mcp fal-ai -e "FAL_KEY=# {{ (bitwarden "item" "fal-api-key").login.password }}" fal-ai -- npx -y fal-ai-mcp-server@2.1.4
+  # {{ end }}
+else
+  echo "claude CLI not found - skipping Claude Code MCP setup"
+fi
+
+# ============================================================
+# 2. Claude Desktop App - merge mcpServers into existing config
+# ============================================================
+
+# Detect config path per platform
+if [ "$(uname -s)" = "Darwin" ]; then
+  CLAUDE_DESKTOP_CONFIG="$HOME/Library/Application Support/Claude/claude_desktop_config.json"
+elif [ -n "${APPDATA:-}" ]; then
+  CLAUDE_DESKTOP_CONFIG="$APPDATA/Claude/claude_desktop_config.json"
+else
+  CLAUDE_DESKTOP_CONFIG="$HOME/.config/Claude/claude_desktop_config.json"
+fi
+
+if [ -f "$CLAUDE_DESKTOP_CONFIG" ]; then
+  echo ""
+  echo "Configuring Claude Desktop App MCPs..."
+
+  # Build the mcpServers JSON - same servers as Cursor config
+  MCP_SERVERS=$(cat <<'MCPJSON'
+{
+  "playwright": {
+    "command": "npx",
+    "args": ["-y", "@playwright/mcp@0.0.68"]
+  },
+  "context7": {
+    "url": "https://mcp.context7.com/mcp"
+  },
+  "figma": {
+    "url": "https://mcp.figma.com/mcp"
+  }
+}
+MCPJSON
+)
+
+  # Merge into existing config using python3 (preserves all other keys)
+  if command -v python3 >/dev/null 2>&1; then
+    python3 -c "
+import json, sys
+
+config_path = sys.argv[1]
+new_mcps = json.loads(sys.argv[2])
+
+with open(config_path, 'r') as f:
+    config = json.load(f)
+
+config['mcpServers'] = new_mcps
+
+with open(config_path, 'w') as f:
+    json.dump(config, f, indent=2)
+    f.write('\n')
+
+print('  + Claude Desktop MCPs updated')
+" "$CLAUDE_DESKTOP_CONFIG" "$MCP_SERVERS"
+  else
+    echo "  ! python3 not found - skipping Claude Desktop config"
+    FAILED=$((FAILED + 1))
+  fi
+else
+  echo ""
+  echo "Claude Desktop not found - skipping"
+fi
+
+# ============================================================
+# Summary
+# ============================================================
+
+echo ""
+if [ "$FAILED" -eq 0 ]; then
+  echo "All MCPs configured. OAuth servers will prompt in browser on first use."
+else
+  echo "$FAILED item(s) failed. Re-run 'chezmoi apply' or configure manually."
+fi
+
+exit 0

@@ -1,0 +1,90 @@
+# chezmoi:template:left-delimiter="# {{" right-delimiter="}}"
+# Registers MCP servers in Claude Code CLI and Claude Desktop App.
+# Idempotent: removes then re-adds each server.
+# Re-runs only when template output changes (chezmoi run_onchange_).
+#
+# hash: # {{ include "dot_cursor/mcp.json.tmpl" | sha256sum }}
+
+$ErrorActionPreference = "Continue"
+$failed = 0
+
+# ============================================================
+# 1. Claude Code CLI - via `claude mcp add`
+# ============================================================
+
+if (Get-Command claude -ErrorAction SilentlyContinue) {
+    Write-Host "Configuring Claude Code CLI MCPs..."
+
+    function Add-MCP {
+        param([string]$Name, [string[]]$Args)
+        claude mcp remove --scope user $Name 2>$null
+        claude mcp add --scope user @Args 2>$null
+        if ($LASTEXITCODE -eq 0) {
+            Write-Host "  + $Name"
+        } else {
+            Write-Host "  ! $Name (failed)"
+            $script:failed++
+        }
+    }
+
+    # Core MCPs (always installed)
+    Add-MCP -Name "playwright" -Args @("playwright", "--", "npx", "-y", "@playwright/mcp@0.0.68")
+    Add-MCP -Name "context7" -Args @("--transport", "http", "context7", "https://mcp.context7.com/mcp")
+    Add-MCP -Name "figma" -Args @("--transport", "http", "figma", "https://mcp.figma.com/mcp")
+
+    # {{ if .azure_devops_org }}
+    # Azure DevOps (org-scoped)
+    Add-MCP -Name "azure-devops" -Args @("azure-devops", "--", "npx", "-y", "@azure-devops/mcp@2.5.0", "# {{ .azure_devops_org }}")
+    # {{ end }}
+
+    # {{ if and .enable_api_mcps (lookPath "bw") }}
+    # API-key MCPs (keys from Bitwarden, versions pinned)
+    Add-MCP -Name "exa" -Args @("-e", "EXA_API_KEY=# {{ (bitwarden "item" "exa-api-key").login.password }}", "exa", "--", "npx", "-y", "exa-mcp-server@3.1.9")
+    Add-MCP -Name "firecrawl" -Args @("-e", "FIRECRAWL_API_KEY=# {{ (bitwarden "item" "firecrawl-api-key").login.password }}", "firecrawl", "--", "npx", "-y", "firecrawl-mcp@3.11.0")
+    Add-MCP -Name "fal-ai" -Args @("-e", "FAL_KEY=# {{ (bitwarden "item" "fal-api-key").login.password }}", "fal-ai", "--", "npx", "-y", "fal-ai-mcp-server@2.1.4")
+    # {{ end }}
+} else {
+    Write-Host "claude CLI not found - skipping Claude Code MCP setup"
+}
+
+# ============================================================
+# 2. Claude Desktop App - merge mcpServers into existing config
+# ============================================================
+
+$claudeDesktopConfig = "$env:APPDATA\Claude\claude_desktop_config.json"
+
+if (Test-Path $claudeDesktopConfig) {
+    Write-Host ""
+    Write-Host "Configuring Claude Desktop App MCPs..."
+
+    try {
+        $config = Get-Content $claudeDesktopConfig -Raw | ConvertFrom-Json
+        $mcpServers = @{
+            playwright = @{ command = "npx"; args = @("-y", "@playwright/mcp@0.0.68") }
+            context7 = @{ url = "https://mcp.context7.com/mcp" }
+            figma = @{ url = "https://mcp.figma.com/mcp" }
+        }
+        $config | Add-Member -NotePropertyName "mcpServers" -NotePropertyValue $mcpServers -Force
+        $config | ConvertTo-Json -Depth 10 | Set-Content $claudeDesktopConfig
+        Write-Host "  + Claude Desktop MCPs updated"
+    } catch {
+        Write-Host "  ! Failed to update Claude Desktop config: $_"
+        $failed++
+    }
+} else {
+    Write-Host ""
+    Write-Host "Claude Desktop not found - skipping"
+}
+
+# ============================================================
+# Summary
+# ============================================================
+
+Write-Host ""
+if ($failed -eq 0) {
+    Write-Host "All MCPs configured. OAuth servers will prompt in browser on first use."
+} else {
+    Write-Host "$failed item(s) failed. Re-run 'chezmoi apply' or configure manually."
+}
+
+exit 0

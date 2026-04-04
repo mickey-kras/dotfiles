@@ -69,7 +69,6 @@ Write-Host "MCP Configuration" -ForegroundColor White
 Write-Host ""
 Write-Host "  + Playwright        - Browser automation, E2E testing" -ForegroundColor Green
 Write-Host "  + Context7          - Up-to-date library docs" -ForegroundColor Green
-Write-Host "  + Sentry            - Error tracking, stack traces (OAuth)" -ForegroundColor Green
 Write-Host "  + Figma             - Design-to-code (OAuth)" -ForegroundColor Green
 Write-Host ""
 Write-Host "  Optional:" -ForegroundColor White

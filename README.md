@@ -39,7 +39,6 @@ All versions are pinned for supply-chain safety. OAuth MCPs authenticate in the 
 |--------|-----------|------|-------------|
 | Playwright 0.0.68 | stdio (npx) | None | Browser automation and E2E testing |
 | Context7 | Remote HTTP | OAuth | Up-to-date library docs and code examples |
-| Sentry | Remote HTTP | OAuth | Error tracking: stack traces, breadcrumbs, release health |
 | Figma | Remote HTTP | OAuth | Design-to-code: layouts, tokens, component variants |
 | Azure DevOps 2.5.0 | stdio (npx) | PAT/OAuth | Work items, PRs, pipelines, repos (org-scoped) |
 | Exa 3.1.9 | stdio (npx) | API key | AI-powered web search |
@@ -63,9 +62,9 @@ bw login && export BW_SESSION=$(bw unlock --raw) && chezmoi apply
 
 `~/.claude/settings.json` ships with pre-approved permissions for common dev tools (git, gh, npm, node, docker, az, terraform, kubectl, k6, aws, gcloud, wrangler, etc.), a deny list for dangerous operations (sudo, rm -rf /, etc.), and `model: "opus"` so Claude Code uses the current Opus line by default.
 
-`~/.claude/CLAUDE.md` contains lightweight global preferences (Conventional Commits, feature branches, CLI-first workflow) and is rendered with your configured display name.
+`~/.claude/CLAUDE.md` contains lightweight global preferences (Conventional Commits, feature branches, CLI-first workflow), is rendered with your configured display name, and explicitly ignores Sentry even if it appears locally.
 
-`~/.codex/AGENTS.md` mirrors those same global preferences for Codex, so both tools behave consistently across machines.
+`~/.codex/AGENTS.md` mirrors those same global preferences for Codex, so both tools behave consistently across machines. Cursor gets the same ignore rule through `~/.cursor/rules/global.mdc`.
 
 Global Git hooks are also installed at `~/.config/git/hooks` and enabled through `core.hooksPath`, so the same charset and no-AI-attribution rules are enforced before commit and before push across all local repositories.
 
@@ -118,20 +117,21 @@ dot_local/
   bin/
     executable_dotfiles-update        # -> ~/.local/bin/dotfiles-update
     executable_dotfiles-update.cmd    # -> ~/.local/bin/dotfiles-update.cmd (Windows only)
-run_onchange_after_configure-global-git-hooks.sh.tmpl   # Unix global Git hook setup
-run_onchange_after_configure-global-git-hooks.ps1.tmpl  # Windows global Git hook setup
-run_onchange_after_install-claude-mcps.sh.tmpl   # Unix MCP registration
-run_onchange_after_install-claude-mcps.ps1.tmpl  # Windows MCP registration
 scripts/
   bootstrap.sh                        # macOS/Linux bootstrap
   bootstrap.ps1                       # Windows bootstrap
+  chezmoi/
+    run_onchange_after_configure-global-git-hooks.sh.tmpl   # Unix global Git hook setup
+    run_onchange_after_configure-global-git-hooks.ps1.tmpl  # Windows global Git hook setup
+    run_onchange_after_install-claude-mcps.sh.tmpl          # Unix MCP registration
+    run_onchange_after_install-claude-mcps.ps1.tmpl         # Windows MCP registration
 ```
 
 ## Security
 
 - **Pinned versions** - All stdio MCPs use exact version numbers to prevent supply-chain attacks via malicious updates.
 - **No secrets in repo** - API keys are fetched from Bitwarden at `chezmoi apply` time.
-- **OAuth MCPs** (Context7, Sentry, Figma) authenticate via browser - no tokens stored locally.
+- **OAuth MCPs** (Context7, Figma) authenticate via browser - no tokens stored locally.
 - **Periodic audit** - Run `npx @anthropic-ai/mcp-scan` to scan installed MCPs for tool poisoning.
 
 ## Dependencies

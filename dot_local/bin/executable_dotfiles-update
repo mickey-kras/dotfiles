@@ -104,7 +104,7 @@ fi
 # --- 4. Verify MCPs ---
 section "4. Verifying MCP registration"
 if command -v claude >/dev/null 2>&1; then
-  EXPECTED=("playwright" "context7" "sentry" "figma")
+  EXPECTED=("playwright" "context7" "figma")
   REGISTERED=$(claude mcp list --scope user 2>/dev/null || echo "")
 
   for mcp in "${EXPECTED[@]}"; do

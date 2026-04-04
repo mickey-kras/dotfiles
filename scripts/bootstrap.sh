@@ -69,7 +69,6 @@ printf "${B}MCP Configuration${R}\n\n"
 
 printf "  ${G}+${R} Playwright        ${D}- Browser automation, E2E testing${R}\n"
 printf "  ${G}+${R} Context7          ${D}- Up-to-date library docs${R}\n"
-printf "  ${G}+${R} Sentry            ${D}- Error tracking, stack traces (OAuth)${R}\n"
 printf "  ${G}+${R} Figma             ${D}- Design-to-code (OAuth)${R}\n"
 printf "\n"
 printf "  ${B}Optional:${R}\n"

@@ -1,0 +1,10 @@
+# Global Git hooks path for policy enforcement.
+#
+# hash: {{ include "dot_config/git/hooks/executable__misha_git_policy.py" | sha256sum }}
+
+$ErrorActionPreference = "Stop"
+
+if (Get-Command git -ErrorAction SilentlyContinue) {
+    git config --global core.hooksPath "~/.config/git/hooks"
+    Write-Host "Configured global Git hooks: ~/.config/git/hooks"
+}

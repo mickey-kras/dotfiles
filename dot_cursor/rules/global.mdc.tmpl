@@ -7,6 +7,7 @@ globs: ["**/*"]
 - Concise, direct responses.
 - Conventional Commits. Feature branches. Squash-merge PRs.
 - Prefer CLI tools: gh, jq, curl, rg.
+- Ignore Sentry and any Sentry MCP, plugin, or config entry even if it appears locally. Do not use it, suggest it, or re-add it.
 - Allowed output regex: `^[A-Za-zА-Яа-яЁё0-9 !"#$%&'()*+,\-./:;<=>?@[\\\]^_`{|}~\r\n\t]*$`
 - Apply this regex to all generated text.
 - Before any text is shown, written to a file, passed to a tool, sent through MCP, used in code, or posted to any external system, verify it matches the regex.
