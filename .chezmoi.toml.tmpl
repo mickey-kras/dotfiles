@@ -3,6 +3,9 @@
 {{- $userName := promptStringOnce . "user_name" "Display name for generated instructions" -}}
 {{- $userRoleSummary := promptStringOnce . "user_role_summary" "Short role summary for generated instructions" -}}
 {{- $userStackSummary := promptStringOnce . "user_stack_summary" "Current stack summary for generated instructions" -}}
+{{- $runtimeProfile := promptStringOnce . "runtime_profile" "Runtime profile: restricted, balanced, open, or custom" -}}
+{{- $capabilityPack := promptStringOnce . "capability_pack" "Capability pack" -}}
+{{- $profileBase := promptStringOnce . "profile_base" "Base profile for custom mode" -}}
 {{- $enableApiMcps := promptBoolOnce . "enable_api_mcps" "Enable Bitwarden-backed MCPs (GitHub, AWS, Tailscale, Exa, Firecrawl, fal-ai)?" -}}
 {{- $azureDevOpsOrg := promptStringOnce . "azure_devops_org" "Azure DevOps org name (press Enter to skip)" -}}
 
@@ -10,5 +13,12 @@
   user_name = {{ $userName | quote }}
   user_role_summary = {{ $userRoleSummary | quote }}
   user_stack_summary = {{ $userStackSummary | quote }}
+  runtime_profile = {{ $runtimeProfile | quote }}
+  capability_pack = {{ $capabilityPack | quote }}
+  profile_base = {{ $profileBase | quote }}
+  custom_enabled_mcps = []
+  custom_disabled_mcps = []
+  custom_enabled_permission_groups = []
+  custom_disabled_permission_groups = []
   enable_api_mcps = {{ $enableApiMcps }}
   azure_devops_org = {{ $azureDevOpsOrg | quote }}

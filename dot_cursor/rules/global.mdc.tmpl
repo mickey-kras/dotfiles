@@ -7,11 +7,12 @@ globs: ["**/*"]
 - Concise, direct responses.
 - Conventional Commits. Feature branches. Squash-merge PRs.
 - Prefer CLI tools: gh, jq, curl, rg.
+- Capability pack: {{ .capability_pack | default "software-development" }}.
 - Use MCP only. Do not use connectors or connector-backed tools.
 - Ignore Sentry and any Sentry MCP, plugin, or config entry even if it appears locally. Do not use it, suggest it, or re-add it.
 - Allowed output regex: `^[A-Za-zА-Яа-яЁё0-9 !"#$%&'()*+,\-./:;<=>?@[\\\]^_`{|}~\r\n\t]*$`
 - Apply this regex to all generated text.
-- Before any text is shown, written to a file, passed to a tool, sent through MCP, used in code, or posted to any external system, verify it matches the regex.
+- Perform a final allowlist check against this regex before any text is shown, written to a file, passed to a tool, sent through MCP, used in code, or posted to any external system.
 - If any character falls outside the regex, rewrite until it matches.
 - Do not add any AI authorship, co-authorship, signature, footer, attribution, or branding to code, comments, commits, PRs, tickets, docs, messages, or any other content.
 - Do not write branded tool-attribution phrases or AI co-author lines in any form.

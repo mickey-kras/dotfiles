@@ -65,48 +65,137 @@ command -v claude >/dev/null 2>&1 && printf "  ${G}+${R} Claude Code\n" || print
 command -v codex >/dev/null 2>&1 && printf "  ${G}+${R} Codex\n" || printf "  ${D}x Codex (not found)${R}\n"
 printf "\n"
 
-# --- MCP Selection ---
-printf "${B}MCP Configuration${R}\n\n"
-
-printf "  ${G}+${R} Playwright        ${D}- Browser automation, E2E testing${R}\n"
-printf "  ${G}+${R} Context7          ${D}- Up-to-date library docs${R}\n"
-printf "  ${G}+${R} Figma             ${D}- Design-to-code (OAuth)${R}\n"
-printf "\n"
-printf "  ${B}Optional:${R}\n"
-printf "  ${C}[1]${R} Azure DevOps     ${D}- Work items, PRs, pipelines${R}\n"
-printf "  ${C}[2]${R} Bitwarden MCPs   ${D}- GitHub, AWS, Tailscale, Exa, Firecrawl, fal-ai${R}\n"
-printf "\n"
-
-ENABLE_AZURE_DEVOPS=false
+RUNTIME_PROFILE="balanced"
+CAPABILITY_PACK="software-development"
+PROFILE_BASE="balanced"
 AZURE_DEVOPS_ORG=""
 ENABLE_API_MCPS=false
 USER_NAME=""
+USER_ROLE_SUMMARY=""
+USER_STACK_SUMMARY=""
+CUSTOM_ENABLED_MCPS=()
+CUSTOM_DISABLED_MCPS=()
+CUSTOM_ENABLED_PERMISSION_GROUPS=()
+CUSTOM_DISABLED_PERMISSION_GROUPS=()
 
-printf "${B}Enter numbers to enable (e.g. 1 2), or press Enter for core only: ${R}"
-read -r CHOICES
+RESTRICTED_MCPS=(playwright context7 figma filesystem git memory thinking github azure-devops)
+BALANCED_EXTRA_MCPS=(shell docker process terraform kubernetes)
+OPEN_EXTRA_MCPS=(http aws tailscale exa firecrawl fal-ai)
 
-for choice in $CHOICES; do
-  case "$choice" in
-    1)
-      ENABLE_AZURE_DEVOPS=true
-      printf "\n${B}Azure DevOps org name: ${R}"
-      read -r AZURE_DEVOPS_ORG
-      if [ -z "$AZURE_DEVOPS_ORG" ]; then
-        printf "  ${Y}>${R} No org name - skipping Azure DevOps\n"
-        ENABLE_AZURE_DEVOPS=false
-      else
-        printf "  ${G}+${R} Azure DevOps org: ${C}${AZURE_DEVOPS_ORG}${R}\n"
-      fi
+RESTRICTED_PERMISSION_GROUPS=(core_read_write shell_readonly git_safe gh_safe)
+BALANCED_EXTRA_PERMISSION_GROUPS=(git_full gh_full dev_runtime local_file_mutation containers infra_local)
+OPEN_EXTRA_PERMISSION_GROUPS=(package_runtime cloud_extended secret_tools web_access)
+
+join_by() {
+  local delim="$1"; shift
+  local first=1 item
+  for item in "$@"; do
+    if [ "$first" -eq 1 ]; then
+      printf "%s" "$item"
+      first=0
+    else
+      printf "%s%s" "$delim" "$item"
+    fi
+  done
+}
+
+contains_word() {
+  local needle="$1"; shift
+  local item
+  for item in "$@"; do
+    [ "$item" = "$needle" ] && return 0
+  done
+  return 1
+}
+
+detect_existing_value() {
+  local key="$1"
+  python3 - "$HOME/.config/chezmoi/chezmoi.toml" "$key" <<'PY' 2>/dev/null || true
+import re, sys, pathlib
+path = pathlib.Path(sys.argv[1])
+key = sys.argv[2]
+if not path.exists():
+    raise SystemExit(0)
+text = path.read_text()
+m = re.search(r'^\s*%s\s*=\s*"(.*)"\s*$' % re.escape(key), text, re.M)
+if m:
+    print(m.group(1))
+PY
+}
+
+profile_summary() {
+  local profile="$1"
+  case "$profile" in
+    restricted)
+      printf "restricted: remote work systems, no local/system risk by default\n"
+      printf "  MCPs: %s\n" "$(join_by ', ' "${RESTRICTED_MCPS[@]}")"
       ;;
-    2)
-      ENABLE_API_MCPS=true
-      printf "  ${G}+${R} Bitwarden-backed MCPs enabled\n"
+    balanced)
+      printf "balanced: restricted plus practical local execution and containers\n"
+      printf "  MCPs: %s\n" "$(join_by ', ' "${RESTRICTED_MCPS[@]}" "${BALANCED_EXTRA_MCPS[@]}")"
       ;;
-    *)
-      printf "  ${Y}>${R} Unknown option: $choice (skipped)\n"
+    open)
+      printf "open: balanced plus cloud, web, and high-injection MCPs\n"
+      printf "  MCPs: %s\n" "$(join_by ', ' "${RESTRICTED_MCPS[@]}" "${BALANCED_EXTRA_MCPS[@]}" "${OPEN_EXTRA_MCPS[@]}")"
+      ;;
+    custom)
+      printf "custom: curated MCP catalog and permission groups, user-selected\n"
       ;;
   esac
-done
+}
+
+pick_with_gum() {
+  local prompt="$1"; shift
+  gum choose --header "$prompt" "$@"
+}
+
+pick_many_with_gum() {
+  local prompt="$1"; shift
+  gum choose --no-limit --header "$prompt" "$@"
+}
+
+if command -v gum >/dev/null 2>&1; then
+  printf "${B}Profile Selection${R}\n\n"
+  profile_summary restricted
+  profile_summary balanced
+  profile_summary open
+  profile_summary custom
+  printf "\n"
+  RUNTIME_PROFILE="$(pick_with_gum "Select runtime profile" restricted balanced open custom)"
+  CAPABILITY_PACK="$(pick_with_gum "Select capability pack" software-development)"
+else
+  printf "${B}Runtime profile [restricted/balanced/open/custom] (default: balanced): ${R}"
+  read -r RUNTIME_PROFILE
+  [ -z "$RUNTIME_PROFILE" ] && RUNTIME_PROFILE="balanced"
+  CAPABILITY_PACK="software-development"
+fi
+
+case "$RUNTIME_PROFILE" in
+  restricted|balanced|open|custom) ;;
+  *)
+    printf "  ${Y}>${R} Unknown runtime profile - defaulting to balanced\n"
+    RUNTIME_PROFILE="balanced"
+    ;;
+esac
+
+if [ "$RUNTIME_PROFILE" = "custom" ]; then
+  if command -v gum >/dev/null 2>&1; then
+    PROFILE_BASE="$(pick_with_gum "Select custom base profile" restricted balanced open)"
+    mapfile -t CUSTOM_ENABLED_MCPS < <(pick_many_with_gum "Select MCPs to enable on top of base profile" "${RESTRICTED_MCPS[@]}" "${BALANCED_EXTRA_MCPS[@]}" "${OPEN_EXTRA_MCPS[@]}" | sort -u)
+    mapfile -t CUSTOM_ENABLED_PERMISSION_GROUPS < <(pick_many_with_gum "Select permission groups to enable on top of base profile" \
+      core_read_write shell_readonly git_safe gh_safe git_full gh_full dev_runtime local_file_mutation containers infra_local package_runtime cloud_extended secret_tools web_access | sort -u)
+  else
+    printf "${B}Custom base profile [restricted/balanced/open] (default: balanced): ${R}"
+    read -r PROFILE_BASE
+    [ -z "$PROFILE_BASE" ] && PROFILE_BASE="balanced"
+    printf "${B}Custom enabled MCPs (space-separated, curated catalog only): ${R}"
+    read -r CUSTOM_MCP_INPUT
+    for item in $CUSTOM_MCP_INPUT; do CUSTOM_ENABLED_MCPS+=("$item"); done
+    printf "${B}Custom enabled permission groups (space-separated): ${R}"
+    read -r CUSTOM_PG_INPUT
+    for item in $CUSTOM_PG_INPUT; do CUSTOM_ENABLED_PERMISSION_GROUPS+=("$item"); done
+  fi
+fi
 
 detect_existing_name() {
   local file
@@ -137,13 +226,104 @@ if [ -z "$USER_NAME" ]; then
   USER_NAME="$(whoami)"
 fi
 
+EXISTING_ROLE="$(detect_existing_value user_role_summary)"
+if [ -n "$EXISTING_ROLE" ]; then
+  USER_ROLE_SUMMARY="$EXISTING_ROLE"
+else
+  USER_ROLE_SUMMARY="Full-stack software engineer focused on distributed systems, product delivery, and practical AI-assisted development."
+fi
+if command -v gum >/dev/null 2>&1; then
+  USER_ROLE_SUMMARY="$(gum input --header "Role summary" --value "$USER_ROLE_SUMMARY")"
+else
+  printf "${B}Role summary [%s]: ${R}" "$USER_ROLE_SUMMARY"
+  read -r ROLE_INPUT
+  [ -n "$ROLE_INPUT" ] && USER_ROLE_SUMMARY="$ROLE_INPUT"
+fi
+
+EXISTING_STACK="$(detect_existing_value user_stack_summary)"
+if [ -n "$EXISTING_STACK" ]; then
+  USER_STACK_SUMMARY="$EXISTING_STACK"
+else
+  USER_STACK_SUMMARY="C#/.NET, Python, Go, TypeScript, React, Angular; cloud and platform work across Azure, AWS, GCP, Cloudflare, and DigitalOcean."
+fi
+if command -v gum >/dev/null 2>&1; then
+  USER_STACK_SUMMARY="$(gum input --header "Stack summary" --value "$USER_STACK_SUMMARY")"
+else
+  printf "${B}Stack summary [%s]: ${R}" "$USER_STACK_SUMMARY"
+  read -r STACK_INPUT
+  [ -n "$STACK_INPUT" ] && USER_STACK_SUMMARY="$STACK_INPUT"
+fi
+
+EXISTING_AZDO="$(detect_existing_value azure_devops_org)"
+if [ -n "$EXISTING_AZDO" ]; then
+  AZURE_DEVOPS_ORG="$EXISTING_AZDO"
+fi
+if command -v gum >/dev/null 2>&1; then
+  AZURE_DEVOPS_ORG="$(gum input --header "Azure DevOps org name (optional)" --value "$AZURE_DEVOPS_ORG")"
+else
+  printf "${B}Azure DevOps org name [%s]: ${R}" "$AZURE_DEVOPS_ORG"
+  read -r AZDO_INPUT
+  [ -n "$AZDO_INPUT" ] && AZURE_DEVOPS_ORG="$AZDO_INPUT"
+fi
+
+case "$RUNTIME_PROFILE" in
+  restricted)
+    ENABLE_API_MCPS=false
+    ;;
+  balanced)
+    ENABLE_API_MCPS=false
+    ;;
+  open)
+    ENABLE_API_MCPS=true
+    ;;
+  custom)
+    if contains_word aws "${CUSTOM_ENABLED_MCPS[@]}" || contains_word tailscale "${CUSTOM_ENABLED_MCPS[@]}" || contains_word exa "${CUSTOM_ENABLED_MCPS[@]}" || contains_word firecrawl "${CUSTOM_ENABLED_MCPS[@]}" || contains_word fal-ai "${CUSTOM_ENABLED_MCPS[@]}"; then
+      ENABLE_API_MCPS=true
+    fi
+    ;;
+esac
+
+printf "\n${B}Planned configuration${R}\n"
+printf "  Runtime profile: ${C}%s${R}\n" "$RUNTIME_PROFILE"
+printf "  Capability pack: ${C}%s${R}\n" "$CAPABILITY_PACK"
+printf "  Display name: ${C}%s${R}\n" "$USER_NAME"
+printf "  Role: ${D}%s${R}\n" "$USER_ROLE_SUMMARY"
+printf "  Stack: ${D}%s${R}\n" "$USER_STACK_SUMMARY"
+if [ -n "$AZURE_DEVOPS_ORG" ]; then
+  printf "  Azure DevOps org: ${C}%s${R}\n" "$AZURE_DEVOPS_ORG"
+fi
+if [ "$RUNTIME_PROFILE" = "custom" ]; then
+  printf "  Custom base: ${C}%s${R}\n" "$PROFILE_BASE"
+  printf "  Custom enabled MCPs: ${D}%s${R}\n" "$(join_by ', ' "${CUSTOM_ENABLED_MCPS[@]}")"
+  printf "  Custom enabled permission groups: ${D}%s${R}\n" "$(join_by ', ' "${CUSTOM_ENABLED_PERMISSION_GROUPS[@]}")"
+fi
+
+if command -v gum >/dev/null 2>&1; then
+  gum confirm "Apply this profile?" || exit 0
+else
+  printf "${B}Apply this profile? [Y/n]: ${R}"
+  read -r APPLY_CONFIRM
+  if [ "$APPLY_CONFIRM" = "n" ] || [ "$APPLY_CONFIRM" = "N" ]; then
+    exit 0
+  fi
+fi
+
 # --- Write chezmoi config (Bitwarden-backed MCPs disabled for initial apply) ---
 printf "\n${D}Writing chezmoi config...${R}\n"
 mkdir -p ~/.config/chezmoi
 cat > ~/.config/chezmoi/chezmoi.toml <<TOML
 [data]
   user_name = "${USER_NAME}"
-  enable_api_mcps = false
+  user_role_summary = "${USER_ROLE_SUMMARY}"
+  user_stack_summary = "${USER_STACK_SUMMARY}"
+  runtime_profile = "${RUNTIME_PROFILE}"
+  capability_pack = "${CAPABILITY_PACK}"
+  profile_base = "${PROFILE_BASE}"
+  custom_enabled_mcps = [$(for i in "${CUSTOM_ENABLED_MCPS[@]}"; do printf '"%s",' "$i"; done | sed 's/,$//')]
+  custom_disabled_mcps = []
+  custom_enabled_permission_groups = [$(for i in "${CUSTOM_ENABLED_PERMISSION_GROUPS[@]}"; do printf '"%s",' "$i"; done | sed 's/,$//')]
+  custom_disabled_permission_groups = []
+  enable_api_mcps = ${ENABLE_API_MCPS}
   azure_devops_org = "${AZURE_DEVOPS_ORG}"
 TOML
 printf "  ${G}+${R} Config saved to ~/.config/chezmoi/chezmoi.toml\n"

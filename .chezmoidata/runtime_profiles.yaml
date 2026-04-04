@@ -1,0 +1,365 @@
+catalog_version: 1
+
+profiles:
+  restricted:
+    description: No local or system mutation by default. Remote work systems are allowed.
+    permission_groups:
+      - core_read_write
+      - shell_readonly
+      - git_safe
+      - gh_safe
+  balanced:
+    description: Practical daily-driver profile with moderate local execution power.
+    permission_groups:
+      - core_read_write
+      - shell_readonly
+      - git_full
+      - gh_full
+      - dev_runtime
+      - local_file_mutation
+      - containers
+      - infra_local
+  open:
+    description: Full managed profile with broader web, cloud, and secret-backed capabilities.
+    permission_groups:
+      - core_read_write
+      - shell_readonly
+      - git_full
+      - gh_full
+      - dev_runtime
+      - local_file_mutation
+      - containers
+      - infra_local
+      - package_runtime
+      - cloud_extended
+      - secret_tools
+      - web_access
+
+mcp_sets:
+  restricted:
+    - playwright
+    - context7
+    - figma
+    - filesystem
+    - git
+    - memory
+    - thinking
+    - github
+    - azure-devops
+  balanced:
+    - playwright
+    - context7
+    - figma
+    - filesystem
+    - git
+    - memory
+    - thinking
+    - github
+    - azure-devops
+    - shell
+    - docker
+    - process
+    - terraform
+    - kubernetes
+  open:
+    - playwright
+    - context7
+    - figma
+    - filesystem
+    - git
+    - memory
+    - thinking
+    - github
+    - azure-devops
+    - shell
+    - docker
+    - process
+    - terraform
+    - kubernetes
+    - http
+    - aws
+    - tailscale
+    - exa
+    - firecrawl
+    - fal-ai
+
+mcp_catalog:
+  playwright:
+    transport: stdio
+    needs_secrets: false
+    reads_remote: true
+    writes_remote: false
+    reads_local: false
+    executes_local_processes: true
+    mutates_local_system: false
+    prompt_injection_risk: medium
+    notes: Browser automation against potentially hostile pages.
+  context7:
+    transport: http
+    needs_secrets: false
+    reads_remote: true
+    writes_remote: false
+    reads_local: false
+    executes_local_processes: false
+    mutates_local_system: false
+    prompt_injection_risk: low
+    notes: Documentation-oriented remote source.
+  figma:
+    transport: http
+    needs_secrets: false
+    reads_remote: true
+    writes_remote: true
+    reads_local: false
+    executes_local_processes: false
+    mutates_local_system: false
+    prompt_injection_risk: medium
+    notes: Remote design system access.
+  filesystem:
+    transport: stdio
+    needs_secrets: false
+    reads_remote: false
+    writes_remote: false
+    reads_local: true
+    executes_local_processes: true
+    mutates_local_system: false
+    prompt_injection_risk: low
+    notes: Must stay rooted narrowly.
+  git:
+    transport: stdio
+    needs_secrets: false
+    reads_remote: false
+    writes_remote: false
+    reads_local: true
+    executes_local_processes: true
+    mutates_local_system: false
+    prompt_injection_risk: low
+    notes: Repository inspection surface.
+  memory:
+    transport: stdio
+    needs_secrets: false
+    reads_remote: false
+    writes_remote: false
+    reads_local: true
+    executes_local_processes: true
+    mutates_local_system: true
+    prompt_injection_risk: low
+    notes: Local MCP memory store.
+  thinking:
+    transport: stdio
+    needs_secrets: false
+    reads_remote: false
+    writes_remote: false
+    reads_local: false
+    executes_local_processes: true
+    mutates_local_system: false
+    prompt_injection_risk: low
+    notes: Structured local reasoning MCP.
+  github:
+    transport: stdio
+    needs_secrets: true
+    reads_remote: true
+    writes_remote: true
+    reads_local: false
+    executes_local_processes: true
+    mutates_local_system: false
+    prompt_injection_risk: medium
+    notes: Remote repository surface with user-generated content.
+  azure-devops:
+    transport: stdio
+    needs_secrets: true
+    reads_remote: true
+    writes_remote: true
+    reads_local: false
+    executes_local_processes: true
+    mutates_local_system: false
+    prompt_injection_risk: medium
+    notes: Remote work item and repo surface.
+  shell:
+    transport: stdio
+    needs_secrets: false
+    reads_remote: false
+    writes_remote: false
+    reads_local: true
+    executes_local_processes: true
+    mutates_local_system: true
+    prompt_injection_risk: medium
+    notes: Local command execution surface.
+  docker:
+    transport: stdio
+    needs_secrets: false
+    reads_remote: false
+    writes_remote: false
+    reads_local: true
+    executes_local_processes: true
+    mutates_local_system: true
+    prompt_injection_risk: medium
+    notes: Container and daemon interaction surface.
+  process:
+    transport: stdio
+    needs_secrets: false
+    reads_remote: false
+    writes_remote: false
+    reads_local: true
+    executes_local_processes: true
+    mutates_local_system: false
+    prompt_injection_risk: low
+    notes: Local process inspection.
+  terraform:
+    transport: stdio
+    needs_secrets: false
+    reads_remote: false
+    writes_remote: false
+    reads_local: true
+    executes_local_processes: true
+    mutates_local_system: false
+    prompt_injection_risk: low
+    notes: IaC inspection.
+  kubernetes:
+    transport: stdio
+    needs_secrets: false
+    reads_remote: false
+    writes_remote: true
+    reads_local: true
+    executes_local_processes: true
+    mutates_local_system: false
+    prompt_injection_risk: medium
+    notes: Cluster surface depends on current kube context.
+  http:
+    transport: stdio
+    needs_secrets: false
+    reads_remote: true
+    writes_remote: false
+    reads_local: false
+    executes_local_processes: true
+    mutates_local_system: false
+    prompt_injection_risk: high
+    notes: Open remote content fetch surface.
+  aws:
+    transport: stdio
+    needs_secrets: true
+    reads_remote: true
+    writes_remote: true
+    reads_local: false
+    executes_local_processes: true
+    mutates_local_system: false
+    prompt_injection_risk: medium
+    notes: Cloud admin surface.
+  tailscale:
+    transport: stdio
+    needs_secrets: true
+    reads_remote: true
+    writes_remote: true
+    reads_local: false
+    executes_local_processes: true
+    mutates_local_system: false
+    prompt_injection_risk: medium
+    notes: Network admin surface.
+  exa:
+    transport: stdio
+    needs_secrets: true
+    reads_remote: true
+    writes_remote: false
+    reads_local: false
+    executes_local_processes: true
+    mutates_local_system: false
+    prompt_injection_risk: high
+    notes: Search over remote untrusted content.
+  firecrawl:
+    transport: stdio
+    needs_secrets: true
+    reads_remote: true
+    writes_remote: false
+    reads_local: false
+    executes_local_processes: true
+    mutates_local_system: false
+    prompt_injection_risk: high
+    notes: Crawling and scraping over remote untrusted content.
+  fal-ai:
+    transport: stdio
+    needs_secrets: true
+    reads_remote: true
+    writes_remote: true
+    reads_local: false
+    executes_local_processes: true
+    mutates_local_system: false
+    prompt_injection_risk: medium
+    notes: External AI generation service.
+
+permission_groups:
+  core_read_write:
+    - Read
+    - Edit
+    - Write
+  shell_readonly:
+    - Bash(ls *)
+    - Bash(cat *)
+    - Bash(head *)
+    - Bash(tail *)
+    - Bash(wc *)
+    - Bash(find *)
+    - Bash(grep *)
+    - Bash(rg *)
+    - Bash(jq *)
+  git_safe:
+    - Bash(git status*)
+    - Bash(git diff*)
+    - Bash(git log*)
+  gh_safe:
+    - Bash(gh pr view*)
+    - Bash(gh pr checks*)
+  git_full:
+    - Bash(git *)
+  gh_full:
+    - Bash(gh *)
+  dev_runtime:
+    - Bash(node *)
+    - Bash(dotnet *)
+    - Bash(python3 *)
+    - Bash(pytest *)
+    - Bash(make *)
+    - Bash(k6 *)
+  local_file_mutation:
+    - Bash(mkdir *)
+    - Bash(cp *)
+    - Bash(mv *)
+    - Bash(touch *)
+    - Bash(chmod +x *)
+  containers:
+    - Bash(docker *)
+  infra_local:
+    - Bash(az *)
+    - Bash(terraform *)
+    - Bash(kubectl *)
+  package_runtime:
+    - Bash(npm *)
+    - Bash(npx *)
+    - Bash(pip *)
+  cloud_extended:
+    - Bash(aws *)
+    - Bash(gcloud *)
+    - Bash(wrangler *)
+  secret_tools:
+    - Bash(bw *)
+    - Bash(uvx *)
+  web_access:
+    - Bash(curl *)
+    - WebFetch
+    - WebSearch
+
+hard_bans:
+  shared:
+    - Bash(sudo *)
+    - Bash(su *)
+    - Bash(rm -rf /)
+    - Bash(dd if=/dev/zero*)
+    - Bash(chmod 777 *)
+    - Bash(> /dev/sda*)
+  restricted:
+    - Bash(uv *)
+    - Bash(uvx *)
+    - Bash(npm install*)
+    - Bash(npm i*)
+    - Bash(npx *)
+    - Bash(pip install*)
+    - Bash(choco install*)
+    - Bash(winget install*)

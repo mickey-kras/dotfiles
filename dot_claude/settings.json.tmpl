@@ -1,0 +1,46 @@
+{{- $profile := .runtime_profile | default "balanced" -}}
+{{- $profiles := .profiles -}}
+{{- $permissionGroups := .permission_groups -}}
+{{- $sharedBans := .hard_bans.shared -}}
+{{- $profileBans := index .hard_bans $profile | default (list) -}}
+{{- $selectedGroupNames := list -}}
+{{- if eq $profile "custom" -}}
+  {{- $base := .profile_base | default "balanced" -}}
+  {{- $selectedGroupNames = index $profiles $base "permission_groups" | default (list) -}}
+  {{- range .custom_enabled_permission_groups }}
+    {{- $selectedGroupNames = append $selectedGroupNames . -}}
+  {{- end -}}
+  {{- range .custom_disabled_permission_groups }}
+    {{- $selectedGroupNames = without $selectedGroupNames . -}}
+  {{- end -}}
+{{- else -}}
+  {{- $selectedGroupNames = index $profiles $profile "permission_groups" | default (list) -}}
+{{- end -}}
+{{- $selectedGroupNames = uniq $selectedGroupNames -}}
+{{- $allow := list -}}
+{{- range $groupName := $selectedGroupNames -}}
+  {{- range $entry := index $permissionGroups $groupName | default (list) -}}
+    {{- $allow = append $allow $entry -}}
+  {{- end -}}
+{{- end -}}
+{{- $allow = uniq $allow -}}
+{{- $deny := concat $sharedBans $profileBans | uniq -}}
+{
+  "permissions": {
+    "allow": [
+{{- range $i, $entry := $allow }}
+      {{ $entry | toJson }}{{ if lt (add1 $i) (len $allow) }},{{ end }}
+{{- end }}
+    ],
+    "deny": [
+{{- range $i, $entry := $deny }}
+      {{ $entry | toJson }}{{ if lt (add1 $i) (len $deny) }},{{ end }}
+{{- end }}
+    ]
+  },
+  "env": {
+    "EDITOR": "code --wait",
+    "ENABLE_CLAUDEAI_MCP_SERVERS": "false"
+  },
+  "model": "opus"
+}

@@ -15,6 +15,48 @@ ok()      { printf "  ${G}+${R} %s\n" "$1"; }
 warn()    { printf "  ${Y}>${R} %s\n" "$1"; }
 fail()    { printf "  ${RED}x${R} %s\n" "$1"; }
 
+read_chezmoi_value() {
+  local key="$1"
+  python3 - "$HOME/.config/chezmoi/chezmoi.toml" "$key" <<'PY' 2>/dev/null || true
+import pathlib, re, sys
+path = pathlib.Path(sys.argv[1])
+key = sys.argv[2]
+if not path.exists():
+    raise SystemExit(0)
+text = path.read_text()
+m = re.search(r'^\s*%s\s*=\s*"(.*)"\s*$' % re.escape(key), text, re.M)
+if m:
+    print(m.group(1))
+PY
+}
+
+read_chezmoi_array() {
+  local key="$1"
+  python3 - "$HOME/.config/chezmoi/chezmoi.toml" "$key" <<'PY' 2>/dev/null || true
+import pathlib, re, sys
+path = pathlib.Path(sys.argv[1])
+key = sys.argv[2]
+if not path.exists():
+    raise SystemExit(0)
+text = path.read_text()
+m = re.search(r'^\s*%s\s*=\s*\[(.*)\]\s*$' % re.escape(key), text, re.M)
+if not m:
+    raise SystemExit(0)
+items = [s.strip().strip('"') for s in m.group(1).split(',') if s.strip()]
+for item in items:
+    print(item)
+PY
+}
+
+contains_word() {
+  local needle="$1"; shift
+  local item
+  for item in "$@"; do
+    [ "$item" = "$needle" ] && return 0
+  done
+  return 1
+}
+
 printf "${C}"
 printf '  ____    _    ____ _____ \n'
 printf ' |  _ \\  / \\  / ___|_   _|\n'
@@ -104,21 +146,68 @@ fi
 # --- 4. Verify MCPs ---
 section "4. Verifying MCP registration"
 if command -v claude >/dev/null 2>&1; then
-  EXPECTED=("playwright" "context7" "figma" "filesystem" "git" "shell" "terraform" "kubernetes" "process" "thinking" "memory")
+  RUNTIME_PROFILE="$(read_chezmoi_value runtime_profile)"
+  PROFILE_BASE="$(read_chezmoi_value profile_base)"
+  [ -z "$RUNTIME_PROFILE" ] && RUNTIME_PROFILE="balanced"
+  [ -z "$PROFILE_BASE" ] && PROFILE_BASE="balanced"
+
+  RESTRICTED_MCPS=(playwright context7 figma filesystem git memory thinking github azure-devops)
+  BALANCED_EXTRA_MCPS=(shell docker process terraform kubernetes)
+  OPEN_EXTRA_MCPS=(http aws tailscale exa firecrawl fal-ai)
+
+  EXPECTED=()
+  case "$RUNTIME_PROFILE" in
+    restricted)
+      EXPECTED=("${RESTRICTED_MCPS[@]}")
+      ;;
+    balanced)
+      EXPECTED=("${RESTRICTED_MCPS[@]}" "${BALANCED_EXTRA_MCPS[@]}")
+      ;;
+    open)
+      EXPECTED=("${RESTRICTED_MCPS[@]}" "${BALANCED_EXTRA_MCPS[@]}" "${OPEN_EXTRA_MCPS[@]}")
+      ;;
+    custom)
+      case "$PROFILE_BASE" in
+        restricted) EXPECTED=("${RESTRICTED_MCPS[@]}") ;;
+        balanced) EXPECTED=("${RESTRICTED_MCPS[@]}" "${BALANCED_EXTRA_MCPS[@]}") ;;
+        open) EXPECTED=("${RESTRICTED_MCPS[@]}" "${BALANCED_EXTRA_MCPS[@]}" "${OPEN_EXTRA_MCPS[@]}") ;;
+        *) EXPECTED=("${RESTRICTED_MCPS[@]}" "${BALANCED_EXTRA_MCPS[@]}") ;;
+      esac
+      while IFS= read -r mcp; do
+        [ -n "$mcp" ] && EXPECTED+=("$mcp")
+      done < <(read_chezmoi_array custom_enabled_mcps)
+      while IFS= read -r mcp; do
+        [ -n "$mcp" ] && EXPECTED=("${EXPECTED[@]/$mcp}")
+      done < <(read_chezmoi_array custom_disabled_mcps)
+      ;;
+  esac
+
+  FILTERED=()
+  for mcp in "${EXPECTED[@]}"; do
+    case "$mcp" in
+      azure-devops)
+        [ -n "$(read_chezmoi_value azure_devops_org)" ] && FILTERED+=("$mcp")
+        ;;
+      http|aws)
+        if command -v uvx >/dev/null 2>&1; then FILTERED+=("$mcp"); fi
+        ;;
+      github|tailscale|exa|firecrawl|fal-ai)
+        if command -v bw >/dev/null 2>&1; then FILTERED+=("$mcp"); fi
+        ;;
+      docker)
+        if command -v docker >/dev/null 2>&1; then FILTERED+=("MCP_DOCKER"); fi
+        ;;
+      *)
+        FILTERED+=("$mcp")
+        ;;
+    esac
+  done
+  EXPECTED=("${FILTERED[@]}")
+
   REGISTERED=$(claude mcp list 2>/dev/null || echo "")
 
-  if command -v uvx >/dev/null 2>&1; then
-    EXPECTED+=("http")
-  fi
-  if command -v docker >/dev/null 2>&1; then
-    EXPECTED+=("MCP_DOCKER")
-  fi
-  if command -v bw >/dev/null 2>&1; then
-    EXPECTED+=("github" "tailscale")
-    if command -v uvx >/dev/null 2>&1; then
-      EXPECTED+=("aws")
-    fi
-  fi
+  ok "Runtime profile: $RUNTIME_PROFILE"
+  ok "Capability pack: $(read_chezmoi_value capability_pack)"
 
   for mcp in "${EXPECTED[@]}"; do
     if echo "$REGISTERED" | grep -qi "$mcp"; then
@@ -127,26 +216,6 @@ if command -v claude >/dev/null 2>&1; then
       fail "$mcp - not registered. Run: chezmoi apply"
     fi
   done
-
-  # Check Azure DevOps MCP if configured
-  if grep -q 'azure_devops_org = ".' ~/.config/chezmoi/chezmoi.toml 2>/dev/null; then
-    if echo "$REGISTERED" | grep -qi "azure-devops"; then
-      ok "azure-devops ${D}(org)${R}"
-    else
-      warn "azure-devops - not registered. Run: chezmoi apply"
-    fi
-  fi
-
-  # Check optional MCPs if enabled
-  if grep -q 'enable_api_mcps = true' ~/.config/chezmoi/chezmoi.toml 2>/dev/null; then
-    for mcp in "exa" "firecrawl" "fal-ai"; do
-      if echo "$REGISTERED" | grep -qi "$mcp"; then
-        ok "$mcp ${D}(api)${R}"
-      else
-        warn "$mcp - not registered. Unlock Bitwarden and run: chezmoi apply"
-      fi
-    done
-  fi
 else
   warn "claude CLI not found - skipping MCP verification"
 fi

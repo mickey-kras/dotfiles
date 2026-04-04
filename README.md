@@ -1,6 +1,6 @@
 # dotfiles
 
-AI toolchain config synced across machines with [chezmoi](https://chezmoi.io). One command sets up Claude Code, Cursor, and Codex with shared MCPs, agents, permissions, and Bitwarden-backed secret wrappers.
+AI toolchain config synced across machines with [chezmoi](https://chezmoi.io). One command sets up Claude Code, Cursor, and Codex with shared MCPs, profile-aware permissions, capability packs, and Bitwarden-backed secret wrappers.
 
 ## Quick start
 
@@ -24,39 +24,75 @@ chezmoi init --apply https://github.com/mickey-kras/dotfiles.git
 chezmoi init --apply --source ~/dotfiles
 ```
 
-You'll get two prompts:
-1. **Display name** - reused from your local config when available, otherwise prompted once.
-2. **Bitwarden-backed MCPs** (GitHub, AWS, Tailscale, Exa, Firecrawl, fal-ai) - requires Bitwarden CLI. Say no to skip.
-3. **Azure DevOps org** - enter your org name, or press Enter to skip.
+The installer now asks for:
+1. **Runtime profile** - `restricted`, `balanced`, `open`, or `custom`
+2. **Capability pack** - currently `software-development`
+3. **Display name, role summary, stack summary**
+4. **Azure DevOps org** - optional
+5. **Custom MCPs and permission groups** if `custom` is selected
+
+If `gum` is installed, setup uses a richer TUI. Otherwise it falls back to plain Bash prompts.
 
 ## What gets installed
+
+### Runtime profiles
+
+`restricted`
+- remote work systems allowed
+- no local or system mutation by default
+- no `uv` or `uvx`
+- no high-injection web MCPs
+
+`balanced`
+- `restricted` plus practical local execution and containers
+- good default for work machines
+
+`open`
+- `balanced` plus cloud, web, and high-injection MCPs
+- best fit for trusted personal machines
+
+`custom`
+- curated MCP catalog and permission groups
+- you choose the exact subset
+
+### Capability packs
+
+Current pack:
+- `software-development`
+
+This pack provides the SDLC team model across tools:
+- Claude Code subagents
+- Codex operating model
+- Cursor rules and workflow guidance
+
+Future packs can reuse the same runtime profiles while swapping the working style and capability surface.
 
 ### MCPs
 
 All versions are pinned for supply-chain safety. OAuth MCPs authenticate in the browser on first use.
 
-| Server | Transport | Auth | What it does |
-|--------|-----------|------|-------------|
-| Playwright 0.0.68 | stdio (npx) | None | Browser automation and E2E testing |
-| Context7 | Remote HTTP | OAuth | Up-to-date library docs and code examples |
-| Figma | Remote HTTP | OAuth | Design-to-code: layouts, tokens, component variants |
-| Filesystem 2026.1.14 | stdio (npx) | None | Local file browsing rooted at `~/Dev` |
-| Git 2.10.5 | stdio (npx) | None | Repository history and diff operations |
-| Shell 2.0.15 | stdio (npx) | None | Controlled shell MCP access |
-| Terraform 0.13.0 | stdio (npx) | None | Terraform inspection and IaC workflows |
-| Kubernetes 3.4.0 | stdio (npx) | None | Cluster and manifest inspection |
-| Process 1.5.10 | stdio (npx) | None | Local process inspection |
-| Sequential Thinking 2025.12.18 | stdio (npx) | None | Structured reasoning MCP |
-| Memory 2026.1.26 | stdio (npx) | None | Local MCP memory store |
-| HTTP Fetch 2025.4.7 | stdio (uvx) | None | HTTP fetch and page retrieval |
-| GitHub 2025.4.8 | stdio (npx) | Bitwarden item `mcp-github` | GitHub API access with PAT |
-| AWS 1.3.26 | stdio (uvx) | Bitwarden item `mcp-aws` | AWS API access with key pair |
-| Tailscale 0.3.2 | stdio (npx) | Bitwarden item `mcp-tailscale` | Tailscale admin API access |
-| Docker MCP Gateway | stdio (docker) | Docker Desktop / Engine | Docker MCP toolkit bridge |
-| Azure DevOps 2.5.0 | stdio (npx) | PAT/OAuth | Work items, PRs, pipelines, repos (org-scoped) |
-| Exa 3.1.9 | stdio (npx) | API key | AI-powered web search |
-| Firecrawl 3.11.0 | stdio (npx) | API key | Web scraping and crawling |
-| fal-ai 2.1.4 | stdio (npx) | API key | AI image generation |
+| Server | Profiles | Transport | Auth | Risk | What it does |
+|--------|----------|-----------|------|------|-------------|
+| Playwright 0.0.68 | restricted, balanced, open | stdio (npx) | None | medium | Browser automation and E2E testing |
+| Context7 | restricted, balanced, open | Remote HTTP | OAuth | low | Up-to-date library docs and code examples |
+| Figma | restricted, balanced, open | Remote HTTP | OAuth | medium | Design-to-code: layouts, tokens, component variants |
+| Filesystem 2026.1.14 | restricted, balanced, open | stdio (npx) | None | low | Local file browsing rooted at `~/Dev` |
+| Git 2.10.5 | restricted, balanced, open | stdio (npx) | None | low | Repository history and diff operations |
+| Memory 2026.1.26 | restricted, balanced, open | stdio (npx) | None | low | Local MCP memory store |
+| Sequential Thinking 2025.12.18 | restricted, balanced, open | stdio (npx) | None | low | Structured reasoning MCP |
+| GitHub 2025.4.8 | restricted, balanced, open | stdio (npx) | Bitwarden item `mcp-github` | medium | GitHub API access with PAT |
+| Azure DevOps 2.5.0 | restricted, balanced, open | stdio (npx) | PAT/OAuth | medium | Work items, PRs, pipelines, repos |
+| Shell 2.0.15 | balanced, open | stdio (npx) | None | high | Controlled shell MCP access |
+| Docker MCP Gateway | balanced, open | stdio (docker) | Docker Desktop / Engine | high | Docker MCP toolkit bridge |
+| Process 1.5.10 | balanced, open | stdio (npx) | None | medium | Local process inspection |
+| Terraform 0.13.0 | balanced, open | stdio (npx) | None | low | Terraform inspection and IaC workflows |
+| Kubernetes 3.4.0 | balanced, open | stdio (npx) | None | medium | Cluster and manifest inspection |
+| HTTP Fetch 2025.4.7 | open | stdio (uvx) | None | high | HTTP fetch and page retrieval |
+| AWS 1.3.26 | open | stdio (uvx) | Bitwarden item `mcp-aws` | high | AWS API access with key pair |
+| Tailscale 0.3.2 | open | stdio (npx) | Bitwarden item `mcp-tailscale` | high | Tailscale admin API access |
+| Exa 3.1.9 | open | stdio (npx) | API key | high | AI-powered web search |
+| Firecrawl 3.11.0 | open | stdio (npx) | API key | high | Web scraping and crawling |
+| fal-ai 2.1.4 | open | stdio (npx) | API key | medium | AI image generation |
 
 **Bitwarden-backed MCPs** require [Bitwarden CLI](https://bitwarden.com/help/cli/) plus a valid `~/.bw_session` file. Run `bw-login` after installing dotfiles to refresh it.
 
@@ -93,9 +129,17 @@ bw-login && chezmoi apply
 | technical-writer | Writes high-signal technical docs, runbooks, migration notes, and PR text |
 | incident-commander | Coordinates production incident response, containment, and rollback direction |
 
-### Permissions & settings
+### Permissions and settings
 
-`~/.claude/settings.json` ships with pre-approved permissions for common dev tools (git, gh, npm, node, docker, az, terraform, kubectl, k6, aws, gcloud, wrangler, etc.), a deny list for dangerous operations (sudo, rm -rf /, etc.), `model: "opus"` so Claude Code uses the current Opus line by default, and `ENABLE_CLAUDEAI_MCP_SERVERS=false` so Claude stays MCP-only instead of surfacing `claude.ai` connector-backed tools.
+`~/.claude/settings.json` is now runtime-profile-aware:
+- `restricted` keeps a read-heavy baseline and blocks `uv` and `uvx`
+- `balanced` adds practical local execution and container workflows
+- `open` adds broader package, cloud, secret, and web access
+
+All profiles still keep:
+- `model: "opus"`
+- `ENABLE_CLAUDEAI_MCP_SERVERS=false`
+- dangerous operation denies like `sudo` and `rm -rf /`
 
 `~/.claude/CLAUDE.md` contains lightweight global preferences (Conventional Commits, feature branches, CLI-first workflow), is rendered with your configured display name, explicitly requires MCP-only workflows with no connectors, and explicitly ignores Sentry even if it appears locally.
 
@@ -109,15 +153,15 @@ Global Git hooks are also installed at `~/.config/git/hooks` and enabled through
 
 | Tool | Config files |
 |------|-------------|
-| Claude Code CLI | `~/.claude/CLAUDE.md`, `settings.json`, `agents/` + MCPs via `claude mcp add` |
-| Claude Desktop | MCPs merged into `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) |
+| Claude Code CLI | `~/.claude/CLAUDE.md`, `settings.json`, `agents/` + MCPs reconciled via `claude mcp add/remove` |
+| Claude Desktop | MCPs reconciled into `~/Library/Application Support/Claude/claude_desktop_config.json` |
 | Cursor | `~/.cursor/mcp.json`, `~/.cursor/rules/global.mdc` |
 | Codex | `~/.codex/config.toml`, `~/.codex/AGENTS.md` |
 
 ## Updating
 
 ```bash
-dotfiles-update   # Pull, apply, check versions, verify MCPs, security scan
+dotfiles-update   # Pull, apply, check versions, verify profile-aligned MCPs, security scan
 ```
 
 Installed at `~/.local/bin/dotfiles-update` by chezmoi. Make sure `~/.local/bin` is in your PATH.
@@ -129,11 +173,17 @@ For a quick pull-only update: `chezmoi update`
 ## File structure
 
 ```
-.chezmoi.toml.tmpl                    # Setup prompts (Bitwarden-backed MCPs, Azure DevOps org)
+.chezmoi.toml.tmpl                    # Setup prompts and local data model
+.chezmoidata/
+  runtime_profiles.yaml               # Runtime profiles, MCP catalog, permission groups, hard bans
+  capability_packs.yaml               # Capability pack metadata
 .chezmoiignore                        # Platform-conditional exclusions
+packs/
+  software-development/
+    pack.json                         # Capability pack metadata
 dot_claude/
   CLAUDE.md.tmpl                      # -> ~/.claude/CLAUDE.md
-  settings.json                       # -> ~/.claude/settings.json
+  settings.json.tmpl                  # -> ~/.claude/settings.json
   agents/
     delivery-orchestrator.md          # Request normalization and routing
     planner.md                        # Planning agent
@@ -170,12 +220,12 @@ dot_local/
     executable_dotfiles-update        # -> ~/.local/bin/dotfiles-update
     executable_dotfiles-update.cmd    # -> ~/.local/bin/dotfiles-update.cmd (Windows only)
 scripts/
-  bootstrap.sh                        # macOS/Linux bootstrap
-  bootstrap.ps1                       # Windows bootstrap
+  bootstrap.sh                        # Main setup path for macOS/Linux/WSL/Git Bash
+  bootstrap.ps1                       # Legacy compatibility path
   chezmoi/
     run_onchange_after_configure-global-git-hooks.sh.tmpl   # Unix global Git hook setup
     run_onchange_after_configure-global-git-hooks.ps1.tmpl  # Windows global Git hook setup
-    run_onchange_after_install-claude-mcps.sh.tmpl          # Unix MCP registration
+    run_onchange_after_install-claude-mcps.sh.tmpl          # Authoritative Claude MCP reconciliation
     run_onchange_after_install-claude-mcps.ps1.tmpl         # Windows MCP registration
 ```
 
@@ -184,12 +234,18 @@ scripts/
 - **Pinned versions** - All stdio MCPs use exact version numbers to prevent supply-chain attacks via malicious updates.
 - **No secrets in repo** - API keys are fetched from Bitwarden at `chezmoi apply` time.
 - **OAuth MCPs** (Context7, Figma) authenticate via browser - no tokens stored locally.
+- **Prompt-injection awareness** - `http`, `exa`, and `firecrawl` are intentionally `open`-only because they ingest broad remote content.
+- **Authoritative reconciliation** - setup removes unmanaged or out-of-profile Claude MCPs by default to return the machine to the selected profile.
 - **Periodic audit** - Run `npx @anthropic-ai/mcp-scan` to scan installed MCPs for tool poisoning.
 
 ## Dependencies
 
 **Required:** git, chezmoi (auto-installed by bootstrap), bash (Git Bash on Windows)
 
-**For MCPs:** node, npx, uv
+**For MCPs:** node, npx
+
+**For open-profile MCPs only:** `uv` and `uvx`
+
+**For richer setup UI:** `gum`
 
 **For Bitwarden-backed MCPs:** Bitwarden CLI (`bw`)

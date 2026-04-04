@@ -1,0 +1,21 @@
+packs:
+  software-development:
+    description: Software delivery pack across planning, implementation, testing, review, docs, and incident response.
+    claude_agents:
+      - delivery-orchestrator
+      - planner
+      - product-manager
+      - workflow-architect
+      - backend-engineer
+      - frontend-engineer
+      - staff-engineer
+      - quality-engineer
+      - code-reviewer
+      - debugger
+      - git-workflow-master
+      - devops-engineer
+      - security-engineer
+      - technical-writer
+      - incident-commander
+    codex_mode: software-development
+    cursor_mode: software-development
