@@ -14,6 +14,10 @@ ALLOWED_REGEX = r"^[A-Za-zА-Яа-яЁё0-9 !\"#$%&'()*+,\-./:;<=>?@[\\\]^_`{|}~
 
 BANNED_PATTERNS = [
     re.compile(r"(?im)^\s*(co-authored-by|generated-by)\s*:"),
+    re.compile(r"(?im)^\s*(made-with|created-with|written-with|built-with)\s*:"),
+    re.compile(
+        r"(?i)claude\s+opus\s+4\.6(?:\s*\(1m\s+context\))?\s*<noreply@anthropic\.com>"
+    ),
     re.compile(
         r"(?i)\b(created|generated|written|made|built)\s+with\s+"
         r"(claude(?:\s+code)?|cursor|codex|openai|anthropic|ai)\b"
