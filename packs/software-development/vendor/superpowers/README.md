@@ -25,6 +25,12 @@ This directory is the staging area for workflow skills selectively vendored from
 - requesting-code-review
 - receiving-code-review
 
+## Second Vendored Batch
+- writing-plans
+- executing-plans
+- using-git-worktrees
+- dispatching-parallel-agents
+
 These copies were normalized to local policy:
 - ASCII-safe content
 - no upstream plugin prefixes
