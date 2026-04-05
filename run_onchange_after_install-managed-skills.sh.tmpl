@@ -1,0 +1,92 @@
+#!/usr/bin/env bash
+# Installs managed first-party skills for Claude and Codex.
+#
+# hash: {{ include ".chezmoidata/capability_packs.yaml" | sha256sum }}:{{ include "packs/software-development/pack.json" | sha256sum }}
+
+set -euo pipefail
+
+HOME_SLASHED="{{ replace "\\" "/" .chezmoi.homeDir }}"
+CAPABILITY_PACK="{{ .capability_pack | default "software-development" }}"
+DOTFILES_DIR="$HOME_SLASHED/dotfiles"
+MANAGED_SKILLS_DIR="$DOTFILES_DIR/packs/software-development/skills"
+CLAUDE_SKILLS_DIR="$HOME_SLASHED/.claude/skills"
+CODEX_SKILLS_DIR="$HOME_SLASHED/.codex/skills"
+LEGACY_SUPERPOWERS_ROOT="$HOME_SLASHED/.claude/plugins/cache/claude-plugins-official/superpowers"
+
+MANAGED_SKILLS=(
+{{- $pack := index .packs (.capability_pack | default "software-development") }}
+{{- range $pack.managed_skills }}
+  "{{ . }}"
+{{- end }}
+)
+
+ensure_link() {
+  local src="$1"
+  local dest="$2"
+  if [ -L "$dest" ] || [ -e "$dest" ]; then
+    rm -rf "$dest"
+  fi
+  ln -s "$src" "$dest"
+}
+
+cleanup_legacy_codex_skills() {
+  [ -d "$CODEX_SKILLS_DIR" ] || return 0
+  local entry target name
+  for entry in "$CODEX_SKILLS_DIR"/*; do
+    [ -e "$entry" ] || continue
+    name="$(basename "$entry")"
+    if [ -L "$entry" ]; then
+      target="$(readlink "$entry" || true)"
+      case "$target" in
+        "$LEGACY_SUPERPOWERS_ROOT"/*)
+          rm -rf "$entry"
+          echo "  - removed legacy Codex skill: $name"
+          ;;
+      esac
+    fi
+  done
+}
+
+install_managed_skill_set() {
+  local target_root="$1"
+  local label="$2"
+  local skill src dest
+
+  mkdir -p "$target_root"
+  for skill in "${MANAGED_SKILLS[@]}"; do
+    src="$MANAGED_SKILLS_DIR/$skill"
+    dest="$target_root/$skill"
+    if [ ! -d "$src" ]; then
+      echo "  ! missing managed skill source: $src"
+      continue
+    fi
+    ensure_link "$src" "$dest"
+    echo "  + $label skill: $skill"
+  done
+}
+
+cleanup_managed_targets() {
+  local target_root="$1"
+  local skill
+  mkdir -p "$target_root"
+  for skill in "${MANAGED_SKILLS[@]}"; do
+    rm -rf "$target_root/$skill"
+  done
+}
+
+echo "Reconciling managed skills for capability pack: $CAPABILITY_PACK"
+
+if [ "$CAPABILITY_PACK" != "software-development" ]; then
+  echo "  ! unsupported capability pack for managed skills: $CAPABILITY_PACK"
+  exit 0
+fi
+
+rm -f "$CODEX_SKILLS_DIR/.DS_Store" "$CLAUDE_SKILLS_DIR/.DS_Store"
+
+cleanup_legacy_codex_skills
+cleanup_managed_targets "$CLAUDE_SKILLS_DIR"
+cleanup_managed_targets "$CODEX_SKILLS_DIR"
+install_managed_skill_set "$CLAUDE_SKILLS_DIR" "Claude"
+install_managed_skill_set "$CODEX_SKILLS_DIR" "Codex"
+
+echo "Managed skills reconciled."

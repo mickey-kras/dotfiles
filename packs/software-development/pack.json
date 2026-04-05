@@ -18,6 +18,17 @@
     "technical-writer",
     "incident-commander"
   ],
+  "managedSkills": [
+    "dispatching-parallel-agents",
+    "executing-plans",
+    "receiving-code-review",
+    "requesting-code-review",
+    "systematic-debugging",
+    "test-driven-development",
+    "using-git-worktrees",
+    "verification-before-completion",
+    "writing-plans"
+  ],
   "codexMode": "software-development",
   "cursorMode": "software-development"
 }

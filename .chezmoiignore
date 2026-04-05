@@ -2,6 +2,8 @@ README.md
 LICENSE
 scripts/
 .github/
+!scripts/chezmoi/
+!scripts/chezmoi/run_*
 
 {{ if eq .chezmoi.os "windows" }}
 install-claude-mcps.sh

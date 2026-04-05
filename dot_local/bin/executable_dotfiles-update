@@ -57,6 +57,25 @@ contains_word() {
   return 1
 }
 
+managed_skills_for_pack() {
+  local pack="$1"
+  case "$pack" in
+    software-development)
+      cat <<'EOF'
+dispatching-parallel-agents
+executing-plans
+receiving-code-review
+requesting-code-review
+systematic-debugging
+test-driven-development
+using-git-worktrees
+verification-before-completion
+writing-plans
+EOF
+      ;;
+  esac
+}
+
 printf "${C}"
 printf '  ____    _    ____ _____ \n'
 printf ' |  _ \\  / \\  / ___|_   _|\n'
@@ -258,6 +277,26 @@ if command -v codex >/dev/null 2>&1; then
   [ -f "$HOME/.codex/config.toml" ] && ok "codex/config.toml" || fail "codex/config.toml - missing"
   [ -f "$HOME/.codex/AGENTS.md" ] && ok "codex/AGENTS.md" || fail "codex/AGENTS.md - missing"
 fi
+
+CAPABILITY_PACK="$(read_chezmoi_value capability_pack)"
+[ -z "$CAPABILITY_PACK" ] && CAPABILITY_PACK="software-development"
+
+while IFS= read -r skill; do
+  [ -n "$skill" ] || continue
+  if [ -f "$HOME/.claude/skills/$skill/SKILL.md" ]; then
+    ok "claude skill/$skill"
+  else
+    fail "claude skill/$skill - missing"
+  fi
+
+  if command -v codex >/dev/null 2>&1; then
+    if [ -f "$HOME/.codex/skills/$skill/SKILL.md" ]; then
+      ok "codex skill/$skill"
+    else
+      fail "codex skill/$skill - missing"
+    fi
+  fi
+done < <(managed_skills_for_pack "$CAPABILITY_PACK")
 
 [ -f "$HOME/.local/bin/bw-mcp" ] && ok "bw-mcp" || warn "bw-mcp - missing"
 [ -f "$HOME/.local/bin/bw-login" ] && ok "bw-login" || warn "bw-login - missing"

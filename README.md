@@ -64,6 +64,7 @@ This pack provides the SDLC team model across tools:
 - Claude Code subagents
 - Codex operating model
 - Cursor rules and workflow guidance
+- Managed first-party workflow skills for Claude and Codex
 
 Future packs can reuse the same runtime profiles while swapping the working style and capability surface.
 
@@ -129,6 +130,25 @@ bw-login && chezmoi apply
 | technical-writer | Writes high-signal technical docs, runbooks, migration notes, and PR text |
 | incident-commander | Coordinates production incident response, containment, and rollback direction |
 
+### Skills
+
+The `software-development` pack also installs first-party workflow skills into:
+- `~/.claude/skills`
+- `~/.codex/skills`
+
+Currently managed:
+- `dispatching-parallel-agents`
+- `executing-plans`
+- `receiving-code-review`
+- `requesting-code-review`
+- `systematic-debugging`
+- `test-driven-development`
+- `using-git-worktrees`
+- `verification-before-completion`
+- `writing-plans`
+
+These are installed from the first-party source in `packs/software-development/skills`, not from the live Claude plugin cache.
+
 ### Permissions and settings
 
 `~/.claude/settings.json` is now runtime-profile-aware:
@@ -155,10 +175,10 @@ Global Git hooks are also installed at `~/.config/git/hooks` and enabled through
 
 | Tool | Config files |
 |------|-------------|
-| Claude Code CLI | `~/.claude/CLAUDE.md`, `settings.json`, `agents/` + MCPs reconciled via `claude mcp add/remove` |
+| Claude Code CLI | `~/.claude/CLAUDE.md`, `settings.json`, `agents/`, `skills/` + MCPs reconciled via `claude mcp add/remove` |
 | Claude Desktop | MCPs reconciled into `~/Library/Application Support/Claude/claude_desktop_config.json` |
 | Cursor | `~/.cursor/mcp.json`, `~/.cursor/rules/global.mdc` |
-| Codex | `~/.codex/config.toml`, `~/.codex/AGENTS.md` |
+| Codex | `~/.codex/config.toml`, `~/.codex/AGENTS.md`, `~/.codex/skills/` |
 
 ## Updating
 
