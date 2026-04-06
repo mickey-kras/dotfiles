@@ -31,6 +31,63 @@ function getField(item, fieldName) {
   return field?.value ?? "";
 }
 
+function looksLikeUuid(value) {
+  return /^[0-9a-fA-F-]{36}$/.test(value);
+}
+
+function runBw(args, session) {
+  return spawnSync("bw", args, {
+    encoding: "utf8",
+    env: { ...process.env, BW_SESSION: session }
+  });
+}
+
+function resolveItem(itemRef, session) {
+  if (looksLikeUuid(itemRef)) {
+    const direct = runBw(["get", "item", itemRef, "--session", session], session);
+    if (direct.status !== 0) {
+      fail((direct.stderr || `ERROR: Could not fetch Bitwarden item '${itemRef}'.`).trim());
+    }
+    try {
+      return JSON.parse(direct.stdout);
+    } catch (error) {
+      fail(`ERROR: Failed to parse Bitwarden item '${itemRef}': ${error.message}`);
+    }
+  }
+
+  const listed = runBw(["list", "items", "--search", itemRef, "--session", session], session);
+  if (listed.status !== 0) {
+    fail((listed.stderr || `ERROR: Could not search Bitwarden for '${itemRef}'.`).trim());
+  }
+
+  let items;
+  try {
+    items = JSON.parse(listed.stdout);
+  } catch (error) {
+    fail(`ERROR: Failed to parse Bitwarden search results for '${itemRef}': ${error.message}`);
+  }
+
+  const exactMatches = items.filter((item) => item?.name === itemRef);
+  if (exactMatches.length === 0) {
+    fail(`ERROR: Bitwarden item '${itemRef}' was not found.`);
+  }
+  if (exactMatches.length > 1) {
+    const ids = exactMatches.map((item) => `${item.id} (${item.name})`).join(", ");
+    fail(`ERROR: Multiple Bitwarden items matched '${itemRef}'. Use a unique item name or item id. Matches: ${ids}`);
+  }
+
+  const resolvedId = exactMatches[0].id;
+  const direct = runBw(["get", "item", resolvedId, "--session", session], session);
+  if (direct.status !== 0) {
+    fail((direct.stderr || `ERROR: Could not fetch Bitwarden item '${resolvedId}'.`).trim());
+  }
+  try {
+    return JSON.parse(direct.stdout);
+  } catch (error) {
+    fail(`ERROR: Failed to parse Bitwarden item '${resolvedId}': ${error.message}`);
+  }
+}
+
 const args = process.argv.slice(2);
 if (args.length < 4) {
   fail("Usage: bw-mcp <bw-item-name> <ENV_VAR=field,...> -- <command> [args...]");
@@ -53,20 +110,7 @@ if (!session) {
   fail("ERROR: Bitwarden session not found. Run bw-login or write a valid token to ~/.bw_session.");
 }
 
-const itemResult = spawnSync("bw", ["get", "item", itemName, "--session", session], {
-  encoding: "utf8",
-  env: { ...process.env, BW_SESSION: session }
-});
-if (itemResult.status !== 0) {
-  fail((itemResult.stderr || `ERROR: Could not fetch Bitwarden item '${itemName}'.`).trim());
-}
-
-let item;
-try {
-  item = JSON.parse(itemResult.stdout);
-} catch (error) {
-  fail(`ERROR: Failed to parse Bitwarden item '${itemName}': ${error.message}`);
-}
+const item = resolveItem(itemName, session);
 
 const childEnv = { ...process.env, BW_SESSION: session };
 for (const entry of mapping.split(",")) {

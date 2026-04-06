@@ -104,6 +104,9 @@ Required Bitwarden items and structure:
 - `firecrawl-api-key`: login password = Firecrawl API key
 - `fal-api-key`: login password = fal.ai API key
 
+Keep these item names unique. If Bitwarden contains multiple items with the
+same name, the wrapper cannot safely choose one without an explicit item id.
+
 Then:
 ```bash
 bw-login

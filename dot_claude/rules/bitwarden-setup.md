@@ -52,6 +52,10 @@ Core items used by the current MCP catalog:
 
 Only create the items required by the MCPs you actually enable.
 
+Item names must be unique if you reference them by name. If you keep multiple
+items with the same name, either rename them or switch the MCP wrapper to use a
+specific Bitwarden item id.
+
 ## Verify
 
 ```bash
