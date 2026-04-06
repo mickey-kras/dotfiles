@@ -215,19 +215,16 @@ profile_summary() {
   local profile="$1"
   case "$profile" in
     restricted)
-      printf "restricted: remote work systems, no local/system risk by default\n"
-      printf "  MCPs: %s\n" "$(join_by ', ' "${RESTRICTED_MCPS[@]}")"
+      printf "restricted  Remote work systems, no local/system risk by default\n"
       ;;
     balanced)
-      printf "balanced: restricted plus practical local execution and containers\n"
-      printf "  MCPs: %s\n" "$(join_by ', ' "${RESTRICTED_MCPS[@]}" "${BALANCED_EXTRA_MCPS[@]}")"
+      printf "balanced    Restricted plus practical local execution and containers\n"
       ;;
     open)
-      printf "open: balanced plus cloud, web, and high-injection MCPs\n"
-      printf "  MCPs: %s\n" "$(join_by ', ' "${RESTRICTED_MCPS[@]}" "${BALANCED_EXTRA_MCPS[@]}" "${OPEN_EXTRA_MCPS[@]}")"
+      printf "open        Balanced plus cloud, web, and high-injection MCPs\n"
       ;;
     custom)
-      printf "custom: curated MCP catalog and permission groups, user-selected\n"
+      printf "custom      Curated MCP catalog and permission groups, user-selected\n"
       ;;
   esac
 }
