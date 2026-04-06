@@ -57,18 +57,6 @@ else
   printf "  ${G}+${R} chezmoi $(chezmoi --version 2>/dev/null | head -c 30)\n"
 fi
 
-# --- Check dependencies ---
-MISSING=()
-command -v git  >/dev/null 2>&1 || MISSING+=("git")
-command -v node >/dev/null 2>&1 || MISSING+=("node")
-command -v npx  >/dev/null 2>&1 || MISSING+=("npx")
-command -v uvx  >/dev/null 2>&1 || MISSING+=("uvx")
-
-if [ ${#MISSING[@]} -gt 0 ]; then
-  printf "\n${Y}!${R}  Missing: ${MISSING[*]}\n"
-  printf "   Some MCPs require node/npx/uvx.\n\n"
-fi
-
 # --- Detect AI tools ---
 printf "\n${B}Detected tools:${R}\n"
 command -v claude >/dev/null 2>&1 && printf "  ${G}+${R} Claude Code\n" || printf "  ${D}x Claude Code (not found)${R}\n"
@@ -426,6 +414,21 @@ mapfile -t EFFECTIVE_MCPS < <(effective_mcps "$RUNTIME_PROFILE" "$PROFILE_BASE")
 mapfile -t EFFECTIVE_PERMISSION_GROUPS < <(effective_permission_groups "$RUNTIME_PROFILE" "$PROFILE_BASE")
 printf "  Effective MCPs: ${D}%s${R}\n" "$(join_by ', ' "${EFFECTIVE_MCPS[@]}")"
 printf "  Permission groups: ${D}%s${R}\n" "$(join_by ', ' "${EFFECTIVE_PERMISSION_GROUPS[@]}")"
+
+MISSING=()
+command -v git  >/dev/null 2>&1 || MISSING+=("git")
+command -v node >/dev/null 2>&1 || MISSING+=("node")
+command -v npx  >/dev/null 2>&1 || MISSING+=("npx")
+if contains_word http "${EFFECTIVE_MCPS[@]}" || contains_word aws "${EFFECTIVE_MCPS[@]}"; then
+  command -v uvx >/dev/null 2>&1 || MISSING+=("uvx")
+fi
+
+if [ ${#MISSING[@]} -gt 0 ]; then
+  printf "  ${Y}>${R} Missing tools: ${MISSING[*]}\n"
+  if contains_word uvx "${MISSING[@]}"; then
+    printf "  ${D}uvx is only needed for MCPs in profiles that include http or aws.${R}\n"
+  fi
+fi
 
 if command -v gum >/dev/null 2>&1; then
   gum confirm "Apply this profile?" || exit 0
