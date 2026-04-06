@@ -268,22 +268,62 @@ render_profile_comparison() {
   printf "| %s | %s | %s | %s |\n" \
     "$(pad_cell "$label_w" "")" \
     "$(pad_cell "$col_w" "context7")" \
+    "$(pad_cell "$col_w" "context7")" \
+    "$(pad_cell "$col_w" "context7")"
+  printf "| %s | %s | %s | %s |\n" \
+    "$(pad_cell "$label_w" "")" \
+    "$(pad_cell "$col_w" "figma")" \
+    "$(pad_cell "$col_w" "figma")" \
+    "$(pad_cell "$col_w" "figma")"
+  printf "| %s | %s | %s | %s |\n" \
+    "$(pad_cell "$label_w" "")" \
+    "$(pad_cell "$col_w" "filesystem")" \
+    "$(pad_cell "$col_w" "filesystem")" \
+    "$(pad_cell "$col_w" "filesystem")"
+  printf "| %s | %s | %s | %s |\n" \
+    "$(pad_cell "$label_w" "")" \
+    "$(pad_cell "$col_w" "git")" \
+    "$(pad_cell "$col_w" "git")" \
+    "$(pad_cell "$col_w" "git")"
+  printf "| %s | %s | %s | %s |\n" \
+    "$(pad_cell "$label_w" "")" \
+    "$(pad_cell "$col_w" "memory")" \
+    "$(pad_cell "$col_w" "memory")" \
+    "$(pad_cell "$col_w" "memory")"
+  printf "| %s | %s | %s | %s |\n" \
+    "$(pad_cell "$label_w" "")" \
+    "$(pad_cell "$col_w" "")" \
     "$(pad_cell "$col_w" "atlassian")" \
     "$(pad_cell "$col_w" "atlassian")"
   printf "| %s | %s | %s | %s |\n" \
     "$(pad_cell "$label_w" "")" \
-    "$(pad_cell "$col_w" "figma")" \
+    "$(pad_cell "$col_w" "")" \
     "$(pad_cell "$col_w" "shell")" \
+    "$(pad_cell "$col_w" "shell")"
+  printf "| %s | %s | %s | %s |\n" \
+    "$(pad_cell "$label_w" "")" \
+    "$(pad_cell "$col_w" "")" \
+    "$(pad_cell "$col_w" "docker")" \
+    "$(pad_cell "$col_w" "docker")"
+  printf "| %s | %s | %s | %s |\n" \
+    "$(pad_cell "$label_w" "")" \
+    "$(pad_cell "$col_w" "")" \
+    "$(pad_cell "$col_w" "kubernetes")" \
+    "$(pad_cell "$col_w" "kubernetes")"
+  printf "| %s | %s | %s | %s |\n" \
+    "$(pad_cell "$label_w" "")" \
+    "$(pad_cell "$col_w" "")" \
+    "$(pad_cell "$col_w" "")" \
     "$(pad_cell "$col_w" "http")"
   printf "| %s | %s | %s | %s |\n" \
     "$(pad_cell "$label_w" "")" \
-    "$(pad_cell "$col_w" "filesystem")" \
-    "$(pad_cell "$col_w" "docker")" \
+    "$(pad_cell "$col_w" "")" \
+    "$(pad_cell "$col_w" "")" \
     "$(pad_cell "$col_w" "aws")"
   printf "| %s | %s | %s | %s |\n" \
     "$(pad_cell "$label_w" "")" \
-    "$(pad_cell "$col_w" "git")" \
-    "$(pad_cell "$col_w" "kubernetes")" \
+    "$(pad_cell "$col_w" "")" \
+    "$(pad_cell "$col_w" "")" \
     "$(pad_cell "$col_w" "tailscale")"
   printf "%s\n" "$sep"
   printf "custom  Start from restricted, balanced, or open and choose curated MCPs and permission groups yourself.\n"
