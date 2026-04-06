@@ -55,4 +55,4 @@
 - three adapted specialists staged
 - the strongest ideas from those specialists were merged into the live `quality-engineer`, `technical-writer`, and `code-reviewer`
 - the staged specialists remain out of the default live pack to avoid menu fatigue
-- plugin remains installed only for comparison and gradual migration
+- the live `pr-review-toolkit` plugin dependency has been removed locally
