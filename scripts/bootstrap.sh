@@ -68,7 +68,6 @@ RUNTIME_PROFILE="balanced"
 CAPABILITY_PACK="software-development"
 PROFILE_BASE="balanced"
 AZURE_DEVOPS_ORG=""
-ENABLE_API_MCPS=false
 USER_NAME=""
 USER_ROLE_SUMMARY=""
 USER_STACK_SUMMARY=""
@@ -375,23 +374,6 @@ else
   [ -n "$AZDO_INPUT" ] && AZURE_DEVOPS_ORG="$AZDO_INPUT"
 fi
 
-case "$RUNTIME_PROFILE" in
-  restricted)
-    ENABLE_API_MCPS=false
-    ;;
-  balanced)
-    ENABLE_API_MCPS=false
-    ;;
-  open)
-    ENABLE_API_MCPS=true
-    ;;
-  custom)
-    if contains_word aws "${CUSTOM_ENABLED_MCPS[@]}" || contains_word tailscale "${CUSTOM_ENABLED_MCPS[@]}" || contains_word exa "${CUSTOM_ENABLED_MCPS[@]}" || contains_word firecrawl "${CUSTOM_ENABLED_MCPS[@]}" || contains_word fal-ai "${CUSTOM_ENABLED_MCPS[@]}"; then
-      ENABLE_API_MCPS=true
-    fi
-    ;;
-esac
-
 printf "\n${B}Planned configuration${R}\n"
 printf "  Runtime profile: ${C}%s${R}\n" "$RUNTIME_PROFILE"
 printf "  Capability pack: ${C}%s${R}\n" "$CAPABILITY_PACK"
@@ -412,6 +394,10 @@ if [ "$RUNTIME_PROFILE" = "custom" ]; then
 fi
 mapfile -t EFFECTIVE_MCPS < <(effective_mcps "$RUNTIME_PROFILE" "$PROFILE_BASE")
 mapfile -t EFFECTIVE_PERMISSION_GROUPS < <(effective_permission_groups "$RUNTIME_PROFILE" "$PROFILE_BASE")
+NEEDS_BITWARDEN=false
+if contains_word github "${EFFECTIVE_MCPS[@]}" || contains_word aws "${EFFECTIVE_MCPS[@]}" || contains_word tailscale "${EFFECTIVE_MCPS[@]}" || contains_word exa "${EFFECTIVE_MCPS[@]}" || contains_word firecrawl "${EFFECTIVE_MCPS[@]}" || contains_word fal-ai "${EFFECTIVE_MCPS[@]}"; then
+  NEEDS_BITWARDEN=true
+fi
 printf "  Effective MCPs: ${D}%s${R}\n" "$(join_by ', ' "${EFFECTIVE_MCPS[@]}")"
 printf "  Permission groups: ${D}%s${R}\n" "$(join_by ', ' "${EFFECTIVE_PERMISSION_GROUPS[@]}")"
 
@@ -455,7 +441,6 @@ cat > ~/.config/chezmoi/chezmoi.toml <<TOML
   custom_disabled_mcps = []
   custom_enabled_permission_groups = [$(for i in "${CUSTOM_ENABLED_PERMISSION_GROUPS[@]}"; do printf '"%s",' "$i"; done | sed 's/,$//')]
   custom_disabled_permission_groups = []
-  enable_api_mcps = ${ENABLE_API_MCPS}
   memory_provider = "${MEMORY_PROVIDER}"
   obsidian_vault_path = "${OBSIDIAN_VAULT_PATH}"
   azure_devops_org = "${AZURE_DEVOPS_ORG}"
@@ -491,8 +476,8 @@ if [ -d "$CHEZMOI_SRC" ] && [ ! -L "$CHEZMOI_SRC" ]; then
   printf "  ${G}+${R} Source linked: %s -> %s\n" "$CHEZMOI_SRC" "$DOTFILES_DIR"
 fi
 
-# --- Bitwarden setup (if Bitwarden-backed MCPs enabled) ---
-if [ "$ENABLE_API_MCPS" = "true" ]; then
+# --- Bitwarden setup (if selected MCPs need Bitwarden) ---
+if [ "$NEEDS_BITWARDEN" = "true" ]; then
   if ! command -v bw >/dev/null 2>&1; then
     printf "\n${B}Bitwarden CLI required for Bitwarden-backed MCPs${R}\n"
     printf "${B}Install now? [Y/n]: ${R}"
@@ -566,7 +551,7 @@ if [ "$ENABLE_API_MCPS" = "true" ]; then
         bw sync >/dev/null 2>&1
       fi
 
-      # Enable Bitwarden-backed MCPs in config and re-apply without dropping the selected profile state.
+      # Re-apply without dropping the selected profile state once Bitwarden is ready.
       cat > ~/.config/chezmoi/chezmoi.toml <<TOML
 [data]
   user_name = "${USER_NAME}"
@@ -579,7 +564,6 @@ if [ "$ENABLE_API_MCPS" = "true" ]; then
   custom_disabled_mcps = []
   custom_enabled_permission_groups = [$(for i in "${CUSTOM_ENABLED_PERMISSION_GROUPS[@]}"; do printf '"%s",' "$i"; done | sed 's/,$//')]
   custom_disabled_permission_groups = []
-  enable_api_mcps = true
   memory_provider = "${MEMORY_PROVIDER}"
   obsidian_vault_path = "${OBSIDIAN_VAULT_PATH}"
   azure_devops_org = "${AZURE_DEVOPS_ORG}"
