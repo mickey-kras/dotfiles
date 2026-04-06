@@ -244,6 +244,7 @@ section "5. Verifying config files"
 FILES=(
   "$HOME/.claude/CLAUDE.md"
   "$HOME/.claude/settings.json"
+  "$HOME/.claude/hooks/scripts/security-review.py"
   "$HOME/.claude/agents/delivery-orchestrator.md"
   "$HOME/.claude/agents/planner.md"
   "$HOME/.claude/agents/product-manager.md"
@@ -300,6 +301,29 @@ done < <(managed_skills_for_pack "$CAPABILITY_PACK")
 
 [ -f "$HOME/.local/bin/bw-mcp" ] && ok "bw-mcp" || warn "bw-mcp - missing"
 [ -f "$HOME/.local/bin/bw-login" ] && ok "bw-login" || warn "bw-login - missing"
+
+# --- 6. Verify plugin state ---
+section "6. Verifying Claude plugin state"
+if [ -f "$HOME/.claude/plugins/installed_plugins.json" ]; then
+  PLUGINS_JSON="$HOME/.claude/plugins/installed_plugins.json"
+  PLUGIN_COUNT=$(python3 - "$PLUGINS_JSON" <<'PY' 2>/dev/null || echo "?"
+import json, pathlib, sys
+path = pathlib.Path(sys.argv[1])
+data = json.loads(path.read_text())
+plugins = data.get("plugins", {})
+print(sum(len(v) for v in plugins.values()))
+PY
+)
+  if [ "$PLUGIN_COUNT" = "0" ]; then
+    ok "claude/plugins - no installed plugins"
+  elif [ "$PLUGIN_COUNT" = "?" ]; then
+    warn "claude/plugins - could not inspect installed_plugins.json"
+  else
+    fail "claude/plugins - $PLUGIN_COUNT installed plugin(s) remain"
+  fi
+else
+  ok "claude/plugins - no installed_plugins.json found"
+fi
 
 # --- Summary ---
 printf "\n${G}+ Update complete${R}\n"
