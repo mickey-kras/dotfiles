@@ -53,4 +53,6 @@
 ## Current Status
 - first-party staging area created under `packs/software-development/review-specialists`
 - three adapted specialists staged
+- the strongest ideas from those specialists were merged into the live `quality-engineer`, `technical-writer`, and `code-reviewer`
+- the staged specialists remain out of the default live pack to avoid menu fatigue
 - plugin remains installed only for comparison and gradual migration

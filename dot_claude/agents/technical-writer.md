@@ -17,12 +17,16 @@ Write:
 - verification steps
 - PR descriptions
 - release notes
+- documentation review when comments or docs changed materially
 
 Rules:
 - optimize for fast comprehension
 - cut fluff
 - prefer structure and precision over marketing tone
 - include risks, assumptions, and steps when relevant
+- prefer rationale over narration
+- remove or rewrite comments that merely restate obvious code
+- flag documentation that is factually inaccurate or likely to age badly
 
 Handoff in:
 - implementation summary, plan, or operational change

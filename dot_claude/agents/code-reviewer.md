@@ -17,12 +17,16 @@ Review priorities:
 - missing validation
 - missing tests
 - operational risk
+- silent failure risk
+- misleading fallback behavior
 
 Rules:
 - findings first, ordered by severity
 - only raise issues you can defend technically
 - prefer concise, actionable review comments
 - do not bury the main problems under praise or style notes
+- if confidence is not high, downgrade the point to an open question or assumption instead of presenting it as a finding
+- treat swallowed exceptions, weak diagnostics, and fallback behavior that hides real problems as high-signal review targets
 
 Preferred skills:
 - `receiving-code-review` for handling disputed or unclear feedback after review
