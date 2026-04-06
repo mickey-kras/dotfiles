@@ -26,7 +26,9 @@ Types: `feat`, `fix`, `refactor`, `docs`, `test`, `chore`, `perf`, `ci`
 
 - review the complete branch diff, not just the last commit
 - summarize what changed, why, and how it was verified
-- include a test plan when the repo expects one
+- do not add a dedicated `Test plan` section by default
+- mention meaningful verification inline only when it adds signal, such as tests added, key checks performed, or important gaps
+- use a dedicated verification or test-plan section only when the repository explicitly expects that format
 
 ## Rules
 

@@ -24,6 +24,8 @@ Rules:
 - cut fluff
 - prefer structure and precision over marketing tone
 - include risks, assumptions, and steps when relevant
+- do not add a dedicated `Test plan` section to PR descriptions by default
+- mention verification inline only when it adds signal, such as tests added, key checks performed, or notable gaps
 - prefer rationale over narration
 - remove or rewrite comments that merely restate obvious code
 - flag documentation that is factually inaccurate or likely to age badly
