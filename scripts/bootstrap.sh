@@ -17,13 +17,13 @@ R='\033[0m'     # reset
 
 # --- Logo ---
 printf "${C}"
-printf '  ____    _    ____ _____ \n'
-printf ' |  _ \\  / \\  / ___|_   _|\n'
-printf ' | |_) |/ _ \\| |     | |  \n'
-printf ' |  __// ___ \\ |___  | |  \n'
-printf ' |_|  /_/   \\_\\____| |_|  \n'
+printf '  ____        _    __ _ _            \n'
+printf ' |  _ \\  ___ | |_ / _(_) | ___  ___ \n'
+printf ' | | | |/ _ \\| __| |_| | |/ _ \\/ __|\n'
+printf ' | |_| | (_) | |_|  _| | |  __/\\__ \\\n'
+printf ' |____/ \\___/ \\__|_| |_|_|\\___||___/\n'
 printf "${R}\n"
-printf "${B}  People & AI Conduct Terms${R}\n"
+printf "${B}              .dotfiles${R}\n"
 printf "${D}  Claude Code - Cursor - Codex${R}\n\n"
 
 # --- Install chezmoi if missing ---

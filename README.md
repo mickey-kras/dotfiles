@@ -1,5 +1,4 @@
 # dotfiles
-<img width="1536" height="559" alt="image" src="https://github.com/user-attachments/assets/fc69d91a-0a8a-4588-9f7c-598504819171" />
 AI toolchain config synced across machines with [chezmoi](https://chezmoi.io). One command sets up Claude Code, Cursor, and Codex with shared MCPs, profile-aware permissions, capability packs, and Bitwarden-backed secret wrappers.
 
 ## Quick start
