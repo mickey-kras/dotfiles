@@ -227,6 +227,19 @@ On Windows, Git Bash is the supported path. Small `.cmd` wrappers are installed 
 
 For a quick pull-only update: `chezmoi update`
 
+## Cleanup
+
+To wipe local Claude Code, Claude Desktop, Codex, and Cursor state from a
+machine, use:
+
+```bash
+./scripts/reset-ai-tooling.sh --dry-run
+./scripts/reset-ai-tooling.sh --yes
+```
+
+The script is Bash-first and supports macOS plus Windows via Git Bash. It
+targets app bundles, user config, caches, logs, and user-level CLI shims.
+
 ## File structure
 
 ```
