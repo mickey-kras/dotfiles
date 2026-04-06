@@ -41,7 +41,8 @@ Use Context7 when the answer depends on current library behavior or official API
 ## Method
 
 Follow this sequence:
-- resolve the library ID
+- use the exact library ID directly if it is already known
+- otherwise resolve the library ID
 - choose the best match
 - query the documentation with the user question
 - answer from the returned docs, not from guesswork
@@ -60,12 +61,18 @@ If the result set is ambiguous and the answer would materially differ, ask for c
 
 Pass the full user question as the documentation query whenever practical. Broad keyword-only queries usually return weaker results than the actual task phrasing.
 
+If the exact Context7 library ID is already known, skip the resolution step and query docs directly.
+
 ## Response Rules
 
 - answer with the documentation-backed behavior
 - include version context when it matters
 - provide code examples only when they help answer the request
 - say when Context7 did not provide a confident match
+
+## Notes
+
+- Context7 also has a CLI workflow upstream, but this skill is specifically for the MCP-based setup used in this environment.
 
 ## Related Skills
 
