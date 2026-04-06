@@ -17,6 +17,9 @@ globs: ["**/*"]
 - start a fresh session for unrelated work instead of dragging old context forward
 - avoid broad multi-file work late in a congested session
 - prefer explicit plans and smaller batches when the work spans many files
+- do not inline large files into subagent prompts when the agent can read them directly
+- use the `context-budget` skill for delegation-heavy or read-heavy work
+- treat vagueness, skipped steps, and weak summaries as early context-pressure warnings
 
 ## Model Use
 

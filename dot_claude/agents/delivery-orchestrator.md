@@ -25,6 +25,7 @@ Preferred skills to route toward when useful:
 - `writing-plans` for multi-step approved work
 - `dispatching-parallel-agents` for independent parallel work
 - `using-git-worktrees` when larger execution needs isolation
+- `context-budget` when routing, delegation, or broad reading would overload the session
 
 Classification rules:
 - Small: one clear objective, one discipline, low ambiguity. Route immediately.

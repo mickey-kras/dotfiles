@@ -12,6 +12,7 @@ Before implementing anything non-trivial:
 - verify API behavior in official documentation before assuming
 - check existing issues, discussions, or docs for edge cases and known failure modes
 - prefer MCP-backed documentation and repo tools when available
+- use the `context-budget` skill when delegation or broad reading would otherwise bloat the session
 
 ## 2. Plan Before Implementing
 
@@ -32,6 +33,8 @@ Before implementing anything non-trivial:
 - make incremental changes and verify between steps
 - use the `systematic-debugging` skill for failures instead of guessing
 - use the `verification-before-completion` skill before claiming success
+- verify against the intended outcome, not just passing proxies or agent summaries
+- if the delivered result intentionally differs from the original target, make that deviation explicit
 
 ## 5. Review Before Merge
 

@@ -27,6 +27,7 @@ description: Use when about to claim work is complete, fixed, or passing, before
 ## Outputs
 - fresh verification evidence
 - accurate status statement tied to that evidence
+- explicit note of any accepted deviation from the original target
 
 ## Overview
 
@@ -66,6 +67,11 @@ For every completion claim:
 - read the real output
 - state the result exactly as the output supports it
 
+Then verify backward from the intended outcome:
+- re-check the stated goal, acceptance criteria, or plan
+- confirm the evidence actually proves that outcome, not just a nearby proxy
+- if the result intentionally differs from the original target, document the deviation explicitly instead of silently treating it as complete
+
 ## Common Failures
 
 | Claim | Requires | Not Sufficient |
@@ -77,6 +83,7 @@ For every completion claim:
 | Regression test works | Red-green cycle verified | Test passes once |
 | Agent completed | VCS diff shows changes | Agent reports "success" |
 | Requirements met | Line-by-line checklist | Tests passing |
+| Original goal satisfied | Evidence matches intended behavior | Nearby behavior, summary text |
 
 ## Red Flags - STOP
 
@@ -128,6 +135,12 @@ GOOD: Re-read plan -> Create checklist -> Verify each -> Report gaps or completi
 BAD: "Tests pass, phase complete"
 ```
 
+**Accepted deviations:**
+```
+GOOD: "Original plan expected X. We intentionally shipped Y instead because Z. Verification covers Y, not X."
+BAD: Quietly treating Y as if X was delivered
+```
+
 **Agent delegation:**
 ```
 GOOD: Agent reports success -> Check VCS diff -> Verify changes -> Report actual state
@@ -142,6 +155,8 @@ From prior failures:
 - Missing requirements shipped - incomplete features
 - Time wasted on false completion -> redirect -> rework
 - Violates the collaboration principle that honesty beats false confidence.
+
+Accepted deviations are not failures when they are explicit, defended, and verified against the new reality. Hidden deviations are still failures.
 
 ## When To Apply
 

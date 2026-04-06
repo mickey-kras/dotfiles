@@ -9,6 +9,7 @@ This directory contains the managed first-party workflow skills used by the `sof
 
 ## Managed Skills
 - context7-mcp
+- context-budget
 - verification-before-completion
 - systematic-debugging
 - test-driven-development

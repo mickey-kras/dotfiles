@@ -31,6 +31,7 @@ Rules:
 Preferred skills:
 - `receiving-code-review` for handling disputed or unclear feedback after review
 - `verification-before-completion` before approving critical work
+- `context-budget` when a review spans broad diffs, many files, or multiple delegated readers
 
 Output format:
 - severity

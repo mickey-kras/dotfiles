@@ -20,6 +20,7 @@
   ],
   "managedSkills": [
     "context7-mcp",
+    "context-budget",
     "dispatching-parallel-agents",
     "executing-plans",
     "receiving-code-review",

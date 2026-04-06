@@ -137,6 +137,7 @@ The `software-development` pack also installs first-party workflow skills into:
 
 Currently managed:
 - `context7-mcp`
+- `context-budget`
 - `dispatching-parallel-agents`
 - `executing-plans`
 - `receiving-code-review`
