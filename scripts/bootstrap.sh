@@ -73,6 +73,8 @@ ENABLE_API_MCPS=false
 USER_NAME=""
 USER_ROLE_SUMMARY=""
 USER_STACK_SUMMARY=""
+MEMORY_PROVIDER="builtin"
+OBSIDIAN_VAULT_PATH=""
 CUSTOM_ENABLED_MCPS=()
 CUSTOM_DISABLED_MCPS=()
 CUSTOM_ENABLED_PERMISSION_GROUPS=()
@@ -106,6 +108,10 @@ contains_word() {
     [ "$item" = "$needle" ] && return 0
   done
   return 1
+}
+
+unique_words() {
+  awk '!seen[$0]++'
 }
 
 detect_existing_value() {
@@ -154,6 +160,60 @@ pick_many_with_gum() {
   gum choose --no-limit --header "$prompt" "$@"
 }
 
+effective_mcps() {
+  local profile="$1" base="$2"
+  local values=()
+  case "$profile" in
+    restricted) values=("${RESTRICTED_MCPS[@]}") ;;
+    balanced) values=("${RESTRICTED_MCPS[@]}" "${BALANCED_EXTRA_MCPS[@]}") ;;
+    open) values=("${RESTRICTED_MCPS[@]}" "${BALANCED_EXTRA_MCPS[@]}" "${OPEN_EXTRA_MCPS[@]}") ;;
+    custom)
+      case "$base" in
+        restricted) values=("${RESTRICTED_MCPS[@]}") ;;
+        balanced) values=("${RESTRICTED_MCPS[@]}" "${BALANCED_EXTRA_MCPS[@]}") ;;
+        open) values=("${RESTRICTED_MCPS[@]}" "${BALANCED_EXTRA_MCPS[@]}" "${OPEN_EXTRA_MCPS[@]}") ;;
+        *) values=("${RESTRICTED_MCPS[@]}" "${BALANCED_EXTRA_MCPS[@]}") ;;
+      esac
+      values+=("${CUSTOM_ENABLED_MCPS[@]}")
+      local item filtered=()
+      for item in "${values[@]}"; do
+        if ! contains_word "$item" "${CUSTOM_DISABLED_MCPS[@]}"; then
+          filtered+=("$item")
+        fi
+      done
+      values=("${filtered[@]}")
+      ;;
+  esac
+  printf "%s\n" "${values[@]}" | unique_words
+}
+
+effective_permission_groups() {
+  local profile="$1" base="$2"
+  local values=()
+  case "$profile" in
+    restricted) values=("${RESTRICTED_PERMISSION_GROUPS[@]}") ;;
+    balanced) values=("${RESTRICTED_PERMISSION_GROUPS[@]}" "${BALANCED_EXTRA_PERMISSION_GROUPS[@]}") ;;
+    open) values=("${RESTRICTED_PERMISSION_GROUPS[@]}" "${BALANCED_EXTRA_PERMISSION_GROUPS[@]}" "${OPEN_EXTRA_PERMISSION_GROUPS[@]}") ;;
+    custom)
+      case "$base" in
+        restricted) values=("${RESTRICTED_PERMISSION_GROUPS[@]}") ;;
+        balanced) values=("${RESTRICTED_PERMISSION_GROUPS[@]}" "${BALANCED_EXTRA_PERMISSION_GROUPS[@]}") ;;
+        open) values=("${RESTRICTED_PERMISSION_GROUPS[@]}" "${BALANCED_EXTRA_PERMISSION_GROUPS[@]}" "${OPEN_EXTRA_PERMISSION_GROUPS[@]}") ;;
+        *) values=("${RESTRICTED_PERMISSION_GROUPS[@]}" "${BALANCED_EXTRA_PERMISSION_GROUPS[@]}") ;;
+      esac
+      values+=("${CUSTOM_ENABLED_PERMISSION_GROUPS[@]}")
+      local item filtered=()
+      for item in "${values[@]}"; do
+        if ! contains_word "$item" "${CUSTOM_DISABLED_PERMISSION_GROUPS[@]}"; then
+          filtered+=("$item")
+        fi
+      done
+      values=("${filtered[@]}")
+      ;;
+  esac
+  printf "%s\n" "${values[@]}" | unique_words
+}
+
 if command -v gum >/dev/null 2>&1; then
   printf "${B}Profile Selection${R}\n\n"
   profile_summary restricted
@@ -163,11 +223,31 @@ if command -v gum >/dev/null 2>&1; then
   printf "\n"
   RUNTIME_PROFILE="$(pick_with_gum "Select runtime profile" restricted balanced open custom)"
   CAPABILITY_PACK="$(pick_with_gum "Select capability pack" software-development)"
+  MEMORY_PROVIDER="$(pick_with_gum "Select memory provider" builtin obsidian)"
+  if [ "$MEMORY_PROVIDER" = "obsidian" ]; then
+    OBSIDIAN_VAULT_PATH="$(gum input --header "Obsidian vault path")"
+  fi
 else
+  if [[ "$(uname -s)" == "Darwin" ]] && command -v brew >/dev/null 2>&1; then
+    printf "${B}Optional dependency${R}\n"
+    printf "  gum provides the richer TUI installer flow.\n"
+    printf "${B}Install gum with Homebrew for future setup runs? [y/N]: ${R}"
+    read -r INSTALL_GUM
+    if [ "$INSTALL_GUM" = "y" ] || [ "$INSTALL_GUM" = "Y" ]; then
+      brew install gum || true
+    fi
+  fi
   printf "${B}Runtime profile [restricted/balanced/open/custom] (default: balanced): ${R}"
   read -r RUNTIME_PROFILE
   [ -z "$RUNTIME_PROFILE" ] && RUNTIME_PROFILE="balanced"
   CAPABILITY_PACK="software-development"
+  printf "${B}Memory provider [builtin/obsidian] (default: builtin): ${R}"
+  read -r MEMORY_PROVIDER
+  [ -z "$MEMORY_PROVIDER" ] && MEMORY_PROVIDER="builtin"
+  if [ "$MEMORY_PROVIDER" = "obsidian" ]; then
+    printf "${B}Obsidian vault path: ${R}"
+    read -r OBSIDIAN_VAULT_PATH
+  fi
 fi
 
 case "$RUNTIME_PROFILE" in
@@ -224,6 +304,16 @@ fi
 
 if [ -z "$USER_NAME" ]; then
   USER_NAME="$(whoami)"
+fi
+
+EXISTING_MEMORY_PROVIDER="$(detect_existing_value memory_provider)"
+if [ -n "$EXISTING_MEMORY_PROVIDER" ] && [ "$MEMORY_PROVIDER" = "builtin" ]; then
+  MEMORY_PROVIDER="$EXISTING_MEMORY_PROVIDER"
+fi
+
+EXISTING_OBSIDIAN_VAULT="$(detect_existing_value obsidian_vault_path)"
+if [ -n "$EXISTING_OBSIDIAN_VAULT" ] && [ -z "$OBSIDIAN_VAULT_PATH" ]; then
+  OBSIDIAN_VAULT_PATH="$EXISTING_OBSIDIAN_VAULT"
 fi
 
 EXISTING_ROLE="$(detect_existing_value user_role_summary)"
@@ -289,6 +379,10 @@ printf "  Capability pack: ${C}%s${R}\n" "$CAPABILITY_PACK"
 printf "  Display name: ${C}%s${R}\n" "$USER_NAME"
 printf "  Role: ${D}%s${R}\n" "$USER_ROLE_SUMMARY"
 printf "  Stack: ${D}%s${R}\n" "$USER_STACK_SUMMARY"
+printf "  Memory provider: ${C}%s${R}\n" "$MEMORY_PROVIDER"
+if [ "$MEMORY_PROVIDER" = "obsidian" ] && [ -n "$OBSIDIAN_VAULT_PATH" ]; then
+  printf "  Obsidian vault: ${D}%s${R}\n" "$OBSIDIAN_VAULT_PATH"
+fi
 if [ -n "$AZURE_DEVOPS_ORG" ]; then
   printf "  Azure DevOps org: ${C}%s${R}\n" "$AZURE_DEVOPS_ORG"
 fi
@@ -297,6 +391,10 @@ if [ "$RUNTIME_PROFILE" = "custom" ]; then
   printf "  Custom enabled MCPs: ${D}%s${R}\n" "$(join_by ', ' "${CUSTOM_ENABLED_MCPS[@]}")"
   printf "  Custom enabled permission groups: ${D}%s${R}\n" "$(join_by ', ' "${CUSTOM_ENABLED_PERMISSION_GROUPS[@]}")"
 fi
+mapfile -t EFFECTIVE_MCPS < <(effective_mcps "$RUNTIME_PROFILE" "$PROFILE_BASE")
+mapfile -t EFFECTIVE_PERMISSION_GROUPS < <(effective_permission_groups "$RUNTIME_PROFILE" "$PROFILE_BASE")
+printf "  Effective MCPs: ${D}%s${R}\n" "$(join_by ', ' "${EFFECTIVE_MCPS[@]}")"
+printf "  Permission groups: ${D}%s${R}\n" "$(join_by ', ' "${EFFECTIVE_PERMISSION_GROUPS[@]}")"
 
 if command -v gum >/dev/null 2>&1; then
   gum confirm "Apply this profile?" || exit 0
@@ -324,6 +422,8 @@ cat > ~/.config/chezmoi/chezmoi.toml <<TOML
   custom_enabled_permission_groups = [$(for i in "${CUSTOM_ENABLED_PERMISSION_GROUPS[@]}"; do printf '"%s",' "$i"; done | sed 's/,$//')]
   custom_disabled_permission_groups = []
   enable_api_mcps = ${ENABLE_API_MCPS}
+  memory_provider = "${MEMORY_PROVIDER}"
+  obsidian_vault_path = "${OBSIDIAN_VAULT_PATH}"
   azure_devops_org = "${AZURE_DEVOPS_ORG}"
 TOML
 printf "  ${G}+${R} Config saved to ~/.config/chezmoi/chezmoi.toml\n"

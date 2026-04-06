@@ -11,6 +11,8 @@ HOME_SLASHED="{{ replace "\\" "/" .chezmoi.homeDir }}"
 RUNTIME_PROFILE="{{ .runtime_profile | default "balanced" }}"
 PROFILE_BASE="{{ .profile_base | default "balanced" }}"
 AZURE_DEVOPS_ORG="{{ .azure_devops_org }}"
+MEMORY_PROVIDER="{{ index . "memory_provider" | default "builtin" }}"
+OBSIDIAN_VAULT_PATH="{{ index . "obsidian_vault_path" | default "" }}"
 
 {{ $profile := .runtime_profile | default "balanced" }}
 {{ $selectedMcps := list }}
@@ -209,7 +211,11 @@ PY
   fi
 
   if contains_name "memory" "${EFFECTIVE_MCP_NAMES[@]}"; then
+    if [ "$MEMORY_PROVIDER" = "obsidian" ] && [ -n "$OBSIDIAN_VAULT_PATH" ]; then
+      add_mcp memory memory -- npx -y @bitbonsai/mcpvault@latest "$OBSIDIAN_VAULT_PATH"
+    else
     add_mcp memory memory -- npx -y @modelcontextprotocol/server-memory@2026.1.26
+    fi
   fi
 
   if contains_name "http" "${EFFECTIVE_MCP_NAMES[@]}"; then

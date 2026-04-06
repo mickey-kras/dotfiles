@@ -150,6 +150,15 @@ Currently managed:
 
 These are installed from the first-party source in `packs/software-development/skills`, not from the live Claude plugin cache.
 
+### Memory
+
+The default memory provider remains the local `memory` MCP.
+
+Optional explicit memory path:
+- Obsidian via MCPVault (`@bitbonsai/mcpvault`)
+- configured through the installer with a vault path
+- stays local-first and replaces the generic `memory` server wiring when selected
+
 ### Intended `~/.claude` layout
 
 The goal is to keep `~/.claude` small and honest: only live configuration and capability surfaces should remain there. Runtime residue like transcripts, caches, telemetry, paste history, shell snapshots, and temporary session state should be disposable.

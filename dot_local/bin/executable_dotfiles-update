@@ -62,6 +62,7 @@ managed_skills_for_pack() {
   case "$pack" in
     software-development)
       cat <<'EOF'
+context-budget
 dispatching-parallel-agents
 executing-plans
 receiving-code-review
@@ -167,8 +168,10 @@ section "4. Verifying MCP registration"
 if command -v claude >/dev/null 2>&1; then
   RUNTIME_PROFILE="$(read_chezmoi_value runtime_profile)"
   PROFILE_BASE="$(read_chezmoi_value profile_base)"
+  MEMORY_PROVIDER="$(read_chezmoi_value memory_provider)"
   [ -z "$RUNTIME_PROFILE" ] && RUNTIME_PROFILE="balanced"
   [ -z "$PROFILE_BASE" ] && PROFILE_BASE="balanced"
+  [ -z "$MEMORY_PROVIDER" ] && MEMORY_PROVIDER="builtin"
 
   RESTRICTED_MCPS=(playwright context7 figma filesystem git memory thinking github azure-devops)
   BALANCED_EXTRA_MCPS=(shell docker process terraform kubernetes)
@@ -227,6 +230,7 @@ if command -v claude >/dev/null 2>&1; then
 
   ok "Runtime profile: $RUNTIME_PROFILE"
   ok "Capability pack: $(read_chezmoi_value capability_pack)"
+  ok "Memory provider: $MEMORY_PROVIDER"
 
   for mcp in "${EXPECTED[@]}"; do
     if echo "$REGISTERED" | grep -qi "$mcp"; then

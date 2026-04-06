@@ -1,5 +1,7 @@
 {{- $home := replace "\\" "/" .chezmoi.homeDir -}}
 {{- $profile := .runtime_profile | default "balanced" -}}
+{{- $memoryProvider := index . "memory_provider" | default "builtin" -}}
+{{- $obsidianVaultPath := index . "obsidian_vault_path" | default "" -}}
 {{- $selectedMcps := list -}}
 {{- if eq $profile "custom" -}}
   {{- $base := .profile_base | default "balanced" -}}
@@ -76,8 +78,13 @@
 {{- end }}
 {{- if has "memory" $selectedMcps }}
     "memory": {
+{{- if and (eq $memoryProvider "obsidian") $obsidianVaultPath }}
+      "command": "npx",
+      "args": ["-y", "@bitbonsai/mcpvault@latest", {{ $obsidianVaultPath | toJson }}]
+{{- else }}
       "command": "npx",
       "args": ["-y", "@modelcontextprotocol/server-memory@2026.1.26"]
+{{- end }}
     }
 {{- end }}
 {{- if and (has "http" $selectedMcps) (lookPath "uvx") }}{{ if or (has "playwright" $selectedMcps) (has "context7" $selectedMcps) (has "figma" $selectedMcps) (has "filesystem" $selectedMcps) (has "git" $selectedMcps) (has "shell" $selectedMcps) (has "terraform" $selectedMcps) (has "kubernetes" $selectedMcps) (has "process" $selectedMcps) (has "thinking" $selectedMcps) (has "memory" $selectedMcps) }},{{ end }}

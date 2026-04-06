@@ -7,6 +7,8 @@
 {{- $capabilityPack := promptStringOnce . "capability_pack" "Capability pack" -}}
 {{- $profileBase := promptStringOnce . "profile_base" "Base profile for custom mode" -}}
 {{- $enableApiMcps := promptBoolOnce . "enable_api_mcps" "Enable Bitwarden-backed MCPs (GitHub, AWS, Tailscale, Exa, Firecrawl, fal-ai)?" -}}
+{{- $memoryProvider := promptStringOnce . "memory_provider" "Memory provider: builtin or obsidian" -}}
+{{- $obsidianVaultPath := promptStringOnce . "obsidian_vault_path" "Obsidian vault path (press Enter to skip)" -}}
 {{- $azureDevOpsOrg := promptStringOnce . "azure_devops_org" "Azure DevOps org name (press Enter to skip)" -}}
 
 [data]
@@ -21,4 +23,6 @@
   custom_enabled_permission_groups = []
   custom_disabled_permission_groups = []
   enable_api_mcps = {{ $enableApiMcps }}
+  memory_provider = {{ $memoryProvider | quote }}
+  obsidian_vault_path = {{ $obsidianVaultPath | quote }}
   azure_devops_org = {{ $azureDevOpsOrg | quote }}

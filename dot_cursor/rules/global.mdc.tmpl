@@ -5,7 +5,10 @@ globs: ["**/*"]
 
 # {{ .user_name }}
 - Concise, direct responses.
-- Conventional Commits. Feature branches. Squash-merge PRs.
+- Use Conventional Commits: `<type>[optional scope]: <description>`.
+- Use `feat` for new functionality and `fix` for bug fixes.
+- Use `!` or `BREAKING CHANGE:` for breaking changes.
+- Feature branches. Squash-merge PRs.
 - Prefer CLI tools: gh, jq, curl, rg.
 - Capability pack: {{ .capability_pack | default "software-development" }}.
 - Use MCP only. Do not use connectors or connector-backed tools.
@@ -17,3 +20,11 @@ globs: ["**/*"]
 - Do not add any AI authorship, co-authorship, signature, footer, attribution, or branding to code, comments, commits, PRs, tickets, docs, messages, or any other content.
 - Do not write branded tool-attribution phrases or AI co-author lines in any form.
 - Only include tool or AI attribution when I explicitly ask for it.
+
+## Workflow
+- Research before coding on non-trivial work.
+- Plan before implementation when the change is broad, risky, or spans many files.
+- Keep context lean: do not inline large files into delegated work when file paths and concise summaries are enough.
+- Test before or alongside implementation when practical.
+- Verify against the intended outcome, not just passing proxies or summaries.
+- If the delivered result intentionally differs from the original target, make that deviation explicit.

@@ -9,7 +9,9 @@
 ## Workflow
 - "ship it" = commit + push + open PR.
 - Outline the plan before big changes (>3 files).
-- Conventional Commits: `<type>(<scope>): <description>`.
+- Use Conventional Commits: `<type>[optional scope]: <description>`.
+- Use `feat` for new functionality and `fix` for bug fixes.
+- Use `!` before the colon or a `BREAKING CHANGE:` footer for breaking changes.
 - Feature branches only. Squash-merge PRs.
 - Prefer CLI tools: gh, jq, curl, rg, az, terraform, kubectl, k6.
 - Prefer MCP tools that are available in the current local configuration and allowed by this policy.
@@ -17,6 +19,21 @@
 - Ignore Sentry and any Sentry MCP, plugin, or config entry even if it appears locally. Do not use it, suggest it, or re-add it.
 - For diagrams: generate Mermaid (renders in GitHub, VS Code, and most markdown viewers).
 - Capability pack: {{ .capability_pack | default "software-development" }}.
+
+## Delivery Model
+- Research before coding on non-trivial work.
+- Plan before implementation when the change spans more than 3 files or has meaningful risk.
+- Test before or alongside implementation when practical.
+- Use context deliberately: keep prompts lean, do not inline large files into delegated work, and checkpoint or start fresh when the session gets heavy.
+- Verify against the intended outcome, not just passing proxies, summaries, or nearby behavior.
+- If the delivered result intentionally differs from the original target, make that deviation explicit instead of quietly treating it as complete.
+
+## Managed Skills
+- `context7-mcp` for current library and API documentation
+- `context-budget` for delegation-heavy or read-heavy work
+- `writing-plans` and `executing-plans` for multi-step delivery
+- `test-driven-development` and `verification-before-completion` for implementation rigor
+- `systematic-debugging` for failures and unclear behavior
 
 ## Output Charset
 - `^[A-Za-zА-Яа-яЁё0-9 !"#$%&'()*+,\-./:;<=>?@[\\\]^_`{|}~\r\n\t]*$`
