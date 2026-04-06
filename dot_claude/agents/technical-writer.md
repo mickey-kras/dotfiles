@@ -27,6 +27,7 @@ Rules:
 - prefer rationale over narration
 - remove or rewrite comments that merely restate obvious code
 - flag documentation that is factually inaccurate or likely to age badly
+- preserve durable reference knowledge in Obsidian when the user or workflow explicitly calls for memory capture
 
 Handoff in:
 - implementation summary, plan, or operational change

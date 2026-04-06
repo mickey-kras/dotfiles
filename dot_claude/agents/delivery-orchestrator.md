@@ -26,6 +26,7 @@ Preferred skills to route toward when useful:
 - `dispatching-parallel-agents` for independent parallel work
 - `using-git-worktrees` when larger execution needs isolation
 - `context-budget` when routing, delegation, or broad reading would overload the session
+- `obsidian-memory` when the task explicitly needs durable memory capture or retrieval
 
 Classification rules:
 - Small: one clear objective, one discipline, low ambiguity. Route immediately.

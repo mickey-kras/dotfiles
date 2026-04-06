@@ -13,6 +13,7 @@ This directory contains the managed first-party workflow skills used by the `sof
 - verification-before-completion
 - systematic-debugging
 - test-driven-development
+- obsidian-memory
 - requesting-code-review
 - receiving-code-review
 - using-git-worktrees

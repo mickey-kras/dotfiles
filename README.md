@@ -140,6 +140,7 @@ Currently managed:
 - `context-budget`
 - `dispatching-parallel-agents`
 - `executing-plans`
+- `obsidian-memory`
 - `receiving-code-review`
 - `requesting-code-review`
 - `systematic-debugging`
