@@ -211,22 +211,82 @@ if m:
 PY
 }
 
-profile_summary() {
-  local profile="$1"
-  case "$profile" in
-    restricted)
-      printf "restricted  Remote work systems, no local/system risk by default\n"
-      ;;
-    balanced)
-      printf "balanced    Restricted plus practical local execution and containers\n"
-      ;;
-    open)
-      printf "open        Balanced plus cloud, web, and high-injection MCPs\n"
-      ;;
-    custom)
-      printf "custom      Curated MCP catalog and permission groups, user-selected\n"
-      ;;
-  esac
+pad_cell() {
+  local width="$1"
+  local text="$2"
+  printf "%-*s" "$width" "$text"
+}
+
+render_profile_comparison() {
+  local label_w=14
+  local col_w=20
+  local sep="+-$(printf '%*s' "$label_w" '' | tr ' ' '-')-+-$(printf '%*s' "$col_w" '' | tr ' ' '-')-+-$(printf '%*s' "$col_w" '' | tr ' ' '-')-+-$(printf '%*s' "$col_w" '' | tr ' ' '-')-+"
+
+  printf "%s\n" "$sep"
+  printf "| %s | %s | %s | %s |\n" \
+    "$(pad_cell "$label_w" "")" \
+    "$(pad_cell "$col_w" "restricted")" \
+    "$(pad_cell "$col_w" "balanced")" \
+    "$(pad_cell "$col_w" "open")"
+  printf "%s\n" "$sep"
+  printf "| %s | %s | %s | %s |\n" \
+    "$(pad_cell "$label_w" "Summary")" \
+    "$(pad_cell "$col_w" "Remote work only")" \
+    "$(pad_cell "$col_w" "Practical local dev")" \
+    "$(pad_cell "$col_w" "Broadest access")"
+  printf "| %s | %s | %s | %s |\n" \
+    "$(pad_cell "$label_w" "Local exec")" \
+    "$(pad_cell "$col_w" "no")" \
+    "$(pad_cell "$col_w" "yes")" \
+    "$(pad_cell "$col_w" "yes")"
+  printf "| %s | %s | %s | %s |\n" \
+    "$(pad_cell "$label_w" "Containers")" \
+    "$(pad_cell "$col_w" "no")" \
+    "$(pad_cell "$col_w" "yes")" \
+    "$(pad_cell "$col_w" "yes")"
+  printf "| %s | %s | %s | %s |\n" \
+    "$(pad_cell "$label_w" "Cloud / web")" \
+    "$(pad_cell "$col_w" "no")" \
+    "$(pad_cell "$col_w" "limited")" \
+    "$(pad_cell "$col_w" "yes")"
+  printf "| %s | %s | %s | %s |\n" \
+    "$(pad_cell "$label_w" "Risk")" \
+    "$(pad_cell "$col_w" "low")" \
+    "$(pad_cell "$col_w" "medium")" \
+    "$(pad_cell "$col_w" "high")"
+  printf "%s\n" "$sep"
+  printf "| %s | %s | %s | %s |\n" \
+    "$(pad_cell "$label_w" "Key MCPs")" \
+    "$(pad_cell "$col_w" "github")" \
+    "$(pad_cell "$col_w" "github")" \
+    "$(pad_cell "$col_w" "github")"
+  printf "| %s | %s | %s | %s |\n" \
+    "$(pad_cell "$label_w" "")" \
+    "$(pad_cell "$col_w" "azure-devops")" \
+    "$(pad_cell "$col_w" "azure-devops")" \
+    "$(pad_cell "$col_w" "azure-devops")"
+  printf "| %s | %s | %s | %s |\n" \
+    "$(pad_cell "$label_w" "")" \
+    "$(pad_cell "$col_w" "context7")" \
+    "$(pad_cell "$col_w" "atlassian")" \
+    "$(pad_cell "$col_w" "atlassian")"
+  printf "| %s | %s | %s | %s |\n" \
+    "$(pad_cell "$label_w" "")" \
+    "$(pad_cell "$col_w" "figma")" \
+    "$(pad_cell "$col_w" "shell")" \
+    "$(pad_cell "$col_w" "http")"
+  printf "| %s | %s | %s | %s |\n" \
+    "$(pad_cell "$label_w" "")" \
+    "$(pad_cell "$col_w" "filesystem")" \
+    "$(pad_cell "$col_w" "docker")" \
+    "$(pad_cell "$col_w" "aws")"
+  printf "| %s | %s | %s | %s |\n" \
+    "$(pad_cell "$label_w" "")" \
+    "$(pad_cell "$col_w" "git")" \
+    "$(pad_cell "$col_w" "kubernetes")" \
+    "$(pad_cell "$col_w" "tailscale")"
+  printf "%s\n" "$sep"
+  printf "custom  Start from restricted, balanced, or open and choose curated MCPs and permission groups yourself.\n"
 }
 
 pick_with_gum() {
@@ -309,10 +369,7 @@ install_gum_if_supported || true
 
 if [ -n "$GUM_BIN" ]; then
   printf "${B}Profile Selection${R}\n\n"
-  profile_summary restricted
-  profile_summary balanced
-  profile_summary open
-  profile_summary custom
+  render_profile_comparison
   printf "\n"
   RUNTIME_PROFILE="$(pick_with_gum "Select runtime profile" restricted balanced open custom)"
   CAPABILITY_PACK="$(pick_with_gum "Select capability pack" software-development)"
