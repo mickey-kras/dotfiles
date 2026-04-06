@@ -6,10 +6,14 @@ scripts/
 !scripts/chezmoi/run_*
 
 {{ if eq .chezmoi.os "windows" }}
-install-claude-mcps.sh
+scripts/chezmoi/run_onchange_after_install-claude-mcps.ps1.tmpl
+scripts/chezmoi/run_onchange_after_configure-global-git-hooks.ps1.tmpl
 {{ end }}
 
 {{ if ne .chezmoi.os "windows" }}
-install-claude-mcps.ps1
+scripts/chezmoi/run_onchange_after_install-claude-mcps.ps1.tmpl
+scripts/chezmoi/run_onchange_after_configure-global-git-hooks.ps1.tmpl
 dot_local/bin/executable_dotfiles-update.cmd
+dot_local/bin/executable_bw-login.cmd
+dot_local/bin/executable_bw-mcp.cmd
 {{ end }}
