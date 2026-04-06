@@ -17,6 +17,12 @@ detect_bw_status() {
   fi
 }
 
+prompt_visible() {
+  local prompt="$1"
+  printf '%s' "$prompt"
+  IFS= read -r REPLY
+}
+
 prompt_hidden() {
   local prompt="$1"
   local stty_state=""
@@ -30,6 +36,42 @@ prompt_hidden() {
     stty "$stty_state"
   fi
   printf '\n'
+}
+
+choose_login_method() {
+  if [ -n "${BW_CLIENTID:-}" ] && [ -n "${BW_CLIENTSECRET:-}" ]; then
+    printf 'apikey'
+    return 0
+  fi
+
+  printf 'Choose Bitwarden login method:\n'
+  printf '  1. Email + password\n'
+  printf '  2. API key\n'
+  printf '  3. SSO\n'
+  prompt_visible "Select [1/2/3] (default: 1): "
+  case "${REPLY:-1}" in
+    2) printf 'apikey' ;;
+    3) printf 'sso' ;;
+    *) printf 'password' ;;
+  esac
+}
+
+perform_login() {
+  local method="$1"
+  case "$method" in
+    apikey)
+      printf 'Bitwarden API key login selected.\n'
+      bw login --apikey
+      ;;
+    sso)
+      printf 'Bitwarden SSO login selected.\n'
+      bw login --sso
+      ;;
+    *)
+      printf 'Bitwarden email/password login selected.\n'
+      bw login
+      ;;
+  esac
 }
 
 write_session_file() {
@@ -58,7 +100,7 @@ unlock_bw() {
 
   if ! session="$(bw unlock --raw --passwordfile "$tmpfile")"; then
     rm -f "$tmpfile"
-    fail "ERROR: Failed to unlock Bitwarden vault. Check your master password and CLI login state."
+    return 1
   fi
 
   rm -f "$tmpfile"
@@ -67,12 +109,13 @@ unlock_bw() {
 }
 
 main() {
-  local status
+  local status login_method
   status="$(detect_bw_status)"
 
   if [ "$status" = "unauthenticated" ]; then
     printf 'Bitwarden login required.\n'
-    bw login
+    login_method="$(choose_login_method)"
+    perform_login "$login_method"
     status="$(detect_bw_status)"
   fi
 
@@ -81,7 +124,22 @@ main() {
     exit 0
   fi
 
-  unlock_bw
+  if unlock_bw; then
+    exit 0
+  fi
+
+  printf 'Existing Bitwarden CLI state may be stale or tied to a different login method.\n'
+  prompt_visible "Reset Bitwarden CLI state with 'bw logout' and log in again? [Y/n]: "
+  case "${REPLY:-Y}" in
+    n|N)
+      fail "ERROR: Failed to unlock Bitwarden vault. Check your master password and CLI login state."
+      ;;
+  esac
+
+  bw logout || true
+  login_method="$(choose_login_method)"
+  perform_login "$login_method"
+  unlock_bw || fail "ERROR: Failed to unlock Bitwarden vault after resetting login state."
 }
 
 main "$@"
