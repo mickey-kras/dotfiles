@@ -44,5 +44,12 @@ if (!session) {
 }
 
 const sessionPath = path.join(os.homedir(), ".bw_session");
-fs.writeFileSync(sessionPath, `${session}\n`, { mode: 0o600 });
+fs.writeFileSync(sessionPath, `${session}\n`);
+if (process.platform !== "win32") {
+  try {
+    fs.chmodSync(sessionPath, 0o600);
+  } catch (error) {
+    fail(`ERROR: Failed to secure ${sessionPath}: ${error.message}`);
+  }
+}
 console.log(`BW_SESSION saved to ${sessionPath}`);

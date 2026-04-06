@@ -94,7 +94,7 @@ All versions are pinned for supply-chain safety. OAuth MCPs authenticate in the 
 | Firecrawl 3.11.0 | open | stdio (npx) | API key | high | Web scraping and crawling |
 | fal-ai 2.1.4 | open | stdio (npx) | API key | medium | AI image generation |
 
-**Bitwarden-backed MCPs** require [Bitwarden CLI](https://bitwarden.com/help/cli/) plus a valid `~/.bw_session` file. Run `bw-login` after installing dotfiles to refresh it.
+**Bitwarden-backed MCPs** require [Bitwarden CLI](https://bitwarden.com/help/cli/) plus a valid `~/.bw_session` file. Run `bw-login` after installing dotfiles to refresh the shared session cache used by Claude, Codex, and Cursor.
 
 Required Bitwarden items and structure:
 - `mcp-github`: login password = GitHub PAT
@@ -106,7 +106,9 @@ Required Bitwarden items and structure:
 
 Then:
 ```bash
-bw-login && chezmoi apply
+bw-login
+export BW_SESSION="$(cat ~/.bw_session)"
+chezmoi apply
 ```
 
 ### Agents
@@ -173,7 +175,6 @@ Keep:
 - `skills/`
 - `settings.json`
 - `settings.local.json`
-- `bw-mcp.sh`
 
 Treat everything else as runtime state:
 - safe to recreate
@@ -200,7 +201,7 @@ All profiles still keep:
 
 Global Git hooks are also installed at `~/.config/git/hooks` and enabled through `core.hooksPath`, so the same charset and no-AI-attribution rules are enforced before commit and before push across all local repositories.
 
-`~/.local/bin/bw-mcp` and `~/.local/bin/bw-login` are installed as shared helpers so Claude, Codex, and Cursor can all use the same Bitwarden-backed MCP definitions.
+`~/.local/bin/bw-mcp` and `~/.local/bin/bw-login` are installed as shared helpers so Claude, Codex, and Cursor can all use the same Bitwarden-backed MCP definitions. `bw-login` writes the unlocked session token to `~/.bw_session`; export it into the current shell only when a shell-driven command needs it immediately.
 
 ## What gets configured
 
@@ -219,7 +220,7 @@ dotfiles-update   # Pull, apply, check versions, verify profile-aligned MCPs, se
 
 Installed at `~/.local/bin/dotfiles-update` by chezmoi. Make sure `~/.local/bin` is in your PATH.
 
-On Windows, a `.cmd` wrapper is installed alongside so `dotfiles-update` works from PowerShell and cmd. Requires Git Bash (`bash` in PATH) - included with [Git for Windows](https://gitforwindows.org).
+On Windows, Git Bash is the primary path. Small `.cmd` wrappers are installed alongside selected helpers for compatibility when a Windows-native launcher invokes them. Git Bash (`bash` in PATH) is still required and comes with [Git for Windows](https://gitforwindows.org).
 
 For a quick pull-only update: `chezmoi update`
 
@@ -269,18 +270,19 @@ dot_config/
 dot_local/
   bin/
     executable_bw-mcp                 # -> ~/.local/bin/bw-mcp
+    executable_bw-mcp.cmd             # -> ~/.local/bin/bw-mcp.cmd (Windows compatibility)
     executable_bw-login               # -> ~/.local/bin/bw-login
     executable_bw-login.cmd           # -> ~/.local/bin/bw-login.cmd (Windows only)
     executable_dotfiles-update        # -> ~/.local/bin/dotfiles-update
     executable_dotfiles-update.cmd    # -> ~/.local/bin/dotfiles-update.cmd (Windows only)
 scripts/
   bootstrap.sh                        # Main setup path for macOS/Linux/WSL/Git Bash
-  bootstrap.ps1                       # Legacy compatibility path
+  bootstrap.ps1                       # Legacy compatibility only
   chezmoi/
     run_onchange_after_configure-global-git-hooks.sh.tmpl   # Unix global Git hook setup
-    run_onchange_after_configure-global-git-hooks.ps1.tmpl  # Windows global Git hook setup
+    run_onchange_after_configure-global-git-hooks.ps1.tmpl  # Legacy Windows global Git hook setup
     run_onchange_after_install-claude-mcps.sh.tmpl          # Authoritative Claude MCP reconciliation
-    run_onchange_after_install-claude-mcps.ps1.tmpl         # Windows MCP registration
+    run_onchange_after_install-claude-mcps.ps1.tmpl         # Legacy Windows MCP registration
 ```
 
 ## Security

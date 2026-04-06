@@ -25,12 +25,14 @@ npm install -g @bitwarden/cli
 ## Login and unlock
 
 ```bash
-bw login
-export BW_SESSION=$(bw unlock --raw)
+bw-login
+export BW_SESSION="$(cat ~/.bw_session)"
 ```
 
-`BW_SESSION` must be available in the shell where you run `chezmoi apply` or
-Claude MCP reconciliation.
+`bw-login` stores the unlocked session token in `~/.bw_session` so Claude
+Desktop, Claude Code, Codex, and Cursor can all use the same Bitwarden-backed
+helpers. Export `BW_SESSION` in the current shell when you want shell-driven
+operations like `chezmoi apply` to use the same session immediately.
 
 ## Required Bitwarden items
 
@@ -67,6 +69,6 @@ chezmoi apply
 ## Troubleshooting
 
 - **`bw: command not found`**: install Bitwarden CLI first.
-- **unlock or auth errors**: export a fresh `BW_SESSION` in the same shell and retry.
+- **unlock or auth errors**: run `bw-login` again, then export `BW_SESSION` from `~/.bw_session` in the same shell if needed.
 - **item not found**: the Bitwarden item name must match the expected name exactly.
 - **do not want secret-backed MCPs on this machine**: choose a runtime profile that omits them, or disable them in custom mode and re-run setup.

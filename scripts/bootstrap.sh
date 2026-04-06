@@ -1,10 +1,17 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# One-command bootstrap for macOS / Linux / WSL
+# One-command bootstrap for macOS / Linux / WSL / Windows (Git Bash)
 # Usage: bash <(curl -sL https://raw.githubusercontent.com/mickey-kras/dotfiles/main/scripts/bootstrap.sh)
 
 REPO="mickey-kras/dotfiles"
+
+is_windows_gitbash() {
+  case "$(uname -s)" in
+    MINGW*|MSYS*|CYGWIN*) return 0 ;;
+    *) return 1 ;;
+  esac
+}
 
 # --- Colors ---
 C='\033[1;36m'  # cyan
@@ -31,6 +38,10 @@ if ! command -v chezmoi >/dev/null 2>&1; then
   printf "${Y}>${R} Installing chezmoi...\n"
   if [[ "$(uname -s)" == "Darwin" ]]; then
     brew install chezmoi
+  elif is_windows_gitbash && command -v winget.exe >/dev/null 2>&1; then
+    winget.exe install -e --id twpayne.chezmoi --accept-package-agreements --accept-source-agreements
+  elif is_windows_gitbash && command -v choco >/dev/null 2>&1; then
+    choco install chezmoi -y
   elif command -v apt-get >/dev/null 2>&1; then
     sudo sh -c 'curl -fsLS get.chezmoi.io | sh' && sudo mv ./bin/chezmoi /usr/local/bin/
   elif command -v dnf >/dev/null 2>&1; then
@@ -486,6 +497,10 @@ if [ "$ENABLE_API_MCPS" = "true" ]; then
     if [ "$BW_INSTALL" != "n" ] && [ "$BW_INSTALL" != "N" ]; then
       if [[ "$(uname -s)" == "Darwin" ]] && command -v brew >/dev/null 2>&1; then
         brew install bitwarden-cli
+      elif is_windows_gitbash && command -v winget.exe >/dev/null 2>&1; then
+        winget.exe install -e --id Bitwarden.CLI --accept-package-agreements --accept-source-agreements
+      elif is_windows_gitbash && command -v choco >/dev/null 2>&1; then
+        choco install bitwarden-cli -y
       elif command -v npm >/dev/null 2>&1; then
         npm install -g @bitwarden/cli
       elif command -v apt-get >/dev/null 2>&1; then
@@ -499,14 +514,8 @@ if [ "$ENABLE_API_MCPS" = "true" ]; then
 
   if command -v bw >/dev/null 2>&1; then
     printf "\n${B}Bitwarden login & unlock${R}\n"
-    BW_STATUS=$(bw status 2>/dev/null | grep -o '"status":"[^"]*"' | cut -d'"' -f4)
-    if [ "$BW_STATUS" = "unauthenticated" ]; then
-      printf "  ${Y}>${R} Not logged in. Running ${C}bw login${R}...\n"
-      bw login
-    fi
-    printf "  ${Y}>${R} Unlocking vault...\n"
-    export BW_SESSION=$(bw unlock --raw)
-    if [ -n "$BW_SESSION" ]; then
+    if "$HOME/.local/bin/bw-login"; then
+      export BW_SESSION="$(cat "$HOME/.bw_session")"
       printf "  ${G}+${R} Vault unlocked\n"
 
       # --- Ensure required Bitwarden items exist ---
@@ -554,11 +563,22 @@ if [ "$ENABLE_API_MCPS" = "true" ]; then
         bw sync >/dev/null 2>&1
       fi
 
-      # Enable Bitwarden-backed MCPs in config and re-apply
+      # Enable Bitwarden-backed MCPs in config and re-apply without dropping the selected profile state.
       cat > ~/.config/chezmoi/chezmoi.toml <<TOML
 [data]
   user_name = "${USER_NAME}"
+  user_role_summary = "${USER_ROLE_SUMMARY}"
+  user_stack_summary = "${USER_STACK_SUMMARY}"
+  runtime_profile = "${RUNTIME_PROFILE}"
+  capability_pack = "${CAPABILITY_PACK}"
+  profile_base = "${PROFILE_BASE}"
+  custom_enabled_mcps = [$(for i in "${CUSTOM_ENABLED_MCPS[@]}"; do printf '"%s",' "$i"; done | sed 's/,$//')]
+  custom_disabled_mcps = []
+  custom_enabled_permission_groups = [$(for i in "${CUSTOM_ENABLED_PERMISSION_GROUPS[@]}"; do printf '"%s",' "$i"; done | sed 's/,$//')]
+  custom_disabled_permission_groups = []
   enable_api_mcps = true
+  memory_provider = "${MEMORY_PROVIDER}"
+  obsidian_vault_path = "${OBSIDIAN_VAULT_PATH}"
   azure_devops_org = "${AZURE_DEVOPS_ORG}"
 TOML
       printf "\n${B}Re-applying dotfiles with Bitwarden-backed MCPs...${R}\n"
@@ -566,11 +586,11 @@ TOML
       printf "  ${G}+${R} Bitwarden-backed MCPs configured\n"
     else
       printf "  ${RED}x${R} Failed to unlock vault.\n"
-      printf "  Run manually: ${C}export BW_SESSION=\$(bw unlock --raw) && chezmoi apply${R}\n\n"
+      printf "  Run manually: ${C}bw-login && export BW_SESSION=\$(cat ~/.bw_session) && chezmoi apply${R}\n\n"
     fi
   else
     printf "\n${Y}!${R}  Skipping Bitwarden-backed MCPs - install Bitwarden CLI later and run:\n"
-    printf "  ${C}bw login && export BW_SESSION=\$(bw unlock --raw) && chezmoi apply${R}\n\n"
+    printf "  ${C}bw-login && export BW_SESSION=\$(cat ~/.bw_session) && chezmoi apply${R}\n\n"
   fi
 fi
 
