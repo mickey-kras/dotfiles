@@ -47,7 +47,8 @@
           "command": "node $HOME/.claude/hooks/scripts/block-no-verify.js"
         }
       ]
-    },
+    }{{ if ne $profile "open" }},{{ end }}
+{{- if ne $profile "open" }}
     {
       "matcher": "Write|Edit",
       "hooks": [
@@ -57,6 +58,7 @@
         }
       ]
     },
+{{- end }}
     {
       "matcher": "Write|Edit|MultiEdit",
       "hooks": [
