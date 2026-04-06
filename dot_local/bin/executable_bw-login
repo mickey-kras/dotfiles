@@ -2,6 +2,7 @@
 const fs = require("fs");
 const os = require("os");
 const path = require("path");
+const readline = require("readline");
 const { spawnSync } = require("child_process");
 
 function fail(message) {
@@ -9,47 +10,84 @@ function fail(message) {
   process.exit(1);
 }
 
-const statusResult = spawnSync("bw", ["status"], {
-  encoding: "utf8",
-  stdio: ["inherit", "pipe", "pipe"]
-});
+function promptHidden(question) {
+  return new Promise((resolve) => {
+    const rl = readline.createInterface({
+      input: process.stdin,
+      output: process.stdout
+    });
 
-let status = "unauthenticated";
-if (statusResult.status === 0) {
-  try {
-    status = JSON.parse(statusResult.stdout).status;
-  } catch {
-    status = "unknown";
+    rl.stdoutMuted = true;
+    rl._writeToOutput = function writeToOutput(stringToWrite) {
+      if (rl.stdoutMuted) {
+        rl.output.write("*");
+      } else {
+        rl.output.write(stringToWrite);
+      }
+    };
+
+    rl.question(question, (answer) => {
+      rl.history = rl.history.slice(1);
+      rl.output.write("\n");
+      rl.close();
+      resolve(answer);
+    });
+  });
+}
+
+async function main() {
+  const statusResult = spawnSync("bw", ["status"], {
+    encoding: "utf8",
+    stdio: ["inherit", "pipe", "pipe"]
+  });
+
+  let status = "unauthenticated";
+  if (statusResult.status === 0) {
+    try {
+      status = JSON.parse(statusResult.stdout).status;
+    } catch {
+      status = "unknown";
+    }
   }
-}
 
-if (status === "unauthenticated") {
-  const loginResult = spawnSync("bw", ["login"], { stdio: "inherit" });
-  if (loginResult.status !== 0) {
-    process.exit(loginResult.status ?? 1);
+  if (status === "unauthenticated") {
+    console.log("Bitwarden login required.");
+    const loginResult = spawnSync("bw", ["login"], { stdio: "inherit" });
+    if (loginResult.status !== 0) {
+      process.exit(loginResult.status ?? 1);
+    }
   }
-}
 
-const unlockResult = spawnSync("bw", ["unlock", "--raw"], {
-  encoding: "utf8",
-  stdio: ["inherit", "pipe", "inherit"]
-});
-if (unlockResult.status !== 0) {
-  process.exit(unlockResult.status ?? 1);
-}
-
-const session = unlockResult.stdout.trim();
-if (!session) {
-  fail("ERROR: Bitwarden unlock returned an empty session.");
-}
-
-const sessionPath = path.join(os.homedir(), ".bw_session");
-fs.writeFileSync(sessionPath, `${session}\n`);
-if (process.platform !== "win32") {
-  try {
-    fs.chmodSync(sessionPath, 0o600);
-  } catch (error) {
-    fail(`ERROR: Failed to secure ${sessionPath}: ${error.message}`);
+  const existingPassword = process.env.BW_PASSWORD;
+  const masterPassword = existingPassword || (await promptHidden("Bitwarden master password: "));
+  if (!masterPassword) {
+    fail("ERROR: Bitwarden master password is required to unlock the vault.");
   }
+
+  const unlockResult = spawnSync("bw", ["unlock", "--raw", "--passwordenv", "BW_PASSWORD"], {
+    encoding: "utf8",
+    env: { ...process.env, BW_PASSWORD: masterPassword },
+    stdio: ["inherit", "pipe", "inherit"]
+  });
+  if (unlockResult.status !== 0) {
+    fail("ERROR: Failed to unlock Bitwarden vault. Check your master password and CLI login state.");
+  }
+
+  const session = unlockResult.stdout.trim();
+  if (!session) {
+    fail("ERROR: Bitwarden unlock returned an empty session.");
+  }
+
+  const sessionPath = path.join(os.homedir(), ".bw_session");
+  fs.writeFileSync(sessionPath, `${session}\n`);
+  if (process.platform !== "win32") {
+    try {
+      fs.chmodSync(sessionPath, 0o600);
+    } catch (error) {
+      fail(`ERROR: Failed to secure ${sessionPath}: ${error.message}`);
+    }
+  }
+  console.log(`BW_SESSION saved to ${sessionPath}`);
 }
-console.log(`BW_SESSION saved to ${sessionPath}`);
+
+main().catch((error) => fail(`ERROR: ${error.message}`));

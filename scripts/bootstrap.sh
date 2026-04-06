@@ -780,6 +780,7 @@ TOML
       printf "  ${G}+${R} Bitwarden-backed MCPs configured\n"
     else
       printf "  ${RED}x${R} Failed to unlock vault.\n"
+      printf "  bw-login should prompt for your Bitwarden master password and write ~/.bw_session.\n"
       printf "  Run manually: ${C}bw-login && export BW_SESSION=\$(cat ~/.bw_session) && chezmoi apply${R}\n\n"
     fi
   else
