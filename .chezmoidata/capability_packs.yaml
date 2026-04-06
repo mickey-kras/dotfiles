@@ -18,6 +18,7 @@ packs:
       - technical-writer
       - incident-commander
     managed_skills:
+      - context7-mcp
       - dispatching-parallel-agents
       - executing-plans
       - receiving-code-review

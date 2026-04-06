@@ -8,6 +8,7 @@ This directory contains the managed first-party workflow skills used by the `sof
 - adapt the skills to local dotfiles policy, agents, and runtime profiles
 
 ## Managed Skills
+- context7-mcp
 - verification-before-completion
 - systematic-debugging
 - test-driven-development
