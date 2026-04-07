@@ -25,48 +25,59 @@ chezmoi init --apply --source ~/dotfiles
 ```
 
 The installer now asks for:
-1. **Runtime profile** - `restricted`, `balanced`, `open`, or `custom`
-2. **Capability pack** - currently `software-development`
-3. **Display name, role summary, stack summary**
-4. **Azure DevOps org** - optional
-5. **Custom MCPs and permission groups** if `custom` is selected
+1. **Capability pack** - currently `software-development` or `content-creation`
+2. **Pack-local profile** - preset or custom, depending on your pack choices
+3. **Pack settings** - for example memory provider, vault path, workspace path, or Azure DevOps org
+4. **Display name, role summary, stack summary**
 
 If `gum` is installed, setup uses a richer TUI. Otherwise it falls back to plain Bash prompts.
 
 ## What gets installed
 
-### Runtime profiles
+### Pack-first architecture
 
-`restricted`
-- remote work systems allowed
-- no local or system mutation by default
-- no `uv` or `uvx`
-- no high-injection web MCPs
+The source of truth is now the selected pack, not a global profile table. Each pack owns:
+- preset profiles
+- curated MCP catalog
+- managed skills
+- Claude agents and rules
+- permission groups
+- pack-specific settings
 
-`balanced`
-- `restricted` plus practical local execution and containers
-- good default for work machines
+The shared resolver in `templates/resolved-state.json` normalizes the current selection, snaps exact customizations back to a preset when possible, and renders Claude, Cursor, and Codex from one resolved state.
 
-`open`
-- `balanced` plus cloud, web, and high-injection MCPs
-- best fit for trusted personal machines
+### Pack profiles
 
-`custom`
-- curated MCP catalog and permission groups
-- you choose the exact subset
+`software-development`
+- `restricted`: read-heavy repo work and low-trust machines
+- `balanced`: daily-driver development profile
+- `open`: personal-machine profile for broader cloud, web, and secret-backed tooling
+
+`content-creation`
+- `focused`: low-risk writing and synthesis
+- `studio`: default for structured research, design collaboration, and iteration
+- `campaign`: broader search, crawl, and image-generation surface for trusted personal machines
 
 ### Capability packs
 
-Current pack:
+Current packs:
 - `software-development`
+- `content-creation`
 
-This pack provides the SDLC team model across tools:
-- Claude Code subagents
+`software-development` provides the SDLC operating model across tools:
+- Claude Code specialists
 - Codex operating model
 - Cursor rules and workflow guidance
 - Managed first-party workflow skills for Claude and Codex
 
-Future packs can reuse the same runtime profiles while swapping the working style and capability surface.
+`content-creation` provides a content and editorial operating model:
+- research and editorial agents
+- content-specific review rules
+- campaign and editorial playbooks
+- curated skills for planning, memory, and verification
+
+Design-complete backlog candidate:
+- `research-and-strategy`
 
 ### MCPs
 
@@ -118,6 +129,8 @@ chezmoi apply
 
 ### Agents
 
+Claude agents are now pack-owned assets. The installer reconciles the selected pack into `~/.claude/agents` by symlinking the enabled agent set and removing only previously managed symlinks.
+
 | Agent | Purpose |
 |-------|---------|
 | delivery-orchestrator | Front door for free-form requests; decomposes work and routes to the right specialists |
@@ -138,11 +151,11 @@ chezmoi apply
 
 ### Skills
 
-The `software-development` pack also installs first-party workflow skills into:
+Managed first-party skills are installed pack-by-pack into:
 - `~/.claude/skills`
 - `~/.codex/skills`
 
-Currently managed:
+`software-development` managed skills:
 - `context7-mcp`
 - `context-budget`
 - `dispatching-parallel-agents`
@@ -156,7 +169,13 @@ Currently managed:
 - `verification-before-completion`
 - `writing-plans`
 
-These are installed from the first-party source in `packs/software-development/skills`, not from the live Claude plugin cache.
+`content-creation` managed skills:
+- `context-budget`
+- `obsidian-memory`
+- `verification-before-completion`
+- `writing-plans`
+
+These are installed from first-party pack directories in `packs/*/skills`, not from live plugin caches.
 
 ### Memory
 
@@ -188,10 +207,11 @@ Treat everything else as runtime state:
 
 ### Permissions and settings
 
-`~/.claude/settings.json` is now runtime-profile-aware:
-- `restricted` keeps a read-heavy baseline and blocks `uv` and `uvx`
-- `balanced` adds practical local execution and container workflows
-- `open` adds broader package, cloud, secret, and web access
+`~/.claude/settings.json` is now resolved-state-aware:
+- the selected pack decides which profiles, MCPs, rules, agents, permissions, and settings exist
+- exact customizations resolve back to a named preset when possible
+- permission allowlists are generated from pack-owned permission groups
+- deny rules keep hard bans centralized and preserve the MCP-only governance surface
 
 All profiles still keep:
 - `model: "opus"`
@@ -212,7 +232,7 @@ Global Git hooks are also installed at `~/.config/git/hooks` and enabled through
 
 | Tool | Config files |
 |------|-------------|
-| Claude Code CLI | `~/.claude/CLAUDE.md`, `settings.json`, `agents/`, `skills/` + MCPs reconciled via `claude mcp add/remove` |
+| Claude Code CLI | `~/.claude/CLAUDE.md`, `settings.json`, `agents/`, `rules/`, `skills/` + MCPs reconciled via `claude mcp add/remove` |
 | Claude Desktop | MCPs reconciled into `~/Library/Application Support/Claude/claude_desktop_config.json` |
 | Cursor | `~/.cursor/mcp.json`, `~/.cursor/rules/global.mdc` |
 | Codex | `~/.codex/config.toml`, `~/.codex/AGENTS.md`, `~/.codex/skills/` |
@@ -245,34 +265,31 @@ targets app bundles, user config, caches, logs, and user-level CLI shims.
 ## File structure
 
 ```
-.chezmoi.toml.tmpl                    # Setup prompts and local data model
-.chezmoidata/
-  runtime_profiles.yaml               # Runtime profiles, MCP catalog, permission groups, hard bans
-  capability_packs.yaml               # Capability pack metadata
+.chezmoi.toml.tmpl                    # Direct init prompts and fallback data model
 .chezmoiignore                        # Platform-conditional exclusions
 packs/
   software-development/
-    pack.json                         # Capability pack metadata
+    pack.yaml                         # Pack-owned schema: profiles, catalogs, settings, UI sections
+    claude/
+      agents/                         # Pack-owned Claude agents
+      rules/                          # Pack-owned Claude rules
+    docs/
+      quickstart.md                   # Pack quickstart and profile guidance
+      playbooks/
+        execute.md                    # Non-trivial delivery sequence
+        review.md                     # Code review checklist
+        orchestration.md              # Multi-agent routing and context discipline
+        health-check.md               # Installation verification
+  content-creation/
+    pack.yaml                         # Pack-owned schema for editorial and campaign work
+    claude/
+      agents/                         # Editorial and campaign agents
+      rules/                          # Editorial governance and workflow rules
+    docs/                             # Pack quickstart and playbooks
 dot_claude/
   CLAUDE.md.tmpl                      # -> ~/.claude/CLAUDE.md
   settings.json.tmpl                  # -> ~/.claude/settings.json
   settings.local.json.tmpl            # -> ~/.claude/settings.local.json
-  agents/
-    delivery-orchestrator.md          # Request normalization and routing
-    planner.md                        # Planning agent
-    product-manager.md                # Product and requirements agent
-    workflow-architect.md             # Workflow and process agent
-    backend-engineer.md               # Backend implementation agent
-    frontend-engineer.md              # Frontend implementation agent
-    staff-engineer.md                 # Cross-cutting engineering agent
-    quality-engineer.md               # Verification and higher-level testing agent
-    code-reviewer.md                  # Code review agent
-    debugger.md                       # Debugging agent
-    git-workflow-master.md            # Git workflow agent
-    devops-engineer.md                # CI/CD and infrastructure agent
-    security-engineer.md              # Security review agent
-    technical-writer.md               # Technical documentation agent
-    incident-commander.md             # Incident response agent
 dot_cursor/
   mcp.json.tmpl                       # -> ~/.cursor/mcp.json
   rules/global.mdc.tmpl               # -> ~/.cursor/rules/global.mdc
@@ -295,9 +312,30 @@ dot_local/
     executable_dotfiles-update.cmd    # -> ~/.local/bin/dotfiles-update.cmd
 scripts/
   bootstrap.sh                        # Main setup path for macOS/Linux/WSL/Git Bash
+  bootstrap-wizard.sh                 # Grouped installer UI
+  pack_state.py                       # Pack metadata and resolved-state helper
   chezmoi/
     run_onchange_after_configure-global-git-hooks.sh.tmpl   # Unix global Git hook setup
     run_onchange_after_install-claude-mcps.sh.tmpl          # Authoritative Claude MCP reconciliation
+    run_onchange_after_install-claude-pack-assets.sh.tmpl   # Symlink selected pack agents and rules
+    run_onchange_after_install-managed-skills.sh.tmpl       # Reconcile pack-selected skills
+  lib/
+    pack-resolver.mjs                 # JS resolver used by tests and helpers
+templates/
+  resolved-state.json                 # Shared pack-first resolution template
+docs/
+  architecture/
+    template-dependency-inventory.md  # Template and resolver dependency map
+  packs/
+    research-and-strategy.md          # Design-complete backlog candidate spec
+  security/
+    README.md                         # Review method and approval criteria
+    CONTRIBUTING.md                   # MCP and plugin evaluation process
+    mcp-decisions/                    # Per-pack MCP decisions
+    plugin-decisions/                 # Policy decisions such as MCP-only
+tests/
+  pack-resolver.test.mjs              # Resolver behavior coverage
+  rendered-output.test.mjs            # Rendered template coverage
 ```
 
 ## Security
@@ -305,8 +343,10 @@ scripts/
 - **Pinned versions** - All stdio MCPs use exact version numbers to prevent supply-chain attacks via malicious updates.
 - **No secrets in repo** - API keys are fetched from Bitwarden at `chezmoi apply` time.
 - **OAuth MCPs** (Context7, Figma) authenticate via browser - no tokens stored locally.
-- **Prompt-injection awareness** - `http`, `exa`, and `firecrawl` are intentionally `open`-only because they ingest broad remote content.
+- **Prompt-injection awareness** - higher-risk remote-content MCPs are isolated to the appropriate pack profiles and documented in `docs/security/mcp-decisions/`.
 - **Authoritative reconciliation** - setup removes unmanaged or out-of-profile Claude MCPs by default to return the machine to the selected profile.
+- **Registry is discovery, not approval** - registry entries are not trusted by default; every MCP or plugin candidate requires documented review before inclusion.
+- **Hooks and plugins stay conservative** - the policy surface remains MCP-only, Sentry stays excluded, and plugin settings are intentionally not generated.
 - **Periodic audit** - Run `npx @anthropic-ai/mcp-scan` to scan installed MCPs for tool poisoning.
 
 ## Dependencies

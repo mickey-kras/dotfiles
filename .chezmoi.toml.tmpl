@@ -3,24 +3,32 @@
 {{- $userName := promptStringOnce . "user_name" "Display name for generated instructions" -}}
 {{- $userRoleSummary := promptStringOnce . "user_role_summary" "Short role summary for generated instructions" -}}
 {{- $userStackSummary := promptStringOnce . "user_stack_summary" "Current stack summary for generated instructions" -}}
-{{- $runtimeProfile := promptStringOnce . "runtime_profile" "Runtime profile: restricted, balanced, open, or custom" -}}
-{{- $capabilityPack := promptStringOnce . "capability_pack" "Capability pack" -}}
-{{- $profileBase := promptStringOnce . "profile_base" "Base profile for custom mode" -}}
+{{- $capabilityPack := promptStringOnce . "capability_pack" "Capability pack id (for example: software-development or content-creation)" -}}
+{{- $profileSelected := promptStringOnce . "profile_selected" "Preset profile id for the selected pack" -}}
 {{- $memoryProvider := promptStringOnce . "memory_provider" "Memory provider: builtin or obsidian" -}}
 {{- $obsidianVaultPath := promptStringOnce . "obsidian_vault_path" "Obsidian vault path (press Enter to skip)" -}}
 {{- $azureDevOpsOrg := promptStringOnce . "azure_devops_org" "Azure DevOps org name (press Enter to skip)" -}}
+{{- $contentWorkspace := promptStringOnce . "content_workspace" "Content workspace path (press Enter to skip)" -}}
 
 [data]
   user_name = {{ $userName | quote }}
   user_role_summary = {{ $userRoleSummary | quote }}
   user_stack_summary = {{ $userStackSummary | quote }}
-  runtime_profile = {{ $runtimeProfile | quote }}
   capability_pack = {{ $capabilityPack | quote }}
-  profile_base = {{ $profileBase | quote }}
+  runtime_profile = {{ $profileSelected | quote }}
+  profile_base = {{ $profileSelected | quote }}
+  profile_selected = {{ $profileSelected | quote }}
+  profile_mode = "preset"
   custom_enabled_mcps = []
   custom_disabled_mcps = []
   custom_enabled_permission_groups = []
   custom_disabled_permission_groups = []
+  selection_enabled_mcps = []
+  selection_enabled_skills = []
+  selection_enabled_agents = []
+  selection_enabled_rules = []
+  selection_enabled_permissions = []
   memory_provider = {{ $memoryProvider | quote }}
   obsidian_vault_path = {{ $obsidianVaultPath | quote }}
   azure_devops_org = {{ $azureDevOpsOrg | quote }}
+  content_workspace = {{ $contentWorkspace | quote }}

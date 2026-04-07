@@ -1,0 +1,72 @@
+# Runtime profile: focused
+# Capability pack: content-creation
+# Codex global configuration
+# Managed by chezmoi - edit the template at ~/dotfiles/dot_codex/config.toml.tmpl
+
+model = "gpt-5.4"
+model_reasoning_effort = "medium"
+
+
+
+
+
+
+
+
+[mcp_servers.context7]
+type = "http"
+url = "https://mcp.context7.com/mcp"
+
+
+
+[mcp_servers.filesystem]
+command = "npx"
+args = ["-y", "@modelcontextprotocol/server-filesystem@2026.1.14", "/Users/mikhailkrasilnikov/Dev"]
+
+
+
+[mcp_servers.git]
+command = "npx"
+args = ["-y", "@cyanheads/git-mcp-server@2.10.5"]
+
+
+
+
+
+
+
+
+
+
+
+[mcp_servers.thinking]
+command = "npx"
+args = ["-y", "@modelcontextprotocol/server-sequential-thinking@2025.12.18"]
+
+
+
+[mcp_servers.memory]
+
+command = "npx"
+args = ["-y", "@modelcontextprotocol/server-memory@2026.1.26"]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

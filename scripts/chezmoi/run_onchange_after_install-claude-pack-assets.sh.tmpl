@@ -1,0 +1,76 @@
+#!/usr/bin/env bash
+# Installs pack-owned Claude agents and rules as symlinks.
+#
+# hash: {{ include "templates/resolved-state.json" | sha256sum }}:{{ include "packs/software-development/pack.yaml" | sha256sum }}:{{ include "packs/content-creation/pack.yaml" | sha256sum }}
+
+set -euo pipefail
+
+HOME_SLASHED="{{ replace "\\" "/" .chezmoi.homeDir }}"
+{{- $runtime := includeTemplate "templates/resolved-state.json" . | fromJson -}}
+{{- $resolved := $runtime.resolved -}}
+CAPABILITY_PACK="{{ index $resolved "pack_id" }}"
+PACK_CLAUDE_DIR="$HOME_SLASHED/dotfiles/packs/$CAPABILITY_PACK/claude"
+CLAUDE_AGENTS_DIR="$HOME_SLASHED/.claude/agents"
+CLAUDE_RULES_DIR="$HOME_SLASHED/.claude/rules"
+
+AGENT_IDS=(
+{{- range index $resolved "agents" "enabled" }}
+  "{{ . }}"
+{{- end }}
+)
+
+RULE_IDS=(
+{{- range index $resolved "rules" "enabled" }}
+  "{{ . }}"
+{{- end }}
+)
+
+ensure_link() {
+  local src="$1"
+  local dest="$2"
+  if [ -L "$dest" ] || [ -e "$dest" ]; then
+    rm -rf "$dest"
+  fi
+  ln -s "$src" "$dest"
+}
+
+cleanup_symlinked_targets() {
+  local target_root="$1"
+  local entry
+  mkdir -p "$target_root"
+  for entry in "$target_root"/*; do
+    [ -e "$entry" ] || [ -L "$entry" ] || continue
+    if [ -L "$entry" ]; then
+      rm -f "$entry"
+    fi
+  done
+}
+
+install_selected_files() {
+  local source_root="$1"
+  local target_root="$2"
+  local label="$3"
+  shift 3
+  local id src dest
+
+  mkdir -p "$target_root"
+  for id in "$@"; do
+    src="$source_root/$id.md"
+    dest="$target_root/$id.md"
+    if [ ! -f "$src" ]; then
+      echo "  ! missing $label source: $src"
+      continue
+    fi
+    ensure_link "$src" "$dest"
+    echo "  + $label: $id"
+  done
+}
+
+echo "Reconciling Claude pack assets for capability pack: $CAPABILITY_PACK"
+
+cleanup_symlinked_targets "$CLAUDE_AGENTS_DIR"
+cleanup_symlinked_targets "$CLAUDE_RULES_DIR"
+install_selected_files "$PACK_CLAUDE_DIR/agents" "$CLAUDE_AGENTS_DIR" "agent" "${AGENT_IDS[@]}"
+install_selected_files "$PACK_CLAUDE_DIR/rules" "$CLAUDE_RULES_DIR" "rule" "${RULE_IDS[@]}"
+
+echo "Claude pack assets reconciled."

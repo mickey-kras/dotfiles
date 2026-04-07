@@ -57,26 +57,6 @@ contains_word() {
   return 1
 }
 
-managed_skills_for_pack() {
-  local pack="$1"
-  case "$pack" in
-    software-development)
-      cat <<'EOF'
-context-budget
-dispatching-parallel-agents
-executing-plans
-receiving-code-review
-requesting-code-review
-systematic-debugging
-test-driven-development
-using-git-worktrees
-verification-before-completion
-writing-plans
-EOF
-      ;;
-  esac
-}
-
 printf "${C}"
 printf '  ____    _    ____ _____ \n'
 printf ' |  _ \\  / \\  / ___|_   _|\n'
@@ -167,42 +147,14 @@ fi
 section "4. Verifying MCP registration"
 if command -v claude >/dev/null 2>&1; then
   RUNTIME_PROFILE="$(read_chezmoi_value runtime_profile)"
-  PROFILE_BASE="$(read_chezmoi_value profile_base)"
   MEMORY_PROVIDER="$(read_chezmoi_value memory_provider)"
   [ -z "$RUNTIME_PROFILE" ] && RUNTIME_PROFILE="balanced"
-  [ -z "$PROFILE_BASE" ] && PROFILE_BASE="balanced"
   [ -z "$MEMORY_PROVIDER" ] && MEMORY_PROVIDER="builtin"
 
-  RESTRICTED_MCPS=(playwright context7 figma filesystem git memory thinking github azure-devops)
-  BALANCED_EXTRA_MCPS=(shell docker process terraform kubernetes)
-  OPEN_EXTRA_MCPS=(http aws tailscale exa firecrawl fal-ai)
-
   EXPECTED=()
-  case "$RUNTIME_PROFILE" in
-    restricted)
-      EXPECTED=("${RESTRICTED_MCPS[@]}")
-      ;;
-    balanced)
-      EXPECTED=("${RESTRICTED_MCPS[@]}" "${BALANCED_EXTRA_MCPS[@]}")
-      ;;
-    open)
-      EXPECTED=("${RESTRICTED_MCPS[@]}" "${BALANCED_EXTRA_MCPS[@]}" "${OPEN_EXTRA_MCPS[@]}")
-      ;;
-    custom)
-      case "$PROFILE_BASE" in
-        restricted) EXPECTED=("${RESTRICTED_MCPS[@]}") ;;
-        balanced) EXPECTED=("${RESTRICTED_MCPS[@]}" "${BALANCED_EXTRA_MCPS[@]}") ;;
-        open) EXPECTED=("${RESTRICTED_MCPS[@]}" "${BALANCED_EXTRA_MCPS[@]}" "${OPEN_EXTRA_MCPS[@]}") ;;
-        *) EXPECTED=("${RESTRICTED_MCPS[@]}" "${BALANCED_EXTRA_MCPS[@]}") ;;
-      esac
-      while IFS= read -r mcp; do
-        [ -n "$mcp" ] && EXPECTED+=("$mcp")
-      done < <(read_chezmoi_array custom_enabled_mcps)
-      while IFS= read -r mcp; do
-        [ -n "$mcp" ] && EXPECTED=("${EXPECTED[@]/$mcp}")
-      done < <(read_chezmoi_array custom_disabled_mcps)
-      ;;
-  esac
+  while IFS= read -r mcp; do
+    [ -n "$mcp" ] && EXPECTED+=("$mcp")
+  done < <(read_chezmoi_array selection_enabled_mcps)
 
   FILTERED=()
   for mcp in "${EXPECTED[@]}"; do
@@ -269,21 +221,6 @@ FILES=(
   "$HOME/.claude/hooks/scripts/quality-gate.js"
   "$HOME/.claude/hooks/scripts/security-review.py"
   "$HOME/.claude/hooks/scripts/suggest-compact.js"
-  "$HOME/.claude/agents/delivery-orchestrator.md"
-  "$HOME/.claude/agents/planner.md"
-  "$HOME/.claude/agents/product-manager.md"
-  "$HOME/.claude/agents/workflow-architect.md"
-  "$HOME/.claude/agents/backend-engineer.md"
-  "$HOME/.claude/agents/frontend-engineer.md"
-  "$HOME/.claude/agents/staff-engineer.md"
-  "$HOME/.claude/agents/quality-engineer.md"
-  "$HOME/.claude/agents/code-reviewer.md"
-  "$HOME/.claude/agents/debugger.md"
-  "$HOME/.claude/agents/git-workflow-master.md"
-  "$HOME/.claude/agents/devops-engineer.md"
-  "$HOME/.claude/agents/security-engineer.md"
-  "$HOME/.claude/agents/technical-writer.md"
-  "$HOME/.claude/agents/incident-commander.md"
 )
 
 for f in "${FILES[@]}"; do
@@ -314,6 +251,24 @@ fi
 CAPABILITY_PACK="$(read_chezmoi_value capability_pack)"
 [ -z "$CAPABILITY_PACK" ] && CAPABILITY_PACK="software-development"
 
+while IFS= read -r agent; do
+  [ -n "$agent" ] || continue
+  if [ -f "$HOME/.claude/agents/$agent.md" ]; then
+    ok "claude agent/$agent"
+  else
+    fail "claude agent/$agent - missing"
+  fi
+done < <(read_chezmoi_array selection_enabled_agents)
+
+while IFS= read -r rule; do
+  [ -n "$rule" ] || continue
+  if [ -f "$HOME/.claude/rules/$rule.md" ]; then
+    ok "claude rule/$rule"
+  else
+    fail "claude rule/$rule - missing"
+  fi
+done < <(read_chezmoi_array selection_enabled_rules)
+
 while IFS= read -r skill; do
   [ -n "$skill" ] || continue
   if [ -f "$HOME/.claude/skills/$skill/SKILL.md" ]; then
@@ -329,7 +284,7 @@ while IFS= read -r skill; do
       fail "codex skill/$skill - missing"
     fi
   fi
-done < <(managed_skills_for_pack "$CAPABILITY_PACK")
+done < <(read_chezmoi_array selection_enabled_skills)
 
 [ -f "$HOME/.local/bin/bw-mcp" ] && ok "bw-mcp" || warn "bw-mcp - missing"
 [ -f "$HOME/.local/bin/bw-login" ] && ok "bw-login" || warn "bw-login - missing"

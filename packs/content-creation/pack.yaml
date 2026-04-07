@@ -1,0 +1,382 @@
+version: 1
+
+id: content-creation
+label: Content Creation
+description: Editorial, research, brand, and visual-production pack for writing, adaptation, and creative execution.
+
+defaults:
+  profile: studio
+  selection:
+    settings:
+      memory_provider: builtin
+      obsidian_vault_path: ""
+      content_workspace: ""
+
+ui:
+  sections:
+    - id: profiles
+      label: Profiles
+    - id: mcps
+      label: MCP Servers
+    - id: skills
+      label: Skills
+    - id: agents
+      label: Agents
+    - id: rules
+      label: Rules
+    - id: permissions
+      label: Permission Groups
+    - id: settings
+      label: Settings
+
+settings_schema:
+  memory_provider:
+    type: enum
+    label: Memory Provider
+    default: builtin
+    options:
+      - value: builtin
+        label: Builtin Memory
+      - value: obsidian
+        label: Obsidian
+  obsidian_vault_path:
+    type: string
+    label: Obsidian Vault Path
+    default: ""
+    visible_if:
+      memory_provider: obsidian
+  content_workspace:
+    type: string
+    label: Content Workspace Path
+    default: ""
+
+catalogs:
+  mcps:
+    context7:
+      label: Context7
+      description: Current library and framework docs
+      transport: http
+      needs_secrets: false
+      prompt_injection_risk: low
+    playwright:
+      label: Playwright
+      description: Browser automation for research capture and structured review
+      transport: stdio
+      needs_secrets: false
+      prompt_injection_risk: medium
+    figma:
+      label: Figma
+      description: Design collaboration, file inspection, and design-system reference
+      transport: http
+      needs_secrets: false
+      prompt_injection_risk: medium
+    filesystem:
+      label: Filesystem
+      description: Local workspace browsing rooted narrowly
+      transport: stdio
+      needs_secrets: false
+      prompt_injection_risk: low
+    git:
+      label: Git
+      description: Content-repo history and diff inspection
+      transport: stdio
+      needs_secrets: false
+      prompt_injection_risk: low
+    memory:
+      label: Memory
+      description: Local memory store or Obsidian-backed memory
+      transport: stdio
+      needs_secrets: false
+      prompt_injection_risk: low
+    thinking:
+      label: Sequential Thinking
+      description: Structured reasoning for editorial and strategy work
+      transport: stdio
+      needs_secrets: false
+      prompt_injection_risk: low
+    process:
+      label: Process
+      description: Local process inspection for content tooling support
+      transport: stdio
+      needs_secrets: false
+      prompt_injection_risk: low
+    http:
+      label: HTTP Fetch
+      description: Open remote content retrieval for campaign research
+      transport: stdio
+      needs_secrets: false
+      prompt_injection_risk: high
+    exa:
+      label: Exa
+      description: AI web search for broader campaign discovery
+      transport: stdio
+      needs_secrets: true
+      prompt_injection_risk: high
+    firecrawl:
+      label: Firecrawl
+      description: Structured crawling and extraction for campaign research
+      transport: stdio
+      needs_secrets: true
+      prompt_injection_risk: high
+    fal-ai:
+      label: fal-ai
+      description: External image-generation service for concept iteration
+      transport: stdio
+      needs_secrets: true
+      prompt_injection_risk: medium
+
+  skills:
+    context-budget:
+      label: Context Budget
+    obsidian-memory:
+      label: Obsidian Memory
+    verification-before-completion:
+      label: Verification Before Completion
+    writing-plans:
+      label: Writing Plans
+
+  agents:
+    content-strategist:
+      label: Content Strategist
+    research-synthesizer:
+      label: Research Synthesizer
+    brand-guardian:
+      label: Brand Guardian
+    visual-storyteller:
+      label: Visual Storyteller
+    script-writer:
+      label: Script Writer
+    channel-adaptation-editor:
+      label: Channel Adaptation Editor
+    editorial-reviewer:
+      label: Editorial Reviewer
+
+  rules:
+    citation-discipline:
+      label: Citation Discipline
+    claims-verification:
+      label: Claims Verification
+    brand-consistency:
+      label: Brand Consistency
+    asset-provenance:
+      label: Asset Provenance
+    editorial-workflow:
+      label: Editorial Workflow
+
+  permissions:
+    core_read_write:
+      label: Core Read Write
+      allow:
+        - Read
+        - Edit
+        - Write
+    shell_readonly:
+      label: Shell Readonly
+      allow:
+        - Bash(ls *)
+        - Bash(cat *)
+        - Bash(head *)
+        - Bash(tail *)
+        - Bash(wc *)
+        - Bash(find *)
+        - Bash(grep *)
+        - Bash(rg *)
+        - Bash(jq *)
+    git_safe:
+      label: Git Safe
+      allow:
+        - Bash(git status*)
+        - Bash(git diff*)
+        - Bash(git log*)
+    local_file_mutation:
+      label: Local File Mutation
+      allow:
+        - Bash(mkdir *)
+        - Bash(cp *)
+        - Bash(mv *)
+        - Bash(touch *)
+        - Bash(chmod +x *)
+    creative_runtime:
+      label: Creative Runtime
+      allow:
+        - Bash(node *)
+        - Bash(python3 *)
+        - Bash(npx *)
+    web_access:
+      label: Web Access
+      allow:
+        - Bash(curl *)
+        - WebFetch
+        - WebSearch
+    secret_tools:
+      label: Secret Tools
+      allow:
+        - Bash(bw *)
+        - Bash(uvx *)
+
+guardrails:
+  hard_bans:
+    shared:
+      - Bash(sudo *)
+      - Bash(su *)
+      - Bash(rm -rf /)
+      - Bash(dd if=/dev/zero*)
+      - Bash(chmod 777 *)
+      - Bash(> /dev/sda*)
+
+profiles:
+  focused:
+    label: Focused
+    description: Writing and synthesis on a low-risk local stack.
+    selection:
+      mcps:
+        enabled:
+          - context7
+          - filesystem
+          - git
+          - memory
+          - thinking
+      skills:
+        enabled:
+          - context-budget
+          - writing-plans
+      agents:
+        enabled:
+          - content-strategist
+          - research-synthesizer
+          - brand-guardian
+          - script-writer
+          - editorial-reviewer
+      rules:
+        enabled:
+          - citation-discipline
+          - claims-verification
+          - brand-consistency
+          - editorial-workflow
+      permissions:
+        enabled:
+          - core_read_write
+          - shell_readonly
+          - git_safe
+      settings:
+        memory_provider: builtin
+        obsidian_vault_path: ""
+        content_workspace: ""
+
+  studio:
+    label: Studio
+    description: Research, visual collaboration, and iterative creative production.
+    selection:
+      mcps:
+        enabled:
+          - context7
+          - playwright
+          - figma
+          - filesystem
+          - git
+          - memory
+          - thinking
+          - process
+      skills:
+        enabled:
+          - context-budget
+          - obsidian-memory
+          - writing-plans
+      agents:
+        enabled:
+          - content-strategist
+          - research-synthesizer
+          - brand-guardian
+          - visual-storyteller
+          - script-writer
+          - channel-adaptation-editor
+          - editorial-reviewer
+      rules:
+        enabled:
+          - citation-discipline
+          - claims-verification
+          - brand-consistency
+          - asset-provenance
+          - editorial-workflow
+      permissions:
+        enabled:
+          - core_read_write
+          - shell_readonly
+          - git_safe
+          - local_file_mutation
+          - creative_runtime
+      settings:
+        memory_provider: builtin
+        obsidian_vault_path: ""
+        content_workspace: ""
+
+  campaign:
+    label: Campaign
+    description: Broader remote research and asset-generation surface for trusted personal machines.
+    selection:
+      mcps:
+        enabled:
+          - context7
+          - playwright
+          - figma
+          - filesystem
+          - git
+          - memory
+          - thinking
+          - process
+          - http
+          - exa
+          - firecrawl
+          - fal-ai
+      skills:
+        enabled:
+          - context-budget
+          - obsidian-memory
+          - verification-before-completion
+          - writing-plans
+      agents:
+        enabled:
+          - content-strategist
+          - research-synthesizer
+          - brand-guardian
+          - visual-storyteller
+          - script-writer
+          - channel-adaptation-editor
+          - editorial-reviewer
+      rules:
+        enabled:
+          - citation-discipline
+          - claims-verification
+          - brand-consistency
+          - asset-provenance
+          - editorial-workflow
+      permissions:
+        enabled:
+          - core_read_write
+          - shell_readonly
+          - git_safe
+          - local_file_mutation
+          - creative_runtime
+          - web_access
+          - secret_tools
+      settings:
+        memory_provider: builtin
+        obsidian_vault_path: ""
+        content_workspace: ""
+
+tooling:
+  claude_agents:
+    - content-strategist
+    - research-synthesizer
+    - brand-guardian
+    - visual-storyteller
+    - script-writer
+    - channel-adaptation-editor
+    - editorial-reviewer
+  managed_skills:
+    - context-budget
+    - obsidian-memory
+    - verification-before-completion
+    - writing-plans
+  codex_mode: content-creation
+  cursor_mode: content-creation

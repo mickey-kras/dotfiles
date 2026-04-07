@@ -1,0 +1,627 @@
+version: 1
+
+id: software-development
+label: Software Development
+description: Software delivery pack across planning, implementation, testing, review, docs, and incident response.
+
+defaults:
+  profile: balanced
+  selection:
+    settings:
+      memory_provider: builtin
+      obsidian_vault_path: ""
+      azure_devops_org: ""
+
+ui:
+  sections:
+    - id: profiles
+      label: Profiles
+    - id: mcps
+      label: MCP Servers
+    - id: skills
+      label: Skills
+    - id: agents
+      label: Agents
+    - id: rules
+      label: Rules
+    - id: permissions
+      label: Permission Groups
+    - id: settings
+      label: Settings
+
+settings_schema:
+  memory_provider:
+    type: enum
+    label: Memory Provider
+    default: builtin
+    options:
+      - value: builtin
+        label: Builtin Memory
+      - value: obsidian
+        label: Obsidian
+  obsidian_vault_path:
+    type: string
+    label: Obsidian Vault Path
+    default: ""
+    visible_if:
+      memory_provider: obsidian
+  azure_devops_org:
+    type: string
+    label: Azure DevOps Org
+    default: ""
+
+catalogs:
+  mcps:
+    playwright:
+      label: Playwright
+      description: Browser automation and E2E testing
+      transport: stdio
+      needs_secrets: false
+      prompt_injection_risk: medium
+    context7:
+      label: Context7
+      description: Current library docs and examples
+      transport: http
+      needs_secrets: false
+      prompt_injection_risk: low
+    figma:
+      label: Figma
+      description: Design-to-code and design system access
+      transport: http
+      needs_secrets: false
+      prompt_injection_risk: medium
+    atlassian:
+      label: Atlassian Rovo
+      description: Atlassian cloud context for Jira and Confluence
+      transport: http
+      needs_secrets: false
+      prompt_injection_risk: medium
+    filesystem:
+      label: Filesystem
+      description: Local file browsing rooted narrowly
+      transport: stdio
+      needs_secrets: false
+      prompt_injection_risk: low
+    git:
+      label: Git
+      description: Repository inspection and history
+      transport: stdio
+      needs_secrets: false
+      prompt_injection_risk: low
+    memory:
+      label: Memory
+      description: Local MCP memory store or Obsidian-backed memory
+      transport: stdio
+      needs_secrets: false
+      prompt_injection_risk: low
+    thinking:
+      label: Sequential Thinking
+      description: Structured local reasoning MCP
+      transport: stdio
+      needs_secrets: false
+      prompt_injection_risk: low
+    github:
+      label: GitHub
+      description: GitHub MCP via Bitwarden-backed PAT
+      transport: stdio
+      needs_secrets: true
+      prompt_injection_risk: medium
+    azure-devops:
+      label: Azure DevOps
+      description: Azure DevOps MCP
+      transport: stdio
+      needs_secrets: true
+      prompt_injection_risk: medium
+      requires:
+        settings:
+          - azure_devops_org
+    shell:
+      label: Shell
+      description: Controlled shell execution surface
+      transport: stdio
+      needs_secrets: false
+      prompt_injection_risk: medium
+    docker:
+      label: Docker
+      description: Container and daemon interaction surface
+      transport: stdio
+      needs_secrets: false
+      prompt_injection_risk: medium
+    process:
+      label: Process
+      description: Local process inspection
+      transport: stdio
+      needs_secrets: false
+      prompt_injection_risk: low
+    terraform:
+      label: Terraform
+      description: Terraform inspection and IaC workflows
+      transport: stdio
+      needs_secrets: false
+      prompt_injection_risk: low
+    kubernetes:
+      label: Kubernetes
+      description: Cluster and manifest inspection
+      transport: stdio
+      needs_secrets: false
+      prompt_injection_risk: medium
+    http:
+      label: HTTP Fetch
+      description: Open remote content fetch surface
+      transport: stdio
+      needs_secrets: false
+      prompt_injection_risk: high
+    aws:
+      label: AWS
+      description: AWS API access via Bitwarden-backed credentials
+      transport: stdio
+      needs_secrets: true
+      prompt_injection_risk: medium
+    tailscale:
+      label: Tailscale
+      description: Tailscale admin API access
+      transport: stdio
+      needs_secrets: true
+      prompt_injection_risk: medium
+    exa:
+      label: Exa
+      description: AI-powered web search
+      transport: stdio
+      needs_secrets: true
+      prompt_injection_risk: high
+    firecrawl:
+      label: Firecrawl
+      description: Web scraping and crawling
+      transport: stdio
+      needs_secrets: true
+      prompt_injection_risk: high
+    fal-ai:
+      label: fal-ai
+      description: External AI image generation service
+      transport: stdio
+      needs_secrets: true
+      prompt_injection_risk: medium
+
+  skills:
+    context7-mcp:
+      label: Context7 MCP
+    context-budget:
+      label: Context Budget
+    dispatching-parallel-agents:
+      label: Dispatching Parallel Agents
+    executing-plans:
+      label: Executing Plans
+    obsidian-memory:
+      label: Obsidian Memory
+    receiving-code-review:
+      label: Receiving Code Review
+    requesting-code-review:
+      label: Requesting Code Review
+    systematic-debugging:
+      label: Systematic Debugging
+    test-driven-development:
+      label: Test Driven Development
+    using-git-worktrees:
+      label: Using Git Worktrees
+    verification-before-completion:
+      label: Verification Before Completion
+    writing-plans:
+      label: Writing Plans
+
+  agents:
+    delivery-orchestrator:
+      label: Delivery Orchestrator
+    planner:
+      label: Planner
+    product-manager:
+      label: Product Manager
+    workflow-architect:
+      label: Workflow Architect
+    backend-engineer:
+      label: Backend Engineer
+    frontend-engineer:
+      label: Frontend Engineer
+    staff-engineer:
+      label: Staff Engineer
+    quality-engineer:
+      label: Quality Engineer
+    code-reviewer:
+      label: Code Reviewer
+    debugger:
+      label: Debugger
+    git-workflow-master:
+      label: Git Workflow Master
+    devops-engineer:
+      label: DevOps Engineer
+    security-engineer:
+      label: Security Engineer
+    technical-writer:
+      label: Technical Writer
+    incident-commander:
+      label: Incident Commander
+
+  rules:
+    bitwarden-setup:
+      label: Bitwarden Setup
+    code-style:
+      label: Code Style
+    development-workflow:
+      label: Development Workflow
+    git-workflow:
+      label: Git Workflow
+    performance:
+      label: Performance
+    security:
+      label: Security
+    testing:
+      label: Testing
+
+  permissions:
+    core_read_write:
+      label: Core Read Write
+      allow:
+        - Read
+        - Edit
+        - Write
+    shell_readonly:
+      label: Shell Readonly
+      allow:
+        - Bash(ls *)
+        - Bash(cat *)
+        - Bash(head *)
+        - Bash(tail *)
+        - Bash(wc *)
+        - Bash(find *)
+        - Bash(grep *)
+        - Bash(rg *)
+        - Bash(jq *)
+    git_safe:
+      label: Git Safe
+      allow:
+        - Bash(git status*)
+        - Bash(git diff*)
+        - Bash(git log*)
+    gh_safe:
+      label: GitHub Safe
+      allow:
+        - Bash(gh pr view*)
+        - Bash(gh pr checks*)
+    git_full:
+      label: Git Full
+      allow:
+        - Bash(git *)
+    gh_full:
+      label: GitHub Full
+      allow:
+        - Bash(gh *)
+    dev_runtime:
+      label: Dev Runtime
+      allow:
+        - Bash(node *)
+        - Bash(dotnet *)
+        - Bash(python3 *)
+        - Bash(pytest *)
+        - Bash(make *)
+        - Bash(k6 *)
+    local_file_mutation:
+      label: Local File Mutation
+      allow:
+        - Bash(mkdir *)
+        - Bash(cp *)
+        - Bash(mv *)
+        - Bash(touch *)
+        - Bash(chmod +x *)
+    containers:
+      label: Containers
+      allow:
+        - Bash(docker *)
+    infra_local:
+      label: Infra Local
+      allow:
+        - Bash(az *)
+        - Bash(terraform *)
+        - Bash(kubectl *)
+    package_runtime:
+      label: Package Runtime
+      allow:
+        - Bash(npm *)
+        - Bash(npx *)
+        - Bash(pip *)
+    cloud_extended:
+      label: Cloud Extended
+      allow:
+        - Bash(aws *)
+        - Bash(gcloud *)
+        - Bash(wrangler *)
+    secret_tools:
+      label: Secret Tools
+      allow:
+        - Bash(bw *)
+        - Bash(uvx *)
+    web_access:
+      label: Web Access
+      allow:
+        - Bash(curl *)
+        - WebFetch
+        - WebSearch
+
+guardrails:
+  hard_bans:
+    shared:
+      - Bash(sudo *)
+      - Bash(su *)
+      - Bash(rm -rf /)
+      - Bash(dd if=/dev/zero*)
+      - Bash(chmod 777 *)
+      - Bash(> /dev/sda*)
+    restricted:
+      - Bash(uv *)
+      - Bash(uvx *)
+      - Bash(npm install*)
+      - Bash(npm i*)
+      - Bash(npx *)
+      - Bash(pip install*)
+      - Bash(choco install*)
+      - Bash(winget install*)
+
+profiles:
+  restricted:
+    label: Restricted
+    description: No local or system mutation by default. Remote work systems are allowed.
+    selection:
+      mcps:
+        enabled:
+          - playwright
+          - context7
+          - figma
+          - filesystem
+          - git
+          - memory
+          - thinking
+          - github
+          - azure-devops
+      skills:
+        enabled:
+          - context7-mcp
+          - context-budget
+          - dispatching-parallel-agents
+          - executing-plans
+          - obsidian-memory
+          - receiving-code-review
+          - requesting-code-review
+          - systematic-debugging
+          - test-driven-development
+          - using-git-worktrees
+          - verification-before-completion
+          - writing-plans
+      agents:
+        enabled:
+          - delivery-orchestrator
+          - planner
+          - product-manager
+          - workflow-architect
+          - backend-engineer
+          - frontend-engineer
+          - staff-engineer
+          - quality-engineer
+          - code-reviewer
+          - debugger
+          - git-workflow-master
+          - devops-engineer
+          - security-engineer
+          - technical-writer
+          - incident-commander
+      rules:
+        enabled:
+          - bitwarden-setup
+          - code-style
+          - development-workflow
+          - git-workflow
+          - performance
+          - security
+          - testing
+      permissions:
+        enabled:
+          - core_read_write
+          - shell_readonly
+          - git_safe
+          - gh_safe
+      settings:
+        memory_provider: builtin
+        obsidian_vault_path: ""
+        azure_devops_org: ""
+
+  balanced:
+    label: Balanced
+    description: Practical daily-driver profile with moderate local execution power.
+    selection:
+      mcps:
+        enabled:
+          - playwright
+          - context7
+          - figma
+          - atlassian
+          - filesystem
+          - git
+          - memory
+          - thinking
+          - github
+          - azure-devops
+          - shell
+          - docker
+          - process
+          - terraform
+          - kubernetes
+      skills:
+        enabled:
+          - context7-mcp
+          - context-budget
+          - dispatching-parallel-agents
+          - executing-plans
+          - obsidian-memory
+          - receiving-code-review
+          - requesting-code-review
+          - systematic-debugging
+          - test-driven-development
+          - using-git-worktrees
+          - verification-before-completion
+          - writing-plans
+      agents:
+        enabled:
+          - delivery-orchestrator
+          - planner
+          - product-manager
+          - workflow-architect
+          - backend-engineer
+          - frontend-engineer
+          - staff-engineer
+          - quality-engineer
+          - code-reviewer
+          - debugger
+          - git-workflow-master
+          - devops-engineer
+          - security-engineer
+          - technical-writer
+          - incident-commander
+      rules:
+        enabled:
+          - bitwarden-setup
+          - code-style
+          - development-workflow
+          - git-workflow
+          - performance
+          - security
+          - testing
+      permissions:
+        enabled:
+          - core_read_write
+          - shell_readonly
+          - git_full
+          - gh_full
+          - dev_runtime
+          - local_file_mutation
+          - containers
+          - infra_local
+      settings:
+        memory_provider: builtin
+        obsidian_vault_path: ""
+        azure_devops_org: ""
+
+  open:
+    label: Open
+    description: Full managed profile with broader web, cloud, and secret-backed capabilities.
+    selection:
+      mcps:
+        enabled:
+          - playwright
+          - context7
+          - figma
+          - atlassian
+          - filesystem
+          - git
+          - memory
+          - thinking
+          - github
+          - azure-devops
+          - shell
+          - docker
+          - process
+          - terraform
+          - kubernetes
+          - http
+          - aws
+          - tailscale
+          - exa
+          - firecrawl
+          - fal-ai
+      skills:
+        enabled:
+          - context7-mcp
+          - context-budget
+          - dispatching-parallel-agents
+          - executing-plans
+          - obsidian-memory
+          - receiving-code-review
+          - requesting-code-review
+          - systematic-debugging
+          - test-driven-development
+          - using-git-worktrees
+          - verification-before-completion
+          - writing-plans
+      agents:
+        enabled:
+          - delivery-orchestrator
+          - planner
+          - product-manager
+          - workflow-architect
+          - backend-engineer
+          - frontend-engineer
+          - staff-engineer
+          - quality-engineer
+          - code-reviewer
+          - debugger
+          - git-workflow-master
+          - devops-engineer
+          - security-engineer
+          - technical-writer
+          - incident-commander
+      rules:
+        enabled:
+          - bitwarden-setup
+          - code-style
+          - development-workflow
+          - git-workflow
+          - performance
+          - security
+          - testing
+      permissions:
+        enabled:
+          - core_read_write
+          - shell_readonly
+          - git_full
+          - gh_full
+          - dev_runtime
+          - local_file_mutation
+          - containers
+          - infra_local
+          - package_runtime
+          - cloud_extended
+          - secret_tools
+          - web_access
+      settings:
+        memory_provider: builtin
+        obsidian_vault_path: ""
+        azure_devops_org: ""
+
+tooling:
+  claude_agents:
+    - delivery-orchestrator
+    - planner
+    - product-manager
+    - workflow-architect
+    - backend-engineer
+    - frontend-engineer
+    - staff-engineer
+    - quality-engineer
+    - code-reviewer
+    - debugger
+    - git-workflow-master
+    - devops-engineer
+    - security-engineer
+    - technical-writer
+    - incident-commander
+  managed_skills:
+    - context7-mcp
+    - context-budget
+    - dispatching-parallel-agents
+    - executing-plans
+    - obsidian-memory
+    - receiving-code-review
+    - requesting-code-review
+    - systematic-debugging
+    - test-driven-development
+    - using-git-worktrees
+    - verification-before-completion
+    - writing-plans
+  codex_mode: software-development
+  cursor_mode: software-development

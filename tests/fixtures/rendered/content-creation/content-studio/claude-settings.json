@@ -1,0 +1,95 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cat *)",
+      "Bash(chmod +x *)",
+      "Bash(cp *)",
+      "Bash(find *)",
+      "Bash(git diff*)",
+      "Bash(git log*)",
+      "Bash(git status*)",
+      "Bash(grep *)",
+      "Bash(head *)",
+      "Bash(jq *)",
+      "Bash(ls *)",
+      "Bash(mkdir *)",
+      "Bash(mv *)",
+      "Bash(node *)",
+      "Bash(npx *)",
+      "Bash(python3 *)",
+      "Bash(rg *)",
+      "Bash(tail *)",
+      "Bash(touch *)",
+      "Bash(wc *)",
+      "Edit",
+      "Read",
+      "Write"
+    ],
+    "deny": [
+      "Bash(\u003e /dev/sda*)",
+      "Bash(chmod 777 *)",
+      "Bash(dd if=/dev/zero*)",
+      "Bash(rm -rf /)",
+      "Bash(su *)",
+      "Bash(sudo *)"
+    ]
+  },
+  "PreToolUse": [
+    {
+      "matcher": "Bash",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "node $HOME/.claude/hooks/scripts/block-no-verify.js"
+        },
+        {
+          "type": "command",
+          "command": "node $HOME/.claude/hooks/scripts/governance-capture.js"
+        }
+      ]
+    },
+    {
+      "matcher": "Write|Edit",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "node $HOME/.claude/hooks/scripts/config-protection.js"
+        }
+      ]
+    },
+    {
+      "matcher": "Write|Edit|MultiEdit",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "python3 $HOME/.claude/hooks/scripts/security-review.py"
+        }
+      ]
+    }
+  ],
+  "PostToolUse": [
+    {
+      "matcher": "*",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "node $HOME/.claude/hooks/scripts/quality-gate.js"
+        },
+        {
+          "type": "command",
+          "command": "node $HOME/.claude/hooks/scripts/post-edit-format.js"
+        },
+        {
+          "type": "command",
+          "command": "node $HOME/.claude/hooks/scripts/suggest-compact.js"
+        }
+      ]
+    }
+  ],
+  "env": {
+    "EDITOR": "code --wait",
+    "ENABLE_CLAUDEAI_MCP_SERVERS": "false",
+    "DOTFILES_RUNTIME_PROFILE": "studio"
+  },
+  "model": "opus"
+}

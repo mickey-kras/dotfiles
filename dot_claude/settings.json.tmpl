@@ -1,34 +1,9 @@
-{{- $profile := .runtime_profile | default "balanced" -}}
-{{- $profiles := .profiles -}}
-{{- $permissionGroups := .permission_groups -}}
-{{- $sharedBans := .hard_bans.shared -}}
-{{- $profileBans := index .hard_bans $profile | default (list) -}}
-{{- $selectedGroupNames := list -}}
-{{- if eq $profile "custom" -}}
-  {{- $base := .profile_base | default "balanced" -}}
-  {{- $selectedGroupNames = index $profiles $base "permission_groups" | default (list) -}}
-  {{- range .custom_enabled_permission_groups }}
-    {{- $selectedGroupNames = append $selectedGroupNames . -}}
-  {{- end -}}
-  {{- range .custom_disabled_permission_groups }}
-    {{- $selectedGroupNames = without $selectedGroupNames . -}}
-  {{- end -}}
-{{- else -}}
-  {{- $selectedGroupNames = index $profiles $profile "permission_groups" | default (list) -}}
-{{- end -}}
-{{- $selectedGroupNames = uniq $selectedGroupNames -}}
-{{- $allow := list -}}
-{{- range $groupName := $selectedGroupNames -}}
-  {{- range $entry := index $permissionGroups $groupName | default (list) -}}
-    {{- $allow = append $allow $entry -}}
-  {{- end -}}
-{{- end -}}
-{{- $allow = uniq $allow -}}
-{{- $deny := concat $sharedBans $profileBans | uniq -}}
-{{- $effectiveProfile := $profile -}}
-{{- if eq $profile "custom" -}}
-  {{- $effectiveProfile = .profile_base | default "balanced" -}}
-{{- end -}}
+{{- $runtime := includeTemplate "templates/resolved-state.json" . | fromJson -}}
+{{- $state := $runtime.state -}}
+{{- $resolved := $runtime.resolved -}}
+{{- $requestedProfile := index $state "profile" "requested" -}}
+{{- $allow := index $resolved "permissions" "allow" | default (list) -}}
+{{- $deny := index $resolved "permissions" "deny" | default (list) -}}
 {
   "permissions": {
     "allow": [
@@ -55,8 +30,8 @@
           "command": "node $HOME/.claude/hooks/scripts/governance-capture.js"
         }
       ]
-    }{{ if ne $profile "open" }},{{ end }}
-{{- if ne $profile "open" }}
+    }{{ if ne $requestedProfile "open" }},{{ end }}
+{{- if ne $requestedProfile "open" }}
     {
       "matcher": "Write|Edit",
       "hooks": [
@@ -99,7 +74,7 @@
   "env": {
     "EDITOR": "code --wait",
     "ENABLE_CLAUDEAI_MCP_SERVERS": "false",
-    "DOTFILES_RUNTIME_PROFILE": {{ $effectiveProfile | toJson }}
+    "DOTFILES_RUNTIME_PROFILE": {{ index $resolved "profile_basis" | toJson }}
   },
   "model": "opus"
 }

@@ -1,0 +1,81 @@
+{
+  "mcpServers": {
+    "playwright": {
+      "command": "npx",
+      "args": ["-y", "@playwright/mcp@0.0.68"]
+    },
+    "context7": {
+      "url": "https://mcp.context7.com/mcp"
+    },
+    "figma": {
+      "url": "https://mcp.figma.com/mcp"
+    },
+    "atlassian": {
+      "url": "https://mcp.atlassian.com/v1/mcp"
+    },
+    "filesystem": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem@2026.1.14", "/Users/mikhailkrasilnikov/Dev"]
+    },
+    "git": {
+      "command": "npx",
+      "args": ["-y", "@cyanheads/git-mcp-server@2.10.5"]
+    },
+    "shell": {
+      "command": "npx",
+      "args": ["-y", "super-shell-mcp@2.0.15"]
+    },
+    "terraform": {
+      "command": "npx",
+      "args": ["-y", "terraform-mcp-server@0.13.0"]
+    },
+    "kubernetes": {
+      "command": "npx",
+      "args": ["-y", "mcp-server-kubernetes@3.4.0"]
+    },
+    "process": {
+      "command": "npx",
+      "args": ["-y", "@ai-capabilities-suite/mcp-process@1.5.10"]
+    },
+    "thinking": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-sequential-thinking@2025.12.18"]
+    },
+    "memory": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-memory@2026.1.26"]
+    },
+    "http": {
+      "command": "uvx",
+      "args": ["mcp-server-fetch==2025.4.7"]
+    },
+    "github": {
+      "command": "node",
+      "args": ["/Users/mikhailkrasilnikov/.local/bin/bw-mcp", "mcp-github", "GITHUB_PERSONAL_ACCESS_TOKEN=password", "--", "npx", "-y", "@modelcontextprotocol/server-github@2025.4.8"]
+    },
+    "aws": {
+      "command": "node",
+      "args": ["/Users/mikhailkrasilnikov/.local/bin/bw-mcp", "mcp-aws", "AWS_ACCESS_KEY_ID=AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY=AWS_SECRET_ACCESS_KEY", "--", "uvx", "awslabs.aws-api-mcp-server==1.3.26"]
+    },
+    "tailscale": {
+      "command": "node",
+      "args": ["/Users/mikhailkrasilnikov/.local/bin/bw-mcp", "mcp-tailscale", "TAILSCALE_API_KEY=password,TAILSCALE_TAILNET=TAILSCALE_TAILNET", "--", "npx", "-y", "@hexsleeves/tailscale-mcp-server@0.3.2"]
+    },
+    "exa": {
+      "command": "node",
+      "args": ["/Users/mikhailkrasilnikov/.local/bin/bw-mcp", "exa-api-key", "EXA_API_KEY=password", "--", "npx", "-y", "exa-mcp-server@3.1.9"]
+    },
+    "firecrawl": {
+      "command": "node",
+      "args": ["/Users/mikhailkrasilnikov/.local/bin/bw-mcp", "firecrawl-api-key", "FIRECRAWL_API_KEY=password", "--", "npx", "-y", "firecrawl-mcp@3.11.0"]
+    },
+    "fal-ai": {
+      "command": "node",
+      "args": ["/Users/mikhailkrasilnikov/.local/bin/bw-mcp", "fal-api-key", "FAL_KEY=password", "--", "npx", "-y", "fal-ai-mcp-server@2.1.4"]
+    },
+    "MCP_DOCKER": {
+      "command": "docker",
+      "args": ["mcp", "gateway", "run"]
+    }
+  }
+}

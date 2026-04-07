@@ -1,0 +1,166 @@
+{{- $packId := "software-development" -}}
+{{- if hasKey . "capability_pack" -}}
+  {{- $packId = index . "capability_pack" -}}
+{{- end -}}
+{{- if hasKey . "pack_id" -}}
+  {{- $packId = index . "pack_id" -}}
+{{- end -}}
+{{- $packPath := printf "packs/%s/pack.yaml" $packId -}}
+{{- $pack := include $packPath | fromYaml -}}
+{{- $defaultProfile := index $pack "defaults" "profile" | default "balanced" -}}
+{{- $requestedProfile := .runtime_profile | default $defaultProfile -}}
+{{- $selectedProfile := $requestedProfile -}}
+{{- $profileMode := "preset" -}}
+{{- $selectedMcps := list -}}
+{{- $selectedSkills := list -}}
+{{- $selectedAgents := list -}}
+{{- $selectedRules := list -}}
+{{- $selectedPermissions := list -}}
+{{- $defaultSettings := dict -}}
+{{- range $settingName, $schema := index $pack "settings_schema" -}}
+  {{- $_ := set $defaultSettings $settingName (index $schema "default") -}}
+{{- end -}}
+{{- range $settingName, $value := index $pack "defaults" "selection" "settings" | default (dict) -}}
+  {{- $_ := set $defaultSettings $settingName $value -}}
+{{- end -}}
+{{- if hasKey . "profile_selected" -}}
+  {{- $selectedProfile = .profile_selected | default $defaultProfile -}}
+  {{- $profileMode = .profile_mode | default "preset" -}}
+  {{- $profile := index $pack "profiles" $selectedProfile -}}
+  {{- range $settingName, $value := index $profile "selection" "settings" | default (dict) -}}
+    {{- $_ := set $defaultSettings $settingName $value -}}
+  {{- end -}}
+  {{- $selectedMcps = .selection_enabled_mcps | default (list) -}}
+  {{- $selectedSkills = .selection_enabled_skills | default (list) -}}
+  {{- $selectedAgents = .selection_enabled_agents | default (list) -}}
+  {{- $selectedRules = .selection_enabled_rules | default (list) -}}
+  {{- $selectedPermissions = .selection_enabled_permissions | default (list) -}}
+{{- else -}}
+  {{- if eq $requestedProfile "custom" -}}
+    {{- $profileMode = "custom" -}}
+    {{- $selectedProfile = .profile_base | default $defaultProfile -}}
+  {{- end -}}
+  {{- $profile := index $pack "profiles" $selectedProfile -}}
+  {{- range $settingName, $value := index $profile "selection" "settings" | default (dict) -}}
+    {{- $_ := set $defaultSettings $settingName $value -}}
+  {{- end -}}
+  {{- $selectedMcps = index $profile "selection" "mcps" "enabled" | default (list) -}}
+  {{- $selectedSkills = index $profile "selection" "skills" "enabled" | default (list) -}}
+  {{- $selectedAgents = index $profile "selection" "agents" "enabled" | default (list) -}}
+  {{- $selectedRules = index $profile "selection" "rules" "enabled" | default (list) -}}
+  {{- $selectedPermissions = index $profile "selection" "permissions" "enabled" | default (list) -}}
+  {{- if eq $requestedProfile "custom" -}}
+    {{- range .custom_enabled_mcps | default (list) -}}
+      {{- $selectedMcps = append $selectedMcps . -}}
+    {{- end -}}
+    {{- range .custom_disabled_mcps | default (list) -}}
+      {{- $selectedMcps = without $selectedMcps . -}}
+    {{- end -}}
+    {{- range .custom_enabled_permission_groups | default (list) -}}
+      {{- $selectedPermissions = append $selectedPermissions . -}}
+    {{- end -}}
+    {{- range .custom_disabled_permission_groups | default (list) -}}
+      {{- $selectedPermissions = without $selectedPermissions . -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+{{- range $settingName, $_ := index $pack "settings_schema" -}}
+  {{- if hasKey $ $settingName -}}
+    {{- $_ := set $defaultSettings $settingName (index $ $settingName) -}}
+  {{- end -}}
+{{- end -}}
+{{- if ne (index $defaultSettings "memory_provider") "obsidian" -}}
+  {{- $_ := set $defaultSettings "obsidian_vault_path" "" -}}
+{{- end -}}
+{{- $selectedMcps = sortAlpha (uniq $selectedMcps) -}}
+{{- $selectedSkills = sortAlpha (uniq $selectedSkills) -}}
+{{- $selectedAgents = sortAlpha (uniq $selectedAgents) -}}
+{{- $selectedRules = sortAlpha (uniq $selectedRules) -}}
+{{- $selectedPermissions = sortAlpha (uniq $selectedPermissions) -}}
+{{- $selection := dict
+  "mcps" (dict "enabled" $selectedMcps)
+  "skills" (dict "enabled" $selectedSkills)
+  "agents" (dict "enabled" $selectedAgents)
+  "rules" (dict "enabled" $selectedRules)
+  "permissions" (dict "enabled" $selectedPermissions)
+  "settings" $defaultSettings
+-}}
+{{- $matchedProfile := "" -}}
+{{- range $profileName, $profileData := index $pack "profiles" -}}
+  {{- $profileSettings := dict -}}
+  {{- range $settingName, $schema := index $pack "settings_schema" -}}
+    {{- $_ := set $profileSettings $settingName (index $schema "default") -}}
+  {{- end -}}
+  {{- range $settingName, $value := index $pack "defaults" "selection" "settings" | default (dict) -}}
+    {{- $_ := set $profileSettings $settingName $value -}}
+  {{- end -}}
+  {{- range $settingName, $value := index $profileData "selection" "settings" | default (dict) -}}
+    {{- $_ := set $profileSettings $settingName $value -}}
+  {{- end -}}
+  {{- if ne (index $profileSettings "memory_provider") "obsidian" -}}
+    {{- $_ := set $profileSettings "obsidian_vault_path" "" -}}
+  {{- end -}}
+  {{- $profileSelection := dict
+    "mcps" (dict "enabled" (sortAlpha (uniq (index $profileData "selection" "mcps" "enabled" | default (list)))))
+    "skills" (dict "enabled" (sortAlpha (uniq (index $profileData "selection" "skills" "enabled" | default (list)))))
+    "agents" (dict "enabled" (sortAlpha (uniq (index $profileData "selection" "agents" "enabled" | default (list)))))
+    "rules" (dict "enabled" (sortAlpha (uniq (index $profileData "selection" "rules" "enabled" | default (list)))))
+    "permissions" (dict "enabled" (sortAlpha (uniq (index $profileData "selection" "permissions" "enabled" | default (list)))))
+    "settings" $profileSettings
+  -}}
+  {{- if eq ($profileSelection | toPrettyJson) ($selection | toPrettyJson) -}}
+    {{- $matchedProfile = $profileName -}}
+  {{- end -}}
+{{- end -}}
+{{- $normalizedMode := "custom" -}}
+{{- $displayProfile := "custom" -}}
+{{- $profileBasis := $selectedProfile -}}
+{{- if ne $matchedProfile "" -}}
+  {{- $normalizedMode = "preset" -}}
+  {{- $displayProfile = $matchedProfile -}}
+  {{- $profileBasis = $matchedProfile -}}
+{{- end -}}
+{{- $permissionCatalog := index $pack "catalogs" "permissions" | default (dict) -}}
+{{- $allow := list -}}
+{{- range $permissionId := $selectedPermissions -}}
+  {{- range $entry := index $permissionCatalog $permissionId "allow" | default (list) -}}
+    {{- $allow = append $allow $entry -}}
+  {{- end -}}
+{{- end -}}
+{{- $allow = sortAlpha (uniq $allow) -}}
+{{- $guardrailProfile := "custom" -}}
+{{- if eq $normalizedMode "preset" -}}
+  {{- $guardrailProfile = $displayProfile -}}
+{{- end -}}
+{{- $deny := concat (index $pack "guardrails" "hard_bans" "shared" | default (list)) (index $pack "guardrails" "hard_bans" $guardrailProfile | default (list)) | uniq | sortAlpha -}}
+{{- $state := dict
+  "pack_id" $packId
+  "profile" (dict
+    "requested" $displayProfile
+    "selected" $profileBasis
+    "mode" $normalizedMode
+  )
+  "selection" $selection
+-}}
+{{- $resolved := dict
+  "pack_id" $packId
+  "profile" $displayProfile
+  "profile_mode" $normalizedMode
+  "profile_basis" $profileBasis
+  "mcps" (dict "enabled" $selectedMcps)
+  "skills" (dict "enabled" $selectedSkills)
+  "agents" (dict "enabled" $selectedAgents)
+  "rules" (dict "enabled" $selectedRules)
+  "permissions" (dict
+    "enabled" $selectedPermissions
+    "allow" $allow
+    "deny" $deny
+  )
+  "settings" $defaultSettings
+  "catalogs" (index $pack "catalogs")
+  "guardrails" (index $pack "guardrails")
+  "tooling" (index $pack "tooling")
+  "ui" (index $pack "ui")
+  "defaults" (index $pack "defaults")
+-}}
+{{- dict "pack" $pack "state" $state "resolved" $resolved | toPrettyJson -}}

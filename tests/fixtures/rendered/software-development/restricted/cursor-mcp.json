@@ -1,0 +1,34 @@
+{
+  "mcpServers": {
+    "playwright": {
+      "command": "npx",
+      "args": ["-y", "@playwright/mcp@0.0.68"]
+    },
+    "context7": {
+      "url": "https://mcp.context7.com/mcp"
+    },
+    "figma": {
+      "url": "https://mcp.figma.com/mcp"
+    },
+    "filesystem": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem@2026.1.14", "/Users/mikhailkrasilnikov/Dev"]
+    },
+    "git": {
+      "command": "npx",
+      "args": ["-y", "@cyanheads/git-mcp-server@2.10.5"]
+    },
+    "thinking": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-sequential-thinking@2025.12.18"]
+    },
+    "memory": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-memory@2026.1.26"]
+    },
+    "github": {
+      "command": "node",
+      "args": ["/Users/mikhailkrasilnikov/.local/bin/bw-mcp", "mcp-github", "GITHUB_PERSONAL_ACCESS_TOKEN=password", "--", "npx", "-y", "@modelcontextprotocol/server-github@2025.4.8"]
+    }
+  }
+}

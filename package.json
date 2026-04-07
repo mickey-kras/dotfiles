@@ -1,0 +1,11 @@
+{
+  "name": "dotfiles",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/*.test.mjs"
+  },
+  "dependencies": {
+    "yaml": "^2.8.1"
+  }
+}

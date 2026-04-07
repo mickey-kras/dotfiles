@@ -1,23 +1,10 @@
 {{- $home := replace "\\" "/" .chezmoi.homeDir -}}
-{{- $profile := .runtime_profile | default "balanced" -}}
-{{- $memoryProvider := index . "memory_provider" | default "builtin" -}}
-{{- $obsidianVaultPath := index . "obsidian_vault_path" | default "" -}}
-{{- $selectedMcps := list -}}
-{{- if eq $profile "custom" -}}
-  {{- $base := .profile_base | default "balanced" -}}
-  {{- $selectedMcps = index .mcp_sets $base | default (list) -}}
-  {{- range .custom_enabled_mcps }}
-    {{- $selectedMcps = append $selectedMcps . -}}
-  {{- end -}}
-  {{- range .custom_disabled_mcps }}
-    {{- $selectedMcps = without $selectedMcps . -}}
-  {{- end -}}
-{{- else -}}
-  {{- $selectedMcps = index .mcp_sets $profile | default (list) -}}
-{{- end -}}
-{{- $selectedMcps = uniq $selectedMcps -}}
-# Runtime profile: {{ $profile }}
-# Capability pack: {{ .capability_pack | default "software-development" }}
+{{- $runtime := includeTemplate "templates/resolved-state.json" . | fromJson -}}
+{{- $resolved := $runtime.resolved -}}
+{{- $selectedMcps := index $resolved "mcps" "enabled" -}}
+{{- $settings := index $resolved "settings" -}}
+# Runtime profile: {{ index $runtime "state" "profile" "requested" }}
+# Capability pack: {{ index $resolved "pack_id" }}
 # Codex global configuration
 # Managed by chezmoi - edit the template at ~/dotfiles/dot_codex/config.toml.tmpl
 
@@ -96,9 +83,9 @@ args = ["-y", "@modelcontextprotocol/server-sequential-thinking@2025.12.18"]
 
 {{ if has "memory" $selectedMcps }}
 [mcp_servers.memory]
-{{ if and (eq $memoryProvider "obsidian") $obsidianVaultPath }}
+{{ if and (eq (index $settings "memory_provider") "obsidian") (index $settings "obsidian_vault_path") }}
 command = "npx"
-args = ["-y", "@bitbonsai/mcpvault@latest", {{ $obsidianVaultPath | toJson }}]
+args = ["-y", "@bitbonsai/mcpvault@latest", {{ index $settings "obsidian_vault_path" | toJson }}]
 {{ else }}
 command = "npx"
 args = ["-y", "@modelcontextprotocol/server-memory@2026.1.26"]
@@ -117,15 +104,10 @@ type = "http"
 url = "https://mcp.figma.com/mcp"
 {{ end }}
 
-[plugins."github@openai-curated"]
-enabled = true
-
-[plugins."claude-import@misha-local"]
-enabled = true
-{{ if and (has "azure-devops" $selectedMcps) .azure_devops_org }}
+{{ if and (has "azure-devops" $selectedMcps) (index $settings "azure_devops_org") }}
 [mcp_servers.azure-devops]
 command = "npx"
-args = ["-y", "@azure-devops/mcp@2.5.0", "{{ .azure_devops_org }}"]
+args = ["-y", "@azure-devops/mcp@2.5.0", "{{ index $settings "azure_devops_org" }}"]
 {{ end }}
 {{ if and (has "github" $selectedMcps) (lookPath "bw") }}
 [mcp_servers.github]

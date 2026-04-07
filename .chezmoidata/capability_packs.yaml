@@ -1,3 +1,5 @@
+# Transitional: kept only for runtime parity tests.
+# Source of truth is packs/*/pack.yaml.
 packs:
   software-development:
     description: Software delivery pack across planning, implementation, testing, review, docs, and incident response.

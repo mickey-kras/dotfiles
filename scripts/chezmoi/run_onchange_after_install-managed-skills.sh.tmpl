@@ -1,21 +1,22 @@
 #!/usr/bin/env bash
 # Installs managed first-party skills for Claude and Codex.
 #
-# hash: {{ include ".chezmoidata/capability_packs.yaml" | sha256sum }}:{{ include "packs/software-development/pack.json" | sha256sum }}
+# hash: {{ include "templates/resolved-state.json" | sha256sum }}:{{ include "packs/software-development/pack.yaml" | sha256sum }}:{{ include "packs/content-creation/pack.yaml" | sha256sum }}
 
 set -euo pipefail
 
 HOME_SLASHED="{{ replace "\\" "/" .chezmoi.homeDir }}"
-CAPABILITY_PACK="{{ .capability_pack | default "software-development" }}"
+{{- $runtime := includeTemplate "templates/resolved-state.json" . | fromJson -}}
+{{- $resolved := $runtime.resolved -}}
+CAPABILITY_PACK="{{ index $resolved "pack_id" }}"
 DOTFILES_DIR="$HOME_SLASHED/dotfiles"
-MANAGED_SKILLS_DIR="$DOTFILES_DIR/packs/software-development/skills"
+MANAGED_SKILLS_DIR="$DOTFILES_DIR/packs/$CAPABILITY_PACK/skills"
 CLAUDE_SKILLS_DIR="$HOME_SLASHED/.claude/skills"
 CODEX_SKILLS_DIR="$HOME_SLASHED/.codex/skills"
 LEGACY_SUPERPOWERS_ROOT="$HOME_SLASHED/.claude/plugins/cache/claude-plugins-official/superpowers"
 
 MANAGED_SKILLS=(
-{{- $pack := index .packs (.capability_pack | default "software-development") }}
-{{- range $pack.managed_skills }}
+{{- range index $resolved "skills" "enabled" }}
   "{{ . }}"
 {{- end }}
 )
@@ -75,11 +76,6 @@ cleanup_managed_targets() {
 }
 
 echo "Reconciling managed skills for capability pack: $CAPABILITY_PACK"
-
-if [ "$CAPABILITY_PACK" != "software-development" ]; then
-  echo "  ! unsupported capability pack for managed skills: $CAPABILITY_PACK"
-  exit 0
-fi
 
 rm -f "$CODEX_SKILLS_DIR/.DS_Store" "$CLAUDE_SKILLS_DIR/.DS_Store"
 

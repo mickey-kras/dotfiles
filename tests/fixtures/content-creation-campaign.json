@@ -1,0 +1,53 @@
+{
+  "capability_pack": "content-creation",
+  "profile_selected": "campaign",
+  "profile_mode": "preset",
+  "selection_enabled_mcps": [
+    "context7",
+    "playwright",
+    "figma",
+    "filesystem",
+    "git",
+    "memory",
+    "thinking",
+    "process",
+    "http",
+    "exa",
+    "firecrawl",
+    "fal-ai"
+  ],
+  "selection_enabled_skills": [
+    "context-budget",
+    "obsidian-memory",
+    "verification-before-completion",
+    "writing-plans"
+  ],
+  "selection_enabled_agents": [
+    "content-strategist",
+    "research-synthesizer",
+    "brand-guardian",
+    "visual-storyteller",
+    "script-writer",
+    "channel-adaptation-editor",
+    "editorial-reviewer"
+  ],
+  "selection_enabled_rules": [
+    "citation-discipline",
+    "claims-verification",
+    "brand-consistency",
+    "asset-provenance",
+    "editorial-workflow"
+  ],
+  "selection_enabled_permissions": [
+    "core_read_write",
+    "shell_readonly",
+    "git_safe",
+    "local_file_mutation",
+    "creative_runtime",
+    "web_access",
+    "secret_tools"
+  ],
+  "memory_provider": "obsidian",
+  "obsidian_vault_path": "/vaults/content",
+  "content_workspace": "/Users/mikhailkrasilnikov/Content"
+}

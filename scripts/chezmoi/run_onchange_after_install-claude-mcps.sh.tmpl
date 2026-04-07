@@ -8,30 +8,16 @@ set -euo pipefail
 
 FAILED=0
 HOME_SLASHED="{{ replace "\\" "/" .chezmoi.homeDir }}"
-RUNTIME_PROFILE="{{ .runtime_profile | default "balanced" }}"
-PROFILE_BASE="{{ .profile_base | default "balanced" }}"
-AZURE_DEVOPS_ORG="{{ .azure_devops_org }}"
-MEMORY_PROVIDER="{{ index . "memory_provider" | default "builtin" }}"
-OBSIDIAN_VAULT_PATH="{{ index . "obsidian_vault_path" | default "" }}"
-
-{{ $profile := .runtime_profile | default "balanced" }}
-{{ $selectedMcps := list }}
-{{ if eq $profile "custom" }}
-  {{ $base := .profile_base | default "balanced" }}
-  {{ $selectedMcps = index .mcp_sets $base | default (list) }}
-  {{ range .custom_enabled_mcps }}
-    {{ $selectedMcps = append $selectedMcps . }}
-  {{ end }}
-  {{ range .custom_disabled_mcps }}
-    {{ $selectedMcps = without $selectedMcps . }}
-  {{ end }}
-{{ else }}
-  {{ $selectedMcps = index .mcp_sets $profile | default (list) }}
-{{ end }}
-{{ $selectedMcps = uniq $selectedMcps }}
+{{- $runtime := includeTemplate "templates/resolved-state.json" . | fromJson -}}
+{{- $resolved := $runtime.resolved -}}
+RUNTIME_PROFILE="{{ index $runtime "state" "profile" "requested" }}"
+PROFILE_BASE="{{ index $runtime "state" "profile" "selected" }}"
+AZURE_DEVOPS_ORG="{{ index $resolved "settings" "azure_devops_org" }}"
+MEMORY_PROVIDER="{{ index $resolved "settings" "memory_provider" }}"
+OBSIDIAN_VAULT_PATH="{{ index $resolved "settings" "obsidian_vault_path" }}"
 
 DESIRED_MCP_NAMES=(
-{{- range $selectedMcps }}
+{{- range index $resolved "mcps" "enabled" }}
   "{{ . }}"
 {{- end }}
 )

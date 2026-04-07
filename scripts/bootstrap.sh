@@ -6,6 +6,10 @@ set -euo pipefail
 
 REPO="mickey-kras/dotfiles"
 GUM_BIN=""
+BOOTSTRAP_SOURCE=""
+BOOTSTRAP_TEMP_SOURCE=""
+STATE_FILE=""
+CONFIG_STATE_JSON=""
 
 is_windows_gitbash() {
   case "$(uname -s)" in
@@ -97,6 +101,30 @@ install_gum_if_supported() {
   return 1
 }
 
+prepare_bootstrap_source() {
+  local script_dir="" repo_root=""
+  script_dir="$(CDPATH= cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+  repo_root="$(CDPATH= cd -- "$script_dir/.." && pwd)"
+  if [ -d "$repo_root/packs" ] && [ -f "$repo_root/scripts/bootstrap-wizard.sh" ]; then
+    BOOTSTRAP_SOURCE="$repo_root"
+    return 0
+  fi
+
+  if ! command -v git >/dev/null 2>&1; then
+    printf "  ${RED}x${R} git is required to load pack metadata for setup.\n"
+    exit 1
+  fi
+
+  BOOTSTRAP_TEMP_SOURCE="$(mktemp -d)"
+  if git clone --depth 1 "https://github.com/${REPO}.git" "$BOOTSTRAP_TEMP_SOURCE" >/dev/null 2>&1; then
+    BOOTSTRAP_SOURCE="$BOOTSTRAP_TEMP_SOURCE"
+    return 0
+  fi
+
+  printf "  ${RED}x${R} Failed to fetch dotfiles source for setup.\n"
+  exit 1
+}
+
 # --- Colors ---
 C='\033[1;36m'  # cyan
 G='\033[1;32m'  # green
@@ -157,18 +185,11 @@ USER_ROLE_SUMMARY=""
 USER_STACK_SUMMARY=""
 MEMORY_PROVIDER="builtin"
 OBSIDIAN_VAULT_PATH=""
+CONTENT_WORKSPACE=""
 CUSTOM_ENABLED_MCPS=()
 CUSTOM_DISABLED_MCPS=()
 CUSTOM_ENABLED_PERMISSION_GROUPS=()
 CUSTOM_DISABLED_PERMISSION_GROUPS=()
-
-RESTRICTED_MCPS=(playwright context7 figma filesystem git memory thinking github azure-devops)
-BALANCED_EXTRA_MCPS=(atlassian shell docker process terraform kubernetes)
-OPEN_EXTRA_MCPS=(http aws tailscale exa firecrawl fal-ai)
-
-RESTRICTED_PERMISSION_GROUPS=(core_read_write shell_readonly git_safe gh_safe)
-BALANCED_EXTRA_PERMISSION_GROUPS=(git_full gh_full dev_runtime local_file_mutation containers infra_local)
-OPEN_EXTRA_PERMISSION_GROUPS=(package_runtime cloud_extended secret_tools web_access)
 
 join_by() {
   local delim="$1"; shift
@@ -190,10 +211,6 @@ contains_word() {
     [ "$item" = "$needle" ] && return 0
   done
   return 1
-}
-
-unique_words() {
-  awk '!seen[$0]++'
 }
 
 detect_existing_value() {
@@ -246,286 +263,117 @@ for path in paths:
 PY
 }
 
-pad_cell() {
-  local width="$1"
-  local text="$2"
-  printf "%-*s" "$width" "$text"
+json_value() {
+  local file="$1"
+  local key="$2"
+  python3 - "$file" "$key" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+data = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+value = data[sys.argv[2]]
+if isinstance(value, bool):
+    print("true" if value else "false")
+elif value is None:
+    print("")
+else:
+    print(value)
+PY
 }
 
-render_profile_comparison() {
-  local label_w=14
-  local col_w=20
-  local sep="+-$(printf '%*s' "$label_w" '' | tr ' ' '-')-+-$(printf '%*s' "$col_w" '' | tr ' ' '-')-+-$(printf '%*s' "$col_w" '' | tr ' ' '-')-+-$(printf '%*s' "$col_w" '' | tr ' ' '-')-+"
+json_array_lines() {
+  local file="$1"
+  local key="$2"
+  python3 - "$file" "$key" <<'PY'
+import json
+import sys
+from pathlib import Path
 
-  printf "%s\n" "$sep"
-  printf "| %s | %s | %s | %s |\n" \
-    "$(pad_cell "$label_w" "")" \
-    "$(pad_cell "$col_w" "restricted")" \
-    "$(pad_cell "$col_w" "balanced")" \
-    "$(pad_cell "$col_w" "open")"
-  printf "%s\n" "$sep"
-  printf "| %s | %s | %s | %s |\n" \
-    "$(pad_cell "$label_w" "Summary")" \
-    "$(pad_cell "$col_w" "Remote work only")" \
-    "$(pad_cell "$col_w" "Practical local dev")" \
-    "$(pad_cell "$col_w" "Broadest access")"
-  printf "| %s | %s | %s | %s |\n" \
-    "$(pad_cell "$label_w" "Local exec")" \
-    "$(pad_cell "$col_w" "no")" \
-    "$(pad_cell "$col_w" "yes")" \
-    "$(pad_cell "$col_w" "yes")"
-  printf "| %s | %s | %s | %s |\n" \
-    "$(pad_cell "$label_w" "Containers")" \
-    "$(pad_cell "$col_w" "no")" \
-    "$(pad_cell "$col_w" "yes")" \
-    "$(pad_cell "$col_w" "yes")"
-  printf "| %s | %s | %s | %s |\n" \
-    "$(pad_cell "$label_w" "Cloud / web")" \
-    "$(pad_cell "$col_w" "no")" \
-    "$(pad_cell "$col_w" "limited")" \
-    "$(pad_cell "$col_w" "yes")"
-  printf "| %s | %s | %s | %s |\n" \
-    "$(pad_cell "$label_w" "Risk")" \
-    "$(pad_cell "$col_w" "low")" \
-    "$(pad_cell "$col_w" "medium")" \
-    "$(pad_cell "$col_w" "high")"
-  printf "%s\n" "$sep"
-  printf "| %s | %s | %s | %s |\n" \
-    "$(pad_cell "$label_w" "Tooling")" \
-    "$(pad_cell "$col_w" "git, node, npx")" \
-    "$(pad_cell "$col_w" "git, node, npx")" \
-    "$(pad_cell "$col_w" "git, node, npx")"
-  printf "| %s | %s | %s | %s |\n" \
-    "$(pad_cell "$label_w" "")" \
-    "$(pad_cell "$col_w" "bw (if github)")" \
-    "$(pad_cell "$col_w" "bw (if github)")" \
-    "$(pad_cell "$col_w" "bw")"
-  printf "| %s | %s | %s | %s |\n" \
-    "$(pad_cell "$label_w" "")" \
-    "$(pad_cell "$col_w" "")" \
-    "$(pad_cell "$col_w" "docker cli")" \
-    "$(pad_cell "$col_w" "docker cli")"
-  printf "| %s | %s | %s | %s |\n" \
-    "$(pad_cell "$label_w" "")" \
-    "$(pad_cell "$col_w" "")" \
-    "$(pad_cell "$col_w" "")" \
-    "$(pad_cell "$col_w" "uvx")"
-  printf "%s\n" "$sep"
-  printf "| %s | %s | %s | %s |\n" \
-    "$(pad_cell "$label_w" "Key MCPs")" \
-    "$(pad_cell "$col_w" "github")" \
-    "$(pad_cell "$col_w" "github")" \
-    "$(pad_cell "$col_w" "github")"
-  printf "| %s | %s | %s | %s |\n" \
-    "$(pad_cell "$label_w" "")" \
-    "$(pad_cell "$col_w" "azure-devops")" \
-    "$(pad_cell "$col_w" "azure-devops")" \
-    "$(pad_cell "$col_w" "azure-devops")"
-  printf "| %s | %s | %s | %s |\n" \
-    "$(pad_cell "$label_w" "")" \
-    "$(pad_cell "$col_w" "context7")" \
-    "$(pad_cell "$col_w" "context7")" \
-    "$(pad_cell "$col_w" "context7")"
-  printf "| %s | %s | %s | %s |\n" \
-    "$(pad_cell "$label_w" "")" \
-    "$(pad_cell "$col_w" "figma")" \
-    "$(pad_cell "$col_w" "figma")" \
-    "$(pad_cell "$col_w" "figma")"
-  printf "| %s | %s | %s | %s |\n" \
-    "$(pad_cell "$label_w" "")" \
-    "$(pad_cell "$col_w" "filesystem")" \
-    "$(pad_cell "$col_w" "filesystem")" \
-    "$(pad_cell "$col_w" "filesystem")"
-  printf "| %s | %s | %s | %s |\n" \
-    "$(pad_cell "$label_w" "")" \
-    "$(pad_cell "$col_w" "git")" \
-    "$(pad_cell "$col_w" "git")" \
-    "$(pad_cell "$col_w" "git")"
-  printf "| %s | %s | %s | %s |\n" \
-    "$(pad_cell "$label_w" "")" \
-    "$(pad_cell "$col_w" "memory")" \
-    "$(pad_cell "$col_w" "memory")" \
-    "$(pad_cell "$col_w" "memory")"
-  printf "| %s | %s | %s | %s |\n" \
-    "$(pad_cell "$label_w" "")" \
-    "$(pad_cell "$col_w" "")" \
-    "$(pad_cell "$col_w" "atlassian")" \
-    "$(pad_cell "$col_w" "atlassian")"
-  printf "| %s | %s | %s | %s |\n" \
-    "$(pad_cell "$label_w" "")" \
-    "$(pad_cell "$col_w" "")" \
-    "$(pad_cell "$col_w" "shell")" \
-    "$(pad_cell "$col_w" "shell")"
-  printf "| %s | %s | %s | %s |\n" \
-    "$(pad_cell "$label_w" "")" \
-    "$(pad_cell "$col_w" "")" \
-    "$(pad_cell "$col_w" "docker")" \
-    "$(pad_cell "$col_w" "docker")"
-  printf "| %s | %s | %s | %s |\n" \
-    "$(pad_cell "$label_w" "")" \
-    "$(pad_cell "$col_w" "")" \
-    "$(pad_cell "$col_w" "kubernetes")" \
-    "$(pad_cell "$col_w" "kubernetes")"
-  printf "| %s | %s | %s | %s |\n" \
-    "$(pad_cell "$label_w" "")" \
-    "$(pad_cell "$col_w" "")" \
-    "$(pad_cell "$col_w" "")" \
-    "$(pad_cell "$col_w" "http")"
-  printf "| %s | %s | %s | %s |\n" \
-    "$(pad_cell "$label_w" "")" \
-    "$(pad_cell "$col_w" "")" \
-    "$(pad_cell "$col_w" "")" \
-    "$(pad_cell "$col_w" "aws")"
-  printf "| %s | %s | %s | %s |\n" \
-    "$(pad_cell "$label_w" "")" \
-    "$(pad_cell "$col_w" "")" \
-    "$(pad_cell "$col_w" "")" \
-    "$(pad_cell "$col_w" "tailscale")"
-  printf "%s\n" "$sep"
-  printf "custom  Start from restricted, balanced, or open and choose curated MCPs and permission groups yourself.\n"
+data = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+for item in data.get(sys.argv[2], []):
+    print(item)
+PY
 }
 
-pick_with_gum() {
-  local prompt="$1"; shift
-  "$GUM_BIN" choose --header "$prompt" "$@"
-}
+write_chezmoi_config() {
+  python3 - "$CONFIG_STATE_JSON" "$USER_NAME" "$USER_ROLE_SUMMARY" "$USER_STACK_SUMMARY" > "$HOME/.config/chezmoi/chezmoi.toml" <<'PY'
+import json
+import sys
+from pathlib import Path
 
-pick_many_with_gum() {
-  local prompt="$1"; shift
-  "$GUM_BIN" choose --no-limit --header "$prompt" "$@"
-}
+config = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+config["user_name"] = sys.argv[2]
+config["user_role_summary"] = sys.argv[3]
+config["user_stack_summary"] = sys.argv[4]
 
-effective_mcps() {
-  local profile="$1" base="$2"
-  local values=()
-  case "$profile" in
-    restricted) values=("${RESTRICTED_MCPS[@]}") ;;
-    balanced) values=("${RESTRICTED_MCPS[@]}" "${BALANCED_EXTRA_MCPS[@]}") ;;
-    open) values=("${RESTRICTED_MCPS[@]}" "${BALANCED_EXTRA_MCPS[@]}" "${OPEN_EXTRA_MCPS[@]}") ;;
-    custom)
-      case "$base" in
-        restricted) values=("${RESTRICTED_MCPS[@]}") ;;
-        balanced) values=("${RESTRICTED_MCPS[@]}" "${BALANCED_EXTRA_MCPS[@]}") ;;
-        open) values=("${RESTRICTED_MCPS[@]}" "${BALANCED_EXTRA_MCPS[@]}" "${OPEN_EXTRA_MCPS[@]}") ;;
-        *) values=("${RESTRICTED_MCPS[@]}" "${BALANCED_EXTRA_MCPS[@]}") ;;
-      esac
-      values+=("${CUSTOM_ENABLED_MCPS[@]}")
-      local item filtered=()
-      for item in "${values[@]}"; do
-        if ! contains_word "$item" "${CUSTOM_DISABLED_MCPS[@]}"; then
-          filtered+=("$item")
-        fi
-      done
-      values=("${filtered[@]}")
-      ;;
-  esac
-  printf "%s\n" "${values[@]}" | unique_words
-}
+order = [
+    "user_name",
+    "user_role_summary",
+    "user_stack_summary",
+    "runtime_profile",
+    "capability_pack",
+    "profile_base",
+    "profile_selected",
+    "profile_mode",
+    "custom_enabled_mcps",
+    "custom_disabled_mcps",
+    "custom_enabled_permission_groups",
+    "custom_disabled_permission_groups",
+    "selection_enabled_mcps",
+    "selection_enabled_skills",
+    "selection_enabled_agents",
+    "selection_enabled_rules",
+    "selection_enabled_permissions",
+    "memory_provider",
+    "obsidian_vault_path",
+    "azure_devops_org",
+    "content_workspace",
+]
 
-effective_permission_groups() {
-  local profile="$1" base="$2"
-  local values=()
-  case "$profile" in
-    restricted) values=("${RESTRICTED_PERMISSION_GROUPS[@]}") ;;
-    balanced) values=("${RESTRICTED_PERMISSION_GROUPS[@]}" "${BALANCED_EXTRA_PERMISSION_GROUPS[@]}") ;;
-    open) values=("${RESTRICTED_PERMISSION_GROUPS[@]}" "${BALANCED_EXTRA_PERMISSION_GROUPS[@]}" "${OPEN_EXTRA_PERMISSION_GROUPS[@]}") ;;
-    custom)
-      case "$base" in
-        restricted) values=("${RESTRICTED_PERMISSION_GROUPS[@]}") ;;
-        balanced) values=("${RESTRICTED_PERMISSION_GROUPS[@]}" "${BALANCED_EXTRA_PERMISSION_GROUPS[@]}") ;;
-        open) values=("${RESTRICTED_PERMISSION_GROUPS[@]}" "${BALANCED_EXTRA_PERMISSION_GROUPS[@]}" "${OPEN_EXTRA_PERMISSION_GROUPS[@]}") ;;
-        *) values=("${RESTRICTED_PERMISSION_GROUPS[@]}" "${BALANCED_EXTRA_PERMISSION_GROUPS[@]}") ;;
-      esac
-      values+=("${CUSTOM_ENABLED_PERMISSION_GROUPS[@]}")
-      local item filtered=()
-      for item in "${values[@]}"; do
-        if ! contains_word "$item" "${CUSTOM_DISABLED_PERMISSION_GROUPS[@]}"; then
-          filtered+=("$item")
-        fi
-      done
-      values=("${filtered[@]}")
-      ;;
-  esac
-  printf "%s\n" "${values[@]}" | unique_words
-}
+def toml_quote(value):
+    return json.dumps(value)
 
-default_memory_provider_for_profile() {
-  local profile="$1"
-  if [ "$profile" = "restricted" ]; then
-    printf "builtin"
-  else
-    printf "obsidian"
-  fi
-}
+def toml_array(values):
+    return "[" + ",".join(json.dumps(value) for value in values) + "]"
 
-EXISTING_MEMORY_PROVIDER="$(detect_existing_value memory_provider)"
-EXISTING_OBSIDIAN_VAULT="$(detect_existing_value obsidian_vault_path)"
+print("[data]")
+for key in order:
+    value = config.get(key, "")
+    if isinstance(value, list):
+        print(f"  {key} = {toml_array(value)}")
+    else:
+        print(f"  {key} = {toml_quote(value)}")
+PY
+}
 
 install_gum_if_supported || true
+prepare_bootstrap_source
+
+STATE_FILE="$(mktemp)"
+CONFIG_STATE_JSON="$(mktemp)"
 
 if [ -n "$GUM_BIN" ]; then
-  printf "${B}Profile Selection${R}\n\n"
-  render_profile_comparison
-  printf "\n"
-  RUNTIME_PROFILE="$(pick_with_gum "Select runtime profile" restricted balanced open custom)"
-  CAPABILITY_PACK="$(pick_with_gum "Select capability pack" software-development)"
-  DEFAULT_MEMORY_PROVIDER="${EXISTING_MEMORY_PROVIDER:-$(default_memory_provider_for_profile "$RUNTIME_PROFILE")}"
-  if [ "$DEFAULT_MEMORY_PROVIDER" = "obsidian" ]; then
-    MEMORY_PROVIDER="$(pick_with_gum "Select memory provider" obsidian builtin)"
-  else
-    MEMORY_PROVIDER="$(pick_with_gum "Select memory provider" builtin obsidian)"
-  fi
-  if [ "$MEMORY_PROVIDER" = "obsidian" ]; then
-    OBSIDIAN_VAULT_PATH="$("$GUM_BIN" input --header "Obsidian vault path" --value "${EXISTING_OBSIDIAN_VAULT:-}")"
-  fi
+  bash "$BOOTSTRAP_SOURCE/scripts/bootstrap-wizard.sh" --source "$BOOTSTRAP_SOURCE" --state "$STATE_FILE" --gum "$GUM_BIN"
 else
-  printf "${B}Runtime profile [restricted/balanced/open/custom] (default: balanced): ${R}"
-  read -r RUNTIME_PROFILE
-  [ -z "$RUNTIME_PROFILE" ] && RUNTIME_PROFILE="balanced"
-  CAPABILITY_PACK="software-development"
-  DEFAULT_MEMORY_PROVIDER="${EXISTING_MEMORY_PROVIDER:-$(default_memory_provider_for_profile "$RUNTIME_PROFILE")}"
-  if [ "$DEFAULT_MEMORY_PROVIDER" = "builtin" ]; then
-    printf "${B}Memory provider [builtin/obsidian] (default: builtin): ${R}"
-  else
-    printf "${B}Memory provider [obsidian/builtin] (default: obsidian): ${R}"
-  fi
-  read -r MEMORY_PROVIDER
-  if [ -z "$MEMORY_PROVIDER" ]; then
-    MEMORY_PROVIDER="$DEFAULT_MEMORY_PROVIDER"
-  fi
-  if [ "$MEMORY_PROVIDER" = "obsidian" ]; then
-    printf "${B}Obsidian vault path [%s]: ${R}" "${EXISTING_OBSIDIAN_VAULT}"
-    read -r OBSIDIAN_VAULT_PATH
-    [ -z "$OBSIDIAN_VAULT_PATH" ] && OBSIDIAN_VAULT_PATH="$EXISTING_OBSIDIAN_VAULT"
-  fi
+  bash "$BOOTSTRAP_SOURCE/scripts/bootstrap-wizard.sh" --source "$BOOTSTRAP_SOURCE" --state "$STATE_FILE"
 fi
 
-case "$RUNTIME_PROFILE" in
-  restricted|balanced|open|custom) ;;
-  *)
-    printf "  ${Y}>${R} Unknown runtime profile - defaulting to balanced\n"
-    RUNTIME_PROFILE="balanced"
-    ;;
-esac
+python3 "$BOOTSTRAP_SOURCE/scripts/pack_state.py" legacy-config "$BOOTSTRAP_SOURCE" "$STATE_FILE" > "$CONFIG_STATE_JSON"
 
-if [ "$RUNTIME_PROFILE" = "custom" ]; then
-  if [ -n "$GUM_BIN" ]; then
-    PROFILE_BASE="$(pick_with_gum "Select custom base profile" restricted balanced open)"
-    mapfile -t CUSTOM_ENABLED_MCPS < <(pick_many_with_gum "Select MCPs to enable on top of base profile" "${RESTRICTED_MCPS[@]}" "${BALANCED_EXTRA_MCPS[@]}" "${OPEN_EXTRA_MCPS[@]}" | sort -u)
-    mapfile -t CUSTOM_ENABLED_PERMISSION_GROUPS < <(pick_many_with_gum "Select permission groups to enable on top of base profile" \
-      core_read_write shell_readonly git_safe gh_safe git_full gh_full dev_runtime local_file_mutation containers infra_local package_runtime cloud_extended secret_tools web_access | sort -u)
-  else
-    printf "${B}Custom base profile [restricted/balanced/open] (default: balanced): ${R}"
-    read -r PROFILE_BASE
-    [ -z "$PROFILE_BASE" ] && PROFILE_BASE="balanced"
-    printf "${B}Custom enabled MCPs (space-separated, curated catalog only): ${R}"
-    read -r CUSTOM_MCP_INPUT
-    for item in $CUSTOM_MCP_INPUT; do CUSTOM_ENABLED_MCPS+=("$item"); done
-    printf "${B}Custom enabled permission groups (space-separated): ${R}"
-    read -r CUSTOM_PG_INPUT
-    for item in $CUSTOM_PG_INPUT; do CUSTOM_ENABLED_PERMISSION_GROUPS+=("$item"); done
-  fi
-fi
+RUNTIME_PROFILE="$(json_value "$CONFIG_STATE_JSON" runtime_profile)"
+CAPABILITY_PACK="$(json_value "$CONFIG_STATE_JSON" capability_pack)"
+PROFILE_BASE="$(json_value "$CONFIG_STATE_JSON" profile_base)"
+MEMORY_PROVIDER="$(json_value "$CONFIG_STATE_JSON" memory_provider)"
+OBSIDIAN_VAULT_PATH="$(json_value "$CONFIG_STATE_JSON" obsidian_vault_path)"
+AZURE_DEVOPS_ORG="$(json_value "$CONFIG_STATE_JSON" azure_devops_org)"
+CONTENT_WORKSPACE="$(json_value "$CONFIG_STATE_JSON" content_workspace)"
+mapfile -t CUSTOM_ENABLED_MCPS < <(json_array_lines "$CONFIG_STATE_JSON" custom_enabled_mcps)
+mapfile -t CUSTOM_DISABLED_MCPS < <(json_array_lines "$CONFIG_STATE_JSON" custom_disabled_mcps)
+mapfile -t CUSTOM_ENABLED_PERMISSION_GROUPS < <(json_array_lines "$CONFIG_STATE_JSON" custom_enabled_permission_groups)
+mapfile -t CUSTOM_DISABLED_PERMISSION_GROUPS < <(json_array_lines "$CONFIG_STATE_JSON" custom_disabled_permission_groups)
+mapfile -t EFFECTIVE_MCPS < <(json_array_lines "$CONFIG_STATE_JSON" selection_enabled_mcps)
+mapfile -t EFFECTIVE_PERMISSION_GROUPS < <(json_array_lines "$CONFIG_STATE_JSON" selection_enabled_permissions)
 
 detect_existing_name() {
   local file
@@ -610,6 +458,16 @@ else
   read -r AZDO_INPUT
   [ -n "$AZDO_INPUT" ] && AZURE_DEVOPS_ORG="$AZDO_INPUT"
 fi
+python3 - "$CONFIG_STATE_JSON" "$AZURE_DEVOPS_ORG" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+path = Path(sys.argv[1])
+data = json.loads(path.read_text(encoding="utf-8"))
+data["azure_devops_org"] = sys.argv[2]
+path.write_text(json.dumps(data, indent=2), encoding="utf-8")
+PY
 
 printf "\n${B}Planned configuration${R}\n"
 printf "  Runtime profile: ${C}%s${R}\n" "$RUNTIME_PROFILE"
@@ -624,13 +482,14 @@ fi
 if [ -n "$AZURE_DEVOPS_ORG" ]; then
   printf "  Azure DevOps org: ${C}%s${R}\n" "$AZURE_DEVOPS_ORG"
 fi
+if [ -n "$CONTENT_WORKSPACE" ]; then
+  printf "  Content workspace: ${D}%s${R}\n" "$CONTENT_WORKSPACE"
+fi
 if [ "$RUNTIME_PROFILE" = "custom" ]; then
   printf "  Custom base: ${C}%s${R}\n" "$PROFILE_BASE"
   printf "  Custom enabled MCPs: ${D}%s${R}\n" "$(join_by ', ' "${CUSTOM_ENABLED_MCPS[@]}")"
   printf "  Custom enabled permission groups: ${D}%s${R}\n" "$(join_by ', ' "${CUSTOM_ENABLED_PERMISSION_GROUPS[@]}")"
 fi
-mapfile -t EFFECTIVE_MCPS < <(effective_mcps "$RUNTIME_PROFILE" "$PROFILE_BASE")
-mapfile -t EFFECTIVE_PERMISSION_GROUPS < <(effective_permission_groups "$RUNTIME_PROFILE" "$PROFILE_BASE")
 NEEDS_BITWARDEN=false
 if contains_word github "${EFFECTIVE_MCPS[@]}" || contains_word aws "${EFFECTIVE_MCPS[@]}" || contains_word tailscale "${EFFECTIVE_MCPS[@]}" || contains_word exa "${EFFECTIVE_MCPS[@]}" || contains_word firecrawl "${EFFECTIVE_MCPS[@]}" || contains_word fal-ai "${EFFECTIVE_MCPS[@]}"; then
   NEEDS_BITWARDEN=true
@@ -666,22 +525,7 @@ fi
 # --- Write chezmoi config (Bitwarden-backed MCPs disabled for initial apply) ---
 printf "\n${D}Writing chezmoi config...${R}\n"
 mkdir -p ~/.config/chezmoi
-cat > ~/.config/chezmoi/chezmoi.toml <<TOML
-[data]
-  user_name = "${USER_NAME}"
-  user_role_summary = "${USER_ROLE_SUMMARY}"
-  user_stack_summary = "${USER_STACK_SUMMARY}"
-  runtime_profile = "${RUNTIME_PROFILE}"
-  capability_pack = "${CAPABILITY_PACK}"
-  profile_base = "${PROFILE_BASE}"
-  custom_enabled_mcps = [$(for i in "${CUSTOM_ENABLED_MCPS[@]}"; do printf '"%s",' "$i"; done | sed 's/,$//')]
-  custom_disabled_mcps = []
-  custom_enabled_permission_groups = [$(for i in "${CUSTOM_ENABLED_PERMISSION_GROUPS[@]}"; do printf '"%s",' "$i"; done | sed 's/,$//')]
-  custom_disabled_permission_groups = []
-  memory_provider = "${MEMORY_PROVIDER}"
-  obsidian_vault_path = "${OBSIDIAN_VAULT_PATH}"
-  azure_devops_org = "${AZURE_DEVOPS_ORG}"
-TOML
+write_chezmoi_config
 printf "  ${G}+${R} Config saved to ~/.config/chezmoi/chezmoi.toml\n"
 
 # --- Clear stale chezmoi state and source for a clean init ---
@@ -805,22 +649,7 @@ if [ "$NEEDS_BITWARDEN" = "true" ]; then
       fi
 
       # Re-apply without dropping the selected profile state once Bitwarden is ready.
-      cat > ~/.config/chezmoi/chezmoi.toml <<TOML
-[data]
-  user_name = "${USER_NAME}"
-  user_role_summary = "${USER_ROLE_SUMMARY}"
-  user_stack_summary = "${USER_STACK_SUMMARY}"
-  runtime_profile = "${RUNTIME_PROFILE}"
-  capability_pack = "${CAPABILITY_PACK}"
-  profile_base = "${PROFILE_BASE}"
-  custom_enabled_mcps = [$(for i in "${CUSTOM_ENABLED_MCPS[@]}"; do printf '"%s",' "$i"; done | sed 's/,$//')]
-  custom_disabled_mcps = []
-  custom_enabled_permission_groups = [$(for i in "${CUSTOM_ENABLED_PERMISSION_GROUPS[@]}"; do printf '"%s",' "$i"; done | sed 's/,$//')]
-  custom_disabled_permission_groups = []
-  memory_provider = "${MEMORY_PROVIDER}"
-  obsidian_vault_path = "${OBSIDIAN_VAULT_PATH}"
-  azure_devops_org = "${AZURE_DEVOPS_ORG}"
-TOML
+      write_chezmoi_config
       printf "\n${B}Re-applying dotfiles with Bitwarden-backed MCPs...${R}\n"
       chezmoi apply
       printf "  ${G}+${R} Bitwarden-backed MCPs configured\n"
