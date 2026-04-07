@@ -24,7 +24,7 @@ chezmoi init --apply --source ~/dotfiles
 ```
 
 The installer now asks for:
-1. **Capability pack** - currently `software-development` or `content-creation`
+1. **Capability pack** - `software-development`, `content-creation`, or `research-and-strategy`
 2. **Pack-local profile** - preset or custom, depending on your pack choices
 3. **Pack settings** - for example memory provider, vault path, workspace path, or Azure DevOps org
 4. **Display name, role summary, stack summary**
@@ -57,11 +57,17 @@ The shared resolver in `templates/resolved-state.json` normalizes the current se
 - `studio`: default for structured research, design collaboration, and iteration
 - `campaign`: broader search, crawl, and image-generation surface for trusted personal machines
 
+`research-and-strategy`
+- `desk`: low-risk reading and local synthesis
+- `analyst`: default for broader investigation with browser and process tools
+- `investigation`: wider crawling and search for trusted personal machines
+
 ### Capability packs
 
 Current packs:
 - `software-development`
 - `content-creation`
+- `research-and-strategy`
 
 `software-development` provides the SDLC operating model across tools:
 - Claude Code specialists
@@ -75,8 +81,11 @@ Current packs:
 - campaign and editorial playbooks
 - curated skills for planning, memory, and verification
 
-Design-complete backlog candidate:
-- `research-and-strategy`
+`research-and-strategy` provides an evidence-focused research and reporting model:
+- trend research, competitive analysis, and evidence review agents
+- citation discipline and uncertainty reporting rules
+- research intake, evidence matrix, and executive summary playbooks
+- curated skills for context budget, memory, planning, and verification
 
 ### MCPs
 
@@ -169,6 +178,12 @@ Managed first-party skills are installed pack-by-pack into:
 - `writing-plans`
 
 `content-creation` managed skills:
+- `context-budget`
+- `obsidian-memory`
+- `verification-before-completion`
+- `writing-plans`
+
+`research-and-strategy` managed skills:
 - `context-budget`
 - `obsidian-memory`
 - `verification-before-completion`
@@ -285,6 +300,12 @@ packs/
       agents/                         # Editorial and campaign agents
       rules/                          # Editorial governance and workflow rules
     docs/                             # Pack quickstart and playbooks
+  research-and-strategy/
+    pack.yaml                         # Pack-owned schema for research and evidence work
+    claude/
+      agents/                         # Research, analysis, and reporting agents
+      rules/                          # Evidence discipline and report structure rules
+    docs/                             # Pack quickstart and playbooks
 dot_claude/
   CLAUDE.md.tmpl                      # -> ~/.claude/CLAUDE.md
   settings.json.tmpl                  # -> ~/.claude/settings.json
@@ -326,7 +347,7 @@ docs/
   architecture/
     template-dependency-inventory.md  # Template and resolver dependency map
   packs/
-    research-and-strategy.md          # Design-complete backlog candidate spec
+    research-and-strategy.md          # Research-and-strategy pack design and implementation notes
   security/
     README.md                         # Review method and approval criteria
     CONTRIBUTING.md                   # MCP and plugin evaluation process
