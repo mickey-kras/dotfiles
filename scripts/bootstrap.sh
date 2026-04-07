@@ -5,7 +5,6 @@ set -euo pipefail
 # Usage: bash <(curl -sL https://raw.githubusercontent.com/mickey-kras/dotfiles/main/scripts/bootstrap.sh)
 
 REPO="mickey-kras/dotfiles"
-GUM_BIN=""
 BOOTSTRAP_SOURCE=""
 BOOTSTRAP_TEMP_SOURCE=""
 STATE_FILE=""
@@ -16,89 +15,6 @@ is_windows_gitbash() {
     MINGW*|MSYS*|CYGWIN*) return 0 ;;
     *) return 1 ;;
   esac
-}
-
-resolve_gum_bin() {
-  local resolved="" resolved_dir="" candidate="" search_root=""
-  if command -v gum >/dev/null 2>&1; then
-    GUM_BIN="$(command -v gum)"
-    return 0
-  fi
-
-  if is_windows_gitbash; then
-    if command -v where.exe >/dev/null 2>&1; then
-      resolved="$(where.exe gum.exe 2>/dev/null | tr -d '\r' | head -n1 || true)"
-      if [ -n "$resolved" ]; then
-        resolved_dir="$(dirname "$resolved")"
-        PATH="$resolved_dir:$PATH"
-        export PATH
-        GUM_BIN="$resolved"
-        return 0
-      fi
-    fi
-
-    for candidate in \
-      "${LOCALAPPDATA:-}/Microsoft/WinGet/Links/gum.exe" \
-      "${LOCALAPPDATA:-}/Microsoft/WindowsApps/gum.exe" \
-      "${USERPROFILE:-}/AppData/Local/Microsoft/WinGet/Links/gum.exe" \
-      "${USERPROFILE:-}/AppData/Local/Microsoft/WindowsApps/gum.exe"
-    do
-      if [ -n "$candidate" ] && [ -x "$candidate" ]; then
-        resolved_dir="$(dirname "$candidate")"
-        PATH="$resolved_dir:$PATH"
-        export PATH
-        GUM_BIN="$candidate"
-        return 0
-      fi
-    done
-
-    for search_root in \
-      "${LOCALAPPDATA:-}/Microsoft/WinGet/Packages" \
-      "${USERPROFILE:-}/AppData/Local/Microsoft/WinGet/Packages" \
-      "/c/Program Files/WinGet/Packages"
-    do
-      if [ -d "$search_root" ]; then
-        resolved="$(find "$search_root" -type f -iname 'gum.exe' 2>/dev/null | head -n1 || true)"
-        if [ -n "$resolved" ]; then
-          resolved_dir="$(dirname "$resolved")"
-          PATH="$resolved_dir:$PATH"
-          export PATH
-          GUM_BIN="$resolved"
-          return 0
-        fi
-      fi
-    done
-  fi
-
-  GUM_BIN=""
-  return 1
-}
-
-install_gum_if_supported() {
-  if resolve_gum_bin; then
-    return 0
-  fi
-
-  printf "${Y}>${R} Installing gum for interactive setup...\n"
-  if [[ "$(uname -s)" == "Darwin" ]] && command -v brew >/dev/null 2>&1; then
-    brew install gum || true
-  elif is_windows_gitbash && command -v winget.exe >/dev/null 2>&1; then
-    winget.exe install -e --id charmbracelet.gum --accept-package-agreements --accept-source-agreements || true
-  elif is_windows_gitbash && command -v choco >/dev/null 2>&1; then
-    choco install gum -y || true
-  elif command -v pacman >/dev/null 2>&1; then
-    sudo pacman -S --noconfirm gum || true
-  elif command -v dnf >/dev/null 2>&1; then
-    sudo dnf install -y gum || true
-  fi
-
-  if resolve_gum_bin; then
-    printf "  ${G}+${R} gum installed\n"
-    return 0
-  fi
-
-  printf "  ${Y}>${R} gum unavailable - falling back to plain prompts\n"
-  return 1
 }
 
 prepare_bootstrap_source() {
@@ -167,6 +83,35 @@ if ! command -v chezmoi >/dev/null 2>&1; then
   printf "  ${G}+${R} chezmoi installed\n"
 else
   printf "  ${G}+${R} chezmoi $(chezmoi --version 2>/dev/null | head -c 30)\n"
+fi
+
+# --- Install .NET SDK if missing (required for the setup wizard TUI) ---
+if ! command -v dotnet >/dev/null 2>&1 || ! dotnet --list-sdks 2>/dev/null | grep -q '^10\.'; then
+  printf "${Y}>${R} Installing .NET 10 SDK...\n"
+  if [[ "$(uname -s)" == "Darwin" ]] && command -v brew >/dev/null 2>&1; then
+    brew install dotnet@10 || brew install dotnet || true
+  elif is_windows_gitbash && command -v winget.exe >/dev/null 2>&1; then
+    winget.exe install -e --id Microsoft.DotNet.SDK.10 --accept-package-agreements --accept-source-agreements || true
+  elif is_windows_gitbash && command -v choco >/dev/null 2>&1; then
+    choco install dotnet-sdk -y || true
+  elif command -v apt-get >/dev/null 2>&1; then
+    curl -fsSL https://dot.net/v1/dotnet-install.sh | bash -s -- --channel 10.0 --install-dir "$HOME/.dotnet" || true
+    export PATH="$HOME/.dotnet:$PATH"
+  elif command -v dnf >/dev/null 2>&1; then
+    sudo dnf install -y dotnet-sdk-10.0 || true
+  elif command -v pacman >/dev/null 2>&1; then
+    sudo pacman -S --noconfirm dotnet-sdk || true
+  else
+    curl -fsSL https://dot.net/v1/dotnet-install.sh | bash -s -- --channel 10.0 --install-dir "$HOME/.dotnet" || true
+    export PATH="$HOME/.dotnet:$PATH"
+  fi
+  if command -v dotnet >/dev/null 2>&1; then
+    printf "  ${G}+${R} dotnet $(dotnet --version 2>/dev/null)\n"
+  else
+    printf "  ${Y}>${R} .NET SDK not available - wizard will fall back to plain prompts\n"
+  fi
+else
+  printf "  ${G}+${R} dotnet $(dotnet --version 2>/dev/null)\n"
 fi
 
 # --- Detect AI tools ---
@@ -347,17 +292,12 @@ for key in order:
 PY
 }
 
-install_gum_if_supported || true
 prepare_bootstrap_source
 
 STATE_FILE="$(mktemp)"
 CONFIG_STATE_JSON="$(mktemp)"
 
-if [ -n "$GUM_BIN" ]; then
-  bash "$BOOTSTRAP_SOURCE/scripts/bootstrap-wizard.sh" --source "$BOOTSTRAP_SOURCE" --state "$STATE_FILE" --gum "$GUM_BIN"
-else
-  bash "$BOOTSTRAP_SOURCE/scripts/bootstrap-wizard.sh" --source "$BOOTSTRAP_SOURCE" --state "$STATE_FILE"
-fi
+bash "$BOOTSTRAP_SOURCE/scripts/bootstrap-wizard.sh" --source "$BOOTSTRAP_SOURCE" --state "$STATE_FILE"
 
 python3 "$BOOTSTRAP_SOURCE/scripts/pack_state.py" legacy-config "$BOOTSTRAP_SOURCE" "$STATE_FILE" > "$CONFIG_STATE_JSON"
 
@@ -388,26 +328,16 @@ detect_existing_name() {
 
 EXISTING_NAME="$(detect_existing_name || true)"
 if [ -n "$EXISTING_NAME" ]; then
-  if [ -n "$GUM_BIN" ]; then
-    if "$GUM_BIN" confirm "Reuse existing display name '${EXISTING_NAME}'?"; then
-      USER_NAME="$EXISTING_NAME"
-    fi
-  else
-    printf "${B}Reuse existing display name '${EXISTING_NAME}'? [Y/n]: ${R}"
-    read -r REUSE_NAME
-    if [ -z "$REUSE_NAME" ] || [ "$REUSE_NAME" = "y" ] || [ "$REUSE_NAME" = "Y" ]; then
-      USER_NAME="$EXISTING_NAME"
-    fi
+  printf "${B}Reuse existing display name '${EXISTING_NAME}'? [Y/n]: ${R}"
+  read -r REUSE_NAME
+  if [ -z "$REUSE_NAME" ] || [ "$REUSE_NAME" = "y" ] || [ "$REUSE_NAME" = "Y" ]; then
+    USER_NAME="$EXISTING_NAME"
   fi
 fi
 
 if [ -z "$USER_NAME" ]; then
-  if [ -n "$GUM_BIN" ]; then
-    USER_NAME="$("$GUM_BIN" input --header "Display name for generated instructions" --value "$USER_NAME")"
-  else
-    printf "${B}Display name for generated instructions: ${R}"
-    read -r USER_NAME
-  fi
+  printf "${B}Display name for generated instructions: ${R}"
+  read -r USER_NAME
 fi
 
 if [ -z "$USER_NAME" ]; then
@@ -425,13 +355,9 @@ if [ -n "$EXISTING_ROLE" ]; then
 else
   USER_ROLE_SUMMARY="Full-stack software engineer focused on distributed systems, product delivery, and practical AI-assisted development."
 fi
-if [ -n "$GUM_BIN" ]; then
-  USER_ROLE_SUMMARY="$("$GUM_BIN" input --header "Role summary" --value "$USER_ROLE_SUMMARY")"
-else
-  printf "${B}Role summary [%s]: ${R}" "$USER_ROLE_SUMMARY"
-  read -r ROLE_INPUT
-  [ -n "$ROLE_INPUT" ] && USER_ROLE_SUMMARY="$ROLE_INPUT"
-fi
+printf "${B}Role summary [%s]: ${R}" "$USER_ROLE_SUMMARY"
+read -r ROLE_INPUT
+[ -n "$ROLE_INPUT" ] && USER_ROLE_SUMMARY="$ROLE_INPUT"
 
 EXISTING_STACK="$(detect_existing_value user_stack_summary)"
 if [ -n "$EXISTING_STACK" ]; then
@@ -439,25 +365,17 @@ if [ -n "$EXISTING_STACK" ]; then
 else
   USER_STACK_SUMMARY="C#/.NET, Python, Go, TypeScript, React, Angular; cloud and platform work across Azure, AWS, GCP, Cloudflare, and DigitalOcean."
 fi
-if [ -n "$GUM_BIN" ]; then
-  USER_STACK_SUMMARY="$("$GUM_BIN" input --header "Stack summary" --value "$USER_STACK_SUMMARY")"
-else
-  printf "${B}Stack summary [%s]: ${R}" "$USER_STACK_SUMMARY"
-  read -r STACK_INPUT
-  [ -n "$STACK_INPUT" ] && USER_STACK_SUMMARY="$STACK_INPUT"
-fi
+printf "${B}Stack summary [%s]: ${R}" "$USER_STACK_SUMMARY"
+read -r STACK_INPUT
+[ -n "$STACK_INPUT" ] && USER_STACK_SUMMARY="$STACK_INPUT"
 
 EXISTING_AZDO="$(detect_existing_azdo_org)"
 if [ -n "$EXISTING_AZDO" ]; then
   AZURE_DEVOPS_ORG="$EXISTING_AZDO"
 fi
-if [ -n "$GUM_BIN" ]; then
-  AZURE_DEVOPS_ORG="$("$GUM_BIN" input --header "Azure DevOps org name (optional)" --value "$AZURE_DEVOPS_ORG")"
-else
-  printf "${B}Azure DevOps org name [%s]: ${R}" "$AZURE_DEVOPS_ORG"
-  read -r AZDO_INPUT
-  [ -n "$AZDO_INPUT" ] && AZURE_DEVOPS_ORG="$AZDO_INPUT"
-fi
+printf "${B}Azure DevOps org name [%s]: ${R}" "$AZURE_DEVOPS_ORG"
+read -r AZDO_INPUT
+[ -n "$AZDO_INPUT" ] && AZURE_DEVOPS_ORG="$AZDO_INPUT"
 python3 - "$CONFIG_STATE_JSON" "$AZURE_DEVOPS_ORG" <<'PY'
 import json
 import sys
@@ -512,14 +430,10 @@ if [ ${#MISSING[@]} -gt 0 ]; then
   fi
 fi
 
-if [ -n "$GUM_BIN" ]; then
-  "$GUM_BIN" confirm "Apply this profile?" || exit 0
-else
-  printf "${B}Apply this profile? [Y/n]: ${R}"
-  read -r APPLY_CONFIRM
-  if [ "$APPLY_CONFIRM" = "n" ] || [ "$APPLY_CONFIRM" = "N" ]; then
-    exit 0
-  fi
+printf "${B}Apply this profile? [Y/n]: ${R}"
+read -r APPLY_CONFIRM
+if [ "$APPLY_CONFIRM" = "n" ] || [ "$APPLY_CONFIRM" = "N" ]; then
+  exit 0
 fi
 
 # --- Write chezmoi config (Bitwarden-backed MCPs disabled for initial apply) ---
@@ -562,12 +476,8 @@ if [ "$NEEDS_BITWARDEN" = "true" ]; then
   if ! command -v bw >/dev/null 2>&1; then
     printf "\n${B}Bitwarden CLI required for Bitwarden-backed MCPs${R}\n"
     BW_INSTALL="y"
-    if [ -n "$GUM_BIN" ]; then
-      "$GUM_BIN" confirm "Install Bitwarden CLI now?" || BW_INSTALL="n"
-    else
-      printf "${B}Install now? [Y/n]: ${R}"
-      read -r BW_INSTALL
-    fi
+    printf "${B}Install now? [Y/n]: ${R}"
+    read -r BW_INSTALL
     if [ "$BW_INSTALL" != "n" ] && [ "$BW_INSTALL" != "N" ]; then
       if [[ "$(uname -s)" == "Darwin" ]] && command -v brew >/dev/null 2>&1; then
         brew install bitwarden-cli

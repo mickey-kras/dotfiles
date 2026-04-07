@@ -14,5 +14,9 @@ desktop.ini
 __pycache__/
 *.pyc
 
+# .NET build artifacts
+scripts/wizard/bin/
+scripts/wizard/obj/
+
 # chezmoi local state
 .chezmoistate.boltdb
