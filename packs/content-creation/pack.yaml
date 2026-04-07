@@ -134,6 +134,10 @@ catalogs:
       label: Verification Before Completion
     writing-plans:
       label: Writing Plans
+    editorial-review-checklist:
+      label: Editorial Review Checklist
+    content-repurposing:
+      label: Content Repurposing
 
   agents:
     content-strategist:
@@ -146,10 +150,12 @@ catalogs:
       label: Visual Storyteller
     script-writer:
       label: Script Writer
-    channel-adaptation-editor:
-      label: Channel Adaptation Editor
     editorial-reviewer:
       label: Editorial Reviewer
+    seo-analyst:
+      label: SEO Analyst
+    content-repurposer:
+      label: Content Repurposer
 
   rules:
     citation-discipline:
@@ -162,6 +168,10 @@ catalogs:
       label: Asset Provenance
     editorial-workflow:
       label: Editorial Workflow
+    platform-formatting:
+      label: Platform Formatting
+    accessibility-standards:
+      label: Accessibility Standards
 
   permissions:
     core_read_write:
@@ -240,6 +250,7 @@ profiles:
         enabled:
           - context-budget
           - writing-plans
+          - editorial-review-checklist
       agents:
         enabled:
           - content-strategist
@@ -247,12 +258,15 @@ profiles:
           - brand-guardian
           - script-writer
           - editorial-reviewer
+          - content-repurposer
       rules:
         enabled:
           - citation-discipline
           - claims-verification
           - brand-consistency
           - editorial-workflow
+          - platform-formatting
+          - accessibility-standards
       permissions:
         enabled:
           - core_read_write
@@ -282,6 +296,8 @@ profiles:
           - context-budget
           - obsidian-memory
           - writing-plans
+          - editorial-review-checklist
+          - content-repurposing
       agents:
         enabled:
           - content-strategist
@@ -289,8 +305,9 @@ profiles:
           - brand-guardian
           - visual-storyteller
           - script-writer
-          - channel-adaptation-editor
           - editorial-reviewer
+          - seo-analyst
+          - content-repurposer
       rules:
         enabled:
           - citation-discipline
@@ -298,6 +315,8 @@ profiles:
           - brand-consistency
           - asset-provenance
           - editorial-workflow
+          - platform-formatting
+          - accessibility-standards
       permissions:
         enabled:
           - core_read_write
@@ -334,6 +353,8 @@ profiles:
           - obsidian-memory
           - verification-before-completion
           - writing-plans
+          - editorial-review-checklist
+          - content-repurposing
       agents:
         enabled:
           - content-strategist
@@ -341,8 +362,9 @@ profiles:
           - brand-guardian
           - visual-storyteller
           - script-writer
-          - channel-adaptation-editor
           - editorial-reviewer
+          - seo-analyst
+          - content-repurposer
       rules:
         enabled:
           - citation-discipline
@@ -350,6 +372,8 @@ profiles:
           - brand-consistency
           - asset-provenance
           - editorial-workflow
+          - platform-formatting
+          - accessibility-standards
       permissions:
         enabled:
           - core_read_write
@@ -371,12 +395,15 @@ tooling:
     - brand-guardian
     - visual-storyteller
     - script-writer
-    - channel-adaptation-editor
     - editorial-reviewer
+    - seo-analyst
+    - content-repurposer
   managed_skills:
     - context-budget
     - obsidian-memory
     - verification-before-completion
     - writing-plans
+    - editorial-review-checklist
+    - content-repurposing
   codex_mode: content-creation
   cursor_mode: content-creation
