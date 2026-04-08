@@ -17,6 +17,8 @@ __pycache__/
 # .NET build artifacts
 scripts/wizard/bin/
 scripts/wizard/obj/
+scripts/wizard-tests/bin/
+scripts/wizard-tests/obj/
 
 # chezmoi local state
 .chezmoistate.boltdb
