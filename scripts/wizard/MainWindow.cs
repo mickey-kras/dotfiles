@@ -1,7 +1,10 @@
 using Terminal.Gui;
 using Terminal.Gui.App;
+using Terminal.Gui.Configuration;
+using Terminal.Gui.Drawing;
 using Terminal.Gui.ViewBase;
 using Terminal.Gui.Views;
+using Attribute = Terminal.Gui.Drawing.Attribute;
 
 namespace DotfilesWizard;
 
@@ -29,8 +32,12 @@ public sealed class MainWindow : Window
     // Settings tab controls
     private readonly List<(string Key, View Control)> _settingControls = [];
     private View _settingsContainer = null!;
+    private bool _rebuildingSettings;
 
     public bool Applied { get; private set; }
+
+    private const int MinCols = 80;
+    private const int MinRows = 30;
 
     public MainWindow(string sourceDir, string stateFile)
     {
@@ -45,7 +52,78 @@ public sealed class MainWindow : Window
         Width = Dim.Fill();
         Height = Dim.Fill();
 
+        var scheme = CreateColorScheme();
+        SchemeManager.AddScheme("Dotfiles", scheme);
+        SchemeName = "Dotfiles";
+
+        var hoverScheme = CreateHoverScheme();
+        SchemeManager.AddScheme("DotfilesHover", hoverScheme);
+
         BuildUi();
+        CheckTerminalSize();
+        Application.SizeChanged += (_, _) => CheckTerminalSize();
+    }
+
+    private Label? _sizeWarning;
+
+    private void CheckTerminalSize()
+    {
+        var cols = Application.Screen.Width;
+        var rows = Application.Screen.Height;
+        if (cols < MinCols || rows < MinRows)
+        {
+            if (_sizeWarning == null)
+            {
+                _sizeWarning = new Label
+                {
+                    X = Pos.Center(), Y = Pos.Center(),
+                    Width = Dim.Auto(), Height = 1,
+                    Text = $"Terminal too small ({cols}x{rows}). Minimum: {MinCols}x{MinRows}. Please resize.",
+                };
+                Add(_sizeWarning);
+            }
+            _sizeWarning.Visible = true;
+            _tabView.Visible = false;
+        }
+        else
+        {
+            if (_sizeWarning != null)
+                _sizeWarning.Visible = false;
+            _tabView.Visible = true;
+        }
+    }
+
+    private static Scheme CreateColorScheme()
+    {
+        var baseScheme = SchemeManager.GetScheme("Base");
+        return baseScheme with
+        {
+            Normal = new Attribute(new Color(255, 255, 255), new Color(58, 58, 58)),
+            Focus = new Attribute(new Color(255, 255, 255), new Color(18, 18, 18)),
+            HotNormal = new Attribute(new Color(0, 255, 255), new Color(58, 58, 58)),
+            HotFocus = new Attribute(new Color(0, 255, 255), new Color(0, 175, 175)),
+            Disabled = new Attribute(new Color(128, 128, 128), new Color(18, 18, 18)),
+            Active = new Attribute(new Color(0, 255, 255), new Color(0, 0, 215)),
+            Highlight = new Attribute(new Color(255, 255, 255), new Color(0, 100, 100)),
+            Editable = new Attribute(new Color(255, 255, 255), new Color(88, 88, 88)),
+            ReadOnly = new Attribute(new Color(0, 175, 175), new Color(18, 18, 18)),
+        };
+    }
+
+    private static Scheme CreateHoverScheme()
+    {
+        var baseScheme = SchemeManager.GetScheme("Dotfiles");
+        return baseScheme with
+        {
+            Normal = new Attribute(new Color(255, 255, 255), new Color(0, 100, 100)),
+            HotNormal = new Attribute(new Color(0, 255, 255), new Color(0, 100, 100)),
+        };
+    }
+
+    private static void AttachHover(View view)
+    {
+        view.MouseEnter += (_, _) => { view.SchemeName = "DotfilesHover"; };
+        view.MouseLeave += (_, _) => { view.SchemeName = "Dotfiles"; };
     }
 
     private WizardState InitState()
@@ -63,10 +141,36 @@ public sealed class MainWindow : Window
 
     private void BuildUi()
     {
+        // ASCII logo banner
+        var logo = new Label
+        {
+            X = 1, Y = 0,
+            Width = Dim.Fill(1),
+            Height = 7,
+            Text = "  ____        _    __ _ _\n"
+                 + " |  _ \\  ___ | |_ / _(_) | ___  ___\n"
+                 + " | | | |/ _ \\| __| |_| | |/ _ \\/ __|\n"
+                 + " | |_| | (_) | |_|  _| | |  __/\\__ \\\n"
+                 + " |____/ \\___/ \\__|_| |_|_|\\___||___/\n"
+                 + "\n"
+                 + "              .dotfiles",
+        };
+        Add(logo);
+
+        // Tool detection line
+        var tools = DetectTools();
+        var toolLabel = new Label
+        {
+            X = 1, Y = 7,
+            Width = Dim.Fill(1),
+            Height = 1,
+            Text = tools,
+        };
+        Add(toolLabel);
+
         _summaryLabel = new Label
         {
-            X = 1,
-            Y = 0,
+            X = 1, Y = 9,
             Width = Dim.Fill(1),
             Height = 1,
             Text = GetSummaryText(),
@@ -75,8 +179,7 @@ public sealed class MainWindow : Window
 
         _tabView = new TabView
         {
-            X = 0,
-            Y = 2,
+            X = 0, Y = 11,
             Width = Dim.Fill(),
             Height = Dim.Fill(2),
             CanFocus = true,
@@ -123,6 +226,53 @@ public sealed class MainWindow : Window
         };
 
         Add(_applyButton, _exitButton);
+    }
+
+    private static string DetectTools()
+    {
+        var parts = new List<string>();
+
+        if (ToolExists("claude"))
+            parts.Add("[+] Claude Code");
+        else
+            parts.Add("[x] Claude Code");
+
+        if (Directory.Exists(Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".cursor"))
+            || Directory.Exists("/Applications/Cursor.app"))
+            parts.Add("[+] Cursor");
+        else
+            parts.Add("[x] Cursor");
+
+        if (ToolExists("codex"))
+            parts.Add("[+] Codex");
+        else
+            parts.Add("[x] Codex");
+
+        return string.Join("  ", parts);
+    }
+
+    private static bool ToolExists(string name)
+    {
+        try
+        {
+            var psi = new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = "which",
+                Arguments = name,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+                CreateNoWindow = true,
+            };
+            using var proc = System.Diagnostics.Process.Start(psi);
+            proc?.WaitForExit(2000);
+            return proc?.ExitCode == 0;
+        }
+        catch
+        {
+            return false;
+        }
     }
 
     private string GetSummaryText()
@@ -177,6 +327,7 @@ public sealed class MainWindow : Window
                 return;
             SwitchPack(packInfo.Id);
         };
+        AttachHover(_packRadio);
         packFrame.Add(_packRadio);
         view.Add(packFrame);
 
@@ -222,6 +373,7 @@ public sealed class MainWindow : Window
                 return;
             SwitchProfile(profileId);
         };
+        AttachHover(radio);
         return radio;
     }
 
@@ -304,6 +456,7 @@ public sealed class MainWindow : Window
                 SnapProfileIfNeeded();
                 UpdateSummary();
             };
+            AttachHover(cb);
             checks.Add(cb);
             view.Add(cb);
             y++;
@@ -332,17 +485,26 @@ public sealed class MainWindow : Window
     {
         var tab = new Tab { DisplayText = " Settings " };
         _settingsContainer = new View { Width = Dim.Fill(), Height = Dim.Fill(), CanFocus = true };
+        RebuildSettingsInto(_settingsContainer);
+        tab.View = _settingsContainer;
+        return tab;
+    }
 
+    private void RebuildSettingsInto(View container)
+    {
         if (_pack.SettingsSchema.Count == 0)
         {
-            _settingsContainer.Add(new Label { X = 2, Y = 1, Text = "No settings available for this pack." });
-            tab.View = _settingsContainer;
-            return tab;
+            container.Add(new Label { X = 2, Y = 1, Text = "No settings available for this pack." });
+            return;
         }
 
         var y = 1;
         foreach (var (key, schema) in _pack.SettingsSchema)
         {
+            // Skip azure_devops_org when azure-devops MCP is not enabled
+            if (key == "azure_devops_org" && !_state.EnabledMcps.Contains("azure-devops"))
+                continue;
+
             // Check visible_if conditions
             if (schema.VisibleIf != null)
             {
@@ -360,7 +522,7 @@ public sealed class MainWindow : Window
                 Width = 25,
                 Text = schema.Label + ":",
             };
-            _settingsContainer.Add(label);
+            container.Add(label);
 
             if (schema.Type == "enum" && schema.Options.Count > 0)
             {
@@ -381,10 +543,9 @@ public sealed class MainWindow : Window
                 {
                     _state.Settings[capturedKey] = capturedOptions[args.SelectedItem ?? 0].Value;
                     SnapProfileIfNeeded();
-                    // Rebuild settings tab if other settings depend on this via visible_if
                     RebuildSettingsContent();
                 };
-                _settingsContainer.Add(radio);
+                container.Add(radio);
                 _settingControls.Add((key, radio));
                 y += schema.Options.Count;
             }
@@ -403,30 +564,31 @@ public sealed class MainWindow : Window
                     _state.Settings[capturedKey] = textField.Text;
                     SnapProfileIfNeeded();
                 };
-                _settingsContainer.Add(textField);
+                container.Add(textField);
                 _settingControls.Add((key, textField));
                 y++;
             }
             y++;
         }
-
-        tab.View = _settingsContainer;
-        return tab;
     }
 
     private void RebuildSettingsContent()
     {
-        // Find the settings tab and rebuild its content
-        var tabs = _tabView.Tabs.ToList();
-        var settingsTab = tabs.LastOrDefault();
-        if (settingsTab == null)
+        if (_rebuildingSettings)
             return;
-
-        _settingControls.Clear();
-        _settingsContainer.RemoveAll();
-        var newTab = BuildSettingsTab();
-        settingsTab.View = newTab.View;
-        _tabView.SetNeedsLayout();
+        _rebuildingSettings = true;
+        try
+        {
+            _settingControls.Clear();
+            _settingsContainer.RemoveAll();
+            RebuildSettingsInto(_settingsContainer);
+            _settingsContainer.SetNeedsLayout();
+            _settingsContainer.SetNeedsDraw();
+        }
+        finally
+        {
+            _rebuildingSettings = false;
+        }
     }
 
     // -----------------------------------------------------------------------

@@ -145,6 +145,12 @@ command = "node"
 args = ["{{ $home }}/.local/bin/bw-mcp", "fal-api-key", "FAL_KEY=password", "--", "npx", "-y", "fal-ai-mcp-server@2.1.4"]
 {{ end }}
 
+{{ if and (has "telegram" $selectedMcps) (lookPath "bw") }}
+[mcp_servers.telegram]
+command = "node"
+args = ["{{ $home }}/.local/bin/bw-mcp", "mcp-telegram", "TELEGRAM_BOT_TOKEN=password", "--", "npx", "-y", "@iqai/mcp-telegram@latest"]
+{{ end }}
+
 {{ if and (has "docker" $selectedMcps) (lookPath "docker") }}
 [mcp_servers.MCP_DOCKER]
 command = "docker"

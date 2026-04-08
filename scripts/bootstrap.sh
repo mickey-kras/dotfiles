@@ -50,16 +50,8 @@ B='\033[1;37m'  # bold white
 RED='\033[1;31m' # red
 R='\033[0m'     # reset
 
-# --- Logo ---
-printf "${C}"
-printf '  ____        _    __ _ _            \n'
-printf ' |  _ \\  ___ | |_ / _(_) | ___  ___ \n'
-printf ' | | | |/ _ \\| __| |_| | |/ _ \\/ __|\n'
-printf ' | |_| | (_) | |_|  _| | |  __/\\__ \\\n'
-printf ' |____/ \\___/ \\__|_| |_|_|\\___||___/\n'
-printf "${R}\n"
-printf "${B}              .dotfiles${R}\n"
-printf "${D}  Claude Code - Cursor - Codex${R}\n\n"
+# --- Pre-flight header ---
+printf "${B}.dotfiles bootstrap${R}\n\n"
 
 # --- Install chezmoi if missing ---
 if ! command -v chezmoi >/dev/null 2>&1; then
@@ -114,11 +106,7 @@ else
   printf "  ${G}+${R} dotnet $(dotnet --version 2>/dev/null)\n"
 fi
 
-# --- Detect AI tools ---
-printf "\n${B}Detected tools:${R}\n"
-command -v claude >/dev/null 2>&1 && printf "  ${G}+${R} Claude Code\n" || printf "  ${D}x Claude Code (not found)${R}\n"
-{ [ -d "$HOME/.cursor" ] || [ -d "/Applications/Cursor.app" ]; } && printf "  ${G}+${R} Cursor\n" || printf "  ${D}x Cursor (not found)${R}\n"
-command -v codex >/dev/null 2>&1 && printf "  ${G}+${R} Codex\n" || printf "  ${D}x Codex (not found)${R}\n"
+# AI tool detection moved into the TUI wizard
 printf "\n"
 
 RUNTIME_PROFILE="balanced"
@@ -308,12 +296,35 @@ MEMORY_PROVIDER="$(json_value "$CONFIG_STATE_JSON" memory_provider)"
 OBSIDIAN_VAULT_PATH="$(json_value "$CONFIG_STATE_JSON" obsidian_vault_path)"
 AZURE_DEVOPS_ORG="$(json_value "$CONFIG_STATE_JSON" azure_devops_org)"
 CONTENT_WORKSPACE="$(json_value "$CONFIG_STATE_JSON" content_workspace)"
-mapfile -t CUSTOM_ENABLED_MCPS < <(json_array_lines "$CONFIG_STATE_JSON" custom_enabled_mcps)
-mapfile -t CUSTOM_DISABLED_MCPS < <(json_array_lines "$CONFIG_STATE_JSON" custom_disabled_mcps)
-mapfile -t CUSTOM_ENABLED_PERMISSION_GROUPS < <(json_array_lines "$CONFIG_STATE_JSON" custom_enabled_permission_groups)
-mapfile -t CUSTOM_DISABLED_PERMISSION_GROUPS < <(json_array_lines "$CONFIG_STATE_JSON" custom_disabled_permission_groups)
-mapfile -t EFFECTIVE_MCPS < <(json_array_lines "$CONFIG_STATE_JSON" selection_enabled_mcps)
-mapfile -t EFFECTIVE_PERMISSION_GROUPS < <(json_array_lines "$CONFIG_STATE_JSON" selection_enabled_permissions)
+CUSTOM_ENABLED_MCPS=()
+while IFS= read -r line; do
+  [ -n "$line" ] && CUSTOM_ENABLED_MCPS+=("$line")
+done < <(json_array_lines "$CONFIG_STATE_JSON" custom_enabled_mcps)
+
+CUSTOM_DISABLED_MCPS=()
+while IFS= read -r line; do
+  [ -n "$line" ] && CUSTOM_DISABLED_MCPS+=("$line")
+done < <(json_array_lines "$CONFIG_STATE_JSON" custom_disabled_mcps)
+
+CUSTOM_ENABLED_PERMISSION_GROUPS=()
+while IFS= read -r line; do
+  [ -n "$line" ] && CUSTOM_ENABLED_PERMISSION_GROUPS+=("$line")
+done < <(json_array_lines "$CONFIG_STATE_JSON" custom_enabled_permission_groups)
+
+CUSTOM_DISABLED_PERMISSION_GROUPS=()
+while IFS= read -r line; do
+  [ -n "$line" ] && CUSTOM_DISABLED_PERMISSION_GROUPS+=("$line")
+done < <(json_array_lines "$CONFIG_STATE_JSON" custom_disabled_permission_groups)
+
+EFFECTIVE_MCPS=()
+while IFS= read -r line; do
+  [ -n "$line" ] && EFFECTIVE_MCPS+=("$line")
+done < <(json_array_lines "$CONFIG_STATE_JSON" selection_enabled_mcps)
+
+EFFECTIVE_PERMISSION_GROUPS=()
+while IFS= read -r line; do
+  [ -n "$line" ] && EFFECTIVE_PERMISSION_GROUPS+=("$line")
+done < <(json_array_lines "$CONFIG_STATE_JSON" selection_enabled_permissions)
 
 detect_existing_name() {
   local file
@@ -369,14 +380,15 @@ printf "${B}Stack summary [%s]: ${R}" "$USER_STACK_SUMMARY"
 read -r STACK_INPUT
 [ -n "$STACK_INPUT" ] && USER_STACK_SUMMARY="$STACK_INPUT"
 
-EXISTING_AZDO="$(detect_existing_azdo_org)"
-if [ -n "$EXISTING_AZDO" ]; then
-  AZURE_DEVOPS_ORG="$EXISTING_AZDO"
-fi
-printf "${B}Azure DevOps org name [%s]: ${R}" "$AZURE_DEVOPS_ORG"
-read -r AZDO_INPUT
-[ -n "$AZDO_INPUT" ] && AZURE_DEVOPS_ORG="$AZDO_INPUT"
-python3 - "$CONFIG_STATE_JSON" "$AZURE_DEVOPS_ORG" <<'PY'
+if contains_word azure-devops "${EFFECTIVE_MCPS[@]}"; then
+  EXISTING_AZDO="$(detect_existing_azdo_org)"
+  if [ -n "$EXISTING_AZDO" ]; then
+    AZURE_DEVOPS_ORG="$EXISTING_AZDO"
+  fi
+  printf "${B}Azure DevOps org name [%s]: ${R}" "$AZURE_DEVOPS_ORG"
+  read -r AZDO_INPUT
+  [ -n "$AZDO_INPUT" ] && AZURE_DEVOPS_ORG="$AZDO_INPUT"
+  python3 - "$CONFIG_STATE_JSON" "$AZURE_DEVOPS_ORG" <<'PY'
 import json
 import sys
 from pathlib import Path
@@ -386,6 +398,7 @@ data = json.loads(path.read_text(encoding="utf-8"))
 data["azure_devops_org"] = sys.argv[2]
 path.write_text(json.dumps(data, indent=2), encoding="utf-8")
 PY
+fi
 
 printf "\n${B}Planned configuration${R}\n"
 printf "  Runtime profile: ${C}%s${R}\n" "$RUNTIME_PROFILE"
@@ -409,7 +422,7 @@ if [ "$RUNTIME_PROFILE" = "custom" ]; then
   printf "  Custom enabled permission groups: ${D}%s${R}\n" "$(join_by ', ' "${CUSTOM_ENABLED_PERMISSION_GROUPS[@]}")"
 fi
 NEEDS_BITWARDEN=false
-if contains_word github "${EFFECTIVE_MCPS[@]}" || contains_word aws "${EFFECTIVE_MCPS[@]}" || contains_word tailscale "${EFFECTIVE_MCPS[@]}" || contains_word exa "${EFFECTIVE_MCPS[@]}" || contains_word firecrawl "${EFFECTIVE_MCPS[@]}" || contains_word fal-ai "${EFFECTIVE_MCPS[@]}"; then
+if contains_word github "${EFFECTIVE_MCPS[@]}" || contains_word aws "${EFFECTIVE_MCPS[@]}" || contains_word tailscale "${EFFECTIVE_MCPS[@]}" || contains_word exa "${EFFECTIVE_MCPS[@]}" || contains_word firecrawl "${EFFECTIVE_MCPS[@]}" || contains_word fal-ai "${EFFECTIVE_MCPS[@]}" || contains_word telegram "${EFFECTIVE_MCPS[@]}"; then
   NEEDS_BITWARDEN=true
 fi
 printf "  Effective MCPs: ${D}%s${R}\n" "$(join_by ', ' "${EFFECTIVE_MCPS[@]}")"
@@ -512,6 +525,9 @@ if [ "$NEEDS_BITWARDEN" = "true" ]; then
       fi
       if contains_word fal-ai "${EFFECTIVE_MCPS[@]}"; then
         BW_ITEMS+=("fal-api-key:fal.ai:https://fal.ai")
+      fi
+      if contains_word telegram "${EFFECTIVE_MCPS[@]}"; then
+        BW_ITEMS+=("mcp-telegram:Telegram Bot:https://t.me/BotFather")
       fi
       ITEMS_MISSING=false
       if [ ${#BW_ITEMS[@]} -gt 0 ]; then

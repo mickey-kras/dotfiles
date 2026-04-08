@@ -112,6 +112,12 @@ catalogs:
       transport: stdio
       needs_secrets: true
       prompt_injection_risk: high
+    telegram:
+      label: Telegram
+      description: Telegram bot for research distribution and stakeholder updates
+      transport: stdio
+      needs_secrets: true
+      prompt_injection_risk: high
 
   skills:
     context-budget:
@@ -122,6 +128,12 @@ catalogs:
       label: Writing Plans
     verification-before-completion:
       label: Verification Before Completion
+    hypothesis-tracking:
+      label: Hypothesis Tracking
+    interview-synthesis:
+      label: Interview Synthesis
+    source-freshness-checker:
+      label: Source Freshness Checker
 
   agents:
     trend-researcher:
@@ -134,6 +146,12 @@ catalogs:
       label: Report Writer
     executive-summary-writer:
       label: Executive Summary Writer
+    literature-reviewer:
+      label: Literature Reviewer
+    stakeholder-synthesizer:
+      label: Stakeholder Synthesizer
+    data-analyst:
+      label: Data Analyst
 
   rules:
     evidence-over-claims:
@@ -144,6 +162,10 @@ catalogs:
       label: Citation Discipline
     report-structure:
       label: Report Structure
+    methodology-transparency:
+      label: Methodology Transparency
+    source-freshness:
+      label: Source Freshness
 
   permissions:
     core_read_write:
@@ -216,18 +238,24 @@ profiles:
         enabled:
           - context-budget
           - writing-plans
+          - hypothesis-tracking
+          - source-freshness-checker
       agents:
         enabled:
           - trend-researcher
           - evidence-reviewer
           - report-writer
           - executive-summary-writer
+          - literature-reviewer
+          - data-analyst
       rules:
         enabled:
           - evidence-over-claims
           - uncertainty-reporting
           - citation-discipline
           - report-structure
+          - methodology-transparency
+          - source-freshness
       permissions:
         enabled:
           - core_read_write
@@ -256,6 +284,9 @@ profiles:
           - context-budget
           - obsidian-memory
           - writing-plans
+          - hypothesis-tracking
+          - interview-synthesis
+          - source-freshness-checker
       agents:
         enabled:
           - trend-researcher
@@ -263,12 +294,17 @@ profiles:
           - evidence-reviewer
           - report-writer
           - executive-summary-writer
+          - literature-reviewer
+          - stakeholder-synthesizer
+          - data-analyst
       rules:
         enabled:
           - evidence-over-claims
           - uncertainty-reporting
           - citation-discipline
           - report-structure
+          - methodology-transparency
+          - source-freshness
       permissions:
         enabled:
           - core_read_write
@@ -296,12 +332,16 @@ profiles:
           - http
           - exa
           - firecrawl
+          - telegram
       skills:
         enabled:
           - context-budget
           - obsidian-memory
           - verification-before-completion
           - writing-plans
+          - hypothesis-tracking
+          - interview-synthesis
+          - source-freshness-checker
       agents:
         enabled:
           - trend-researcher
@@ -309,12 +349,17 @@ profiles:
           - evidence-reviewer
           - report-writer
           - executive-summary-writer
+          - literature-reviewer
+          - stakeholder-synthesizer
+          - data-analyst
       rules:
         enabled:
           - evidence-over-claims
           - uncertainty-reporting
           - citation-discipline
           - report-structure
+          - methodology-transparency
+          - source-freshness
       permissions:
         enabled:
           - core_read_write
@@ -335,10 +380,16 @@ tooling:
     - evidence-reviewer
     - report-writer
     - executive-summary-writer
+    - literature-reviewer
+    - stakeholder-synthesizer
+    - data-analyst
   managed_skills:
     - context-budget
     - obsidian-memory
     - writing-plans
     - verification-before-completion
+    - hypothesis-tracking
+    - interview-synthesis
+    - source-freshness-checker
   codex_mode: research-and-strategy
   cursor_mode: research-and-strategy

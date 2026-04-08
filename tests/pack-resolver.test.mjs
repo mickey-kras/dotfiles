@@ -153,17 +153,34 @@ test("content-creation profiles match their names after normalization", () => {
 
 test("content-creation focused profile has no high-risk MCPs", () => {
   const focused = getProfileSelection(contentPack, "focused");
-  const highRisk = ["http", "exa", "firecrawl", "fal-ai"];
+  const highRisk = ["http", "exa", "firecrawl", "fal-ai", "telegram"];
   for (const mcp of highRisk) {
     assert.ok(!focused.mcps.enabled.includes(mcp), `focused should not include ${mcp}`);
   }
 });
 
-test("content-creation campaign has search and generation MCPs", () => {
+test("content-creation campaign has search, generation, and messaging MCPs", () => {
   const campaign = getProfileSelection(contentPack, "campaign");
   assert.ok(campaign.mcps.enabled.includes("exa"));
   assert.ok(campaign.mcps.enabled.includes("firecrawl"));
   assert.ok(campaign.mcps.enabled.includes("fal-ai"));
+  assert.ok(campaign.mcps.enabled.includes("telegram"));
+});
+
+test("content-creation has social-media-adapter agent in all profiles", () => {
+  for (const profileId of Object.keys(contentPack.profiles)) {
+    const selection = getProfileSelection(contentPack, profileId);
+    assert.ok(selection.agents.enabled.includes("social-media-adapter"),
+      `${profileId} should include social-media-adapter`);
+  }
+});
+
+test("content-creation has ai-discoverability skill in all profiles", () => {
+  for (const profileId of Object.keys(contentPack.profiles)) {
+    const selection = getProfileSelection(contentPack, profileId);
+    assert.ok(selection.skills.enabled.includes("ai-discoverability"),
+      `${profileId} should include ai-discoverability`);
+  }
 });
 
 test("content-creation resolves state with visible_if for obsidian", () => {
@@ -216,11 +233,33 @@ test("research-and-strategy desk profile has no high-risk MCPs", () => {
   }
 });
 
-test("research-and-strategy investigation has search and crawl MCPs", () => {
+test("research-and-strategy investigation has search, crawl, and messaging MCPs", () => {
   const investigation = getProfileSelection(researchPack, "investigation");
   assert.ok(investigation.mcps.enabled.includes("exa"));
   assert.ok(investigation.mcps.enabled.includes("firecrawl"));
   assert.ok(investigation.mcps.enabled.includes("http"));
+  assert.ok(investigation.mcps.enabled.includes("telegram"));
+});
+
+test("research-and-strategy has data-analyst agent in all profiles", () => {
+  for (const profileId of Object.keys(researchPack.profiles)) {
+    const selection = getProfileSelection(researchPack, profileId);
+    assert.ok(selection.agents.enabled.includes("data-analyst"),
+      `${profileId} should include data-analyst`);
+  }
+});
+
+test("research-and-strategy has source-freshness-checker skill in all profiles", () => {
+  for (const profileId of Object.keys(researchPack.profiles)) {
+    const selection = getProfileSelection(researchPack, profileId);
+    assert.ok(selection.skills.enabled.includes("source-freshness-checker"),
+      `${profileId} should include source-freshness-checker`);
+  }
+});
+
+test("research-and-strategy desk profile has no telegram MCP", () => {
+  const desk = getProfileSelection(researchPack, "desk");
+  assert.ok(!desk.mcps.enabled.includes("telegram"), "desk should not include telegram");
 });
 
 test("research-and-strategy resolves state with visible_if for obsidian", () => {

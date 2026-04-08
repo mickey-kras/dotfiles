@@ -12,26 +12,35 @@
     "process",
     "http",
     "exa",
-    "firecrawl"
+    "firecrawl",
+    "telegram"
   ],
   "selection_enabled_skills": [
     "context-budget",
     "obsidian-memory",
     "verification-before-completion",
-    "writing-plans"
+    "writing-plans",
+    "hypothesis-tracking",
+    "interview-synthesis",
+    "source-freshness-checker"
   ],
   "selection_enabled_agents": [
     "trend-researcher",
     "competitive-analyst",
     "evidence-reviewer",
     "report-writer",
-    "executive-summary-writer"
+    "executive-summary-writer",
+    "literature-reviewer",
+    "stakeholder-synthesizer",
+    "data-analyst"
   ],
   "selection_enabled_rules": [
     "evidence-over-claims",
     "uncertainty-reporting",
     "citation-discipline",
-    "report-structure"
+    "report-structure",
+    "methodology-transparency",
+    "source-freshness"
   ],
   "selection_enabled_permissions": [
     "core_read_write",

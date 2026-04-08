@@ -49,6 +49,7 @@ Core items used by the current MCP catalog:
 | `exa-api-key` | Exa API key | Password = API key |
 | `firecrawl-api-key` | Firecrawl API key | Password = API key |
 | `fal-api-key` | fal.ai API key | Password = API key |
+| `mcp-telegram` | Telegram bot token | Password = bot token from BotFather |
 
 Only create the items required by the MCPs you actually enable.
 

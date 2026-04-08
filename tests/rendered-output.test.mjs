@@ -69,6 +69,8 @@ test("research-and-strategy investigation renders pack-specific outputs", () => 
   assert.ok(claude.permissions.allow.includes("WebSearch"));
   assert.match(packAssets, /trend-researcher/);
   assert.match(packAssets, /evidence-over-claims/);
+  assert.match(packAssets, /data-analyst/);
+  assert.match(packAssets, /source-freshness/);
 });
 
 test("content-creation campaign renders pack-specific outputs", () => {
@@ -89,4 +91,6 @@ test("content-creation campaign renders pack-specific outputs", () => {
   assert.ok(claude.permissions.allow.includes("WebSearch"));
   assert.match(packAssets, /content-strategist/);
   assert.match(packAssets, /editorial-workflow/);
+  assert.match(packAssets, /social-media-adapter/);
+  assert.match(packAssets, /seo-analyst/);
 });

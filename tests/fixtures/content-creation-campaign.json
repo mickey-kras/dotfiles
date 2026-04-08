@@ -14,13 +14,17 @@
     "http",
     "exa",
     "firecrawl",
-    "fal-ai"
+    "fal-ai",
+    "telegram"
   ],
   "selection_enabled_skills": [
     "context-budget",
     "obsidian-memory",
     "verification-before-completion",
-    "writing-plans"
+    "writing-plans",
+    "editorial-review-checklist",
+    "content-repurposing",
+    "ai-discoverability"
   ],
   "selection_enabled_agents": [
     "content-strategist",
@@ -28,15 +32,19 @@
     "brand-guardian",
     "visual-storyteller",
     "script-writer",
-    "channel-adaptation-editor",
-    "editorial-reviewer"
+    "editorial-reviewer",
+    "seo-analyst",
+    "content-repurposer",
+    "social-media-adapter"
   ],
   "selection_enabled_rules": [
     "citation-discipline",
     "claims-verification",
     "brand-consistency",
     "asset-provenance",
-    "editorial-workflow"
+    "editorial-workflow",
+    "platform-formatting",
+    "accessibility-standards"
   ],
   "selection_enabled_permissions": [
     "core_read_write",

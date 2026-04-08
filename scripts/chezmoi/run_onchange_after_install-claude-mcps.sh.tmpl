@@ -69,7 +69,7 @@ if command -v claude >/dev/null 2>&1; then
       http|aws)
         command -v uvx >/dev/null 2>&1 && EFFECTIVE_MCP_NAMES+=("$name")
         ;;
-      github|tailscale|exa|firecrawl|fal-ai)
+      github|tailscale|exa|firecrawl|fal-ai|telegram)
         command -v bw >/dev/null 2>&1 && EFFECTIVE_MCP_NAMES+=("$name")
         ;;
       docker)
@@ -277,6 +277,15 @@ PY
       add_mcp fal-ai fal-ai -- node "$HOME/.local/bin/bw-mcp" fal-api-key FAL_KEY=password -- npx -y fal-ai-mcp-server@2.1.4
     else
       echo "  ! fal-ai (Bitwarden CLI not found)"
+      FAILED=$((FAILED + 1))
+    fi
+  fi
+
+  if contains_name "telegram" "${EFFECTIVE_MCP_NAMES[@]}"; then
+    if command -v bw >/dev/null 2>&1; then
+      add_mcp telegram telegram -- node "$HOME/.local/bin/bw-mcp" mcp-telegram TELEGRAM_BOT_TOKEN=password -- npx -y @iqai/mcp-telegram@latest
+    else
+      echo "  ! telegram (Bitwarden CLI not found)"
       FAILED=$((FAILED + 1))
     fi
   fi

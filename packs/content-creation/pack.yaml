@@ -124,6 +124,12 @@ catalogs:
       transport: stdio
       needs_secrets: true
       prompt_injection_risk: medium
+    telegram:
+      label: Telegram
+      description: Telegram bot messaging for content distribution and audience interaction
+      transport: stdio
+      needs_secrets: true
+      prompt_injection_risk: high
 
   skills:
     context-budget:
@@ -134,6 +140,12 @@ catalogs:
       label: Verification Before Completion
     writing-plans:
       label: Writing Plans
+    editorial-review-checklist:
+      label: Editorial Review Checklist
+    content-repurposing:
+      label: Content Repurposing
+    ai-discoverability:
+      label: AI Discoverability
 
   agents:
     content-strategist:
@@ -146,10 +158,14 @@ catalogs:
       label: Visual Storyteller
     script-writer:
       label: Script Writer
-    channel-adaptation-editor:
-      label: Channel Adaptation Editor
     editorial-reviewer:
       label: Editorial Reviewer
+    seo-analyst:
+      label: SEO Analyst
+    content-repurposer:
+      label: Content Repurposer
+    social-media-adapter:
+      label: Social Media Adapter
 
   rules:
     citation-discipline:
@@ -162,6 +178,10 @@ catalogs:
       label: Asset Provenance
     editorial-workflow:
       label: Editorial Workflow
+    platform-formatting:
+      label: Platform Formatting
+    accessibility-standards:
+      label: Accessibility Standards
 
   permissions:
     core_read_write:
@@ -240,6 +260,8 @@ profiles:
         enabled:
           - context-budget
           - writing-plans
+          - editorial-review-checklist
+          - ai-discoverability
       agents:
         enabled:
           - content-strategist
@@ -247,12 +269,16 @@ profiles:
           - brand-guardian
           - script-writer
           - editorial-reviewer
+          - content-repurposer
+          - social-media-adapter
       rules:
         enabled:
           - citation-discipline
           - claims-verification
           - brand-consistency
           - editorial-workflow
+          - platform-formatting
+          - accessibility-standards
       permissions:
         enabled:
           - core_read_write
@@ -282,6 +308,9 @@ profiles:
           - context-budget
           - obsidian-memory
           - writing-plans
+          - editorial-review-checklist
+          - content-repurposing
+          - ai-discoverability
       agents:
         enabled:
           - content-strategist
@@ -289,8 +318,10 @@ profiles:
           - brand-guardian
           - visual-storyteller
           - script-writer
-          - channel-adaptation-editor
           - editorial-reviewer
+          - seo-analyst
+          - content-repurposer
+          - social-media-adapter
       rules:
         enabled:
           - citation-discipline
@@ -298,6 +329,8 @@ profiles:
           - brand-consistency
           - asset-provenance
           - editorial-workflow
+          - platform-formatting
+          - accessibility-standards
       permissions:
         enabled:
           - core_read_write
@@ -328,12 +361,16 @@ profiles:
           - exa
           - firecrawl
           - fal-ai
+          - telegram
       skills:
         enabled:
           - context-budget
           - obsidian-memory
           - verification-before-completion
           - writing-plans
+          - editorial-review-checklist
+          - content-repurposing
+          - ai-discoverability
       agents:
         enabled:
           - content-strategist
@@ -341,8 +378,10 @@ profiles:
           - brand-guardian
           - visual-storyteller
           - script-writer
-          - channel-adaptation-editor
           - editorial-reviewer
+          - seo-analyst
+          - content-repurposer
+          - social-media-adapter
       rules:
         enabled:
           - citation-discipline
@@ -350,6 +389,8 @@ profiles:
           - brand-consistency
           - asset-provenance
           - editorial-workflow
+          - platform-formatting
+          - accessibility-standards
       permissions:
         enabled:
           - core_read_write
@@ -371,12 +412,17 @@ tooling:
     - brand-guardian
     - visual-storyteller
     - script-writer
-    - channel-adaptation-editor
     - editorial-reviewer
+    - seo-analyst
+    - content-repurposer
+    - social-media-adapter
   managed_skills:
     - context-budget
     - obsidian-memory
     - verification-before-completion
     - writing-plans
+    - editorial-review-checklist
+    - content-repurposing
+    - ai-discoverability
   codex_mode: content-creation
   cursor_mode: content-creation

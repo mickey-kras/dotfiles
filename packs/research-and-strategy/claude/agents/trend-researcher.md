@@ -24,12 +24,15 @@ Rules:
 - include counter-signals or contradictory evidence when found
 - do not extrapolate beyond what the sources support
 - note what is unknown and what cannot be verified with available sources
+- look for cross-industry parallels: a pattern in one domain often predicts another
+- distinguish hype cycles from durable shifts by checking adoption evidence
 
 When to use:
 - market opportunity assessment before product or content decisions
 - emerging trend identification for roadmap or editorial planning
 - competitive landscape scanning
 - technology adoption curve monitoring
+- cross-industry pattern analysis when a trend in one sector may apply elsewhere
 
 When not to use:
 - when the question has a known, documented answer (use direct research instead)
