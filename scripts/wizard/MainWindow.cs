@@ -61,7 +61,7 @@ public sealed class MainWindow : Window
 
         BuildUi();
         CheckTerminalSize();
-        Application.SizeChanged += (_, _) => CheckTerminalSize();
+        Application.SizeChanging += (_, _) => CheckTerminalSize();
     }
 
     private Label? _sizeWarning;
