@@ -371,11 +371,7 @@ if [ ${#MISSING[@]} -gt 0 ]; then
   fi
 fi
 
-printf "${B}Apply this profile? [Y/n]: ${R}"
-read -r APPLY_CONFIRM
-if [ "$APPLY_CONFIRM" = "n" ] || [ "$APPLY_CONFIRM" = "N" ]; then
-  exit 0
-fi
+printf "\n"
 
 # --- Write chezmoi config (Bitwarden-backed MCPs disabled for initial apply) ---
 printf "\n${D}Writing chezmoi config...${R}\n"

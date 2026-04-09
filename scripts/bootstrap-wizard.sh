@@ -43,13 +43,16 @@ trap 'rm -f "$RUNTIME_FILE" "$RUNTIME_FILE.settings"' EXIT
 if command -v dotnet >/dev/null 2>&1; then
   WIZARD_PROJECT="$SOURCE_DIR/scripts/wizard"
   if [ -f "$WIZARD_PROJECT/DotfilesWizard.csproj" ]; then
-    if dotnet run --project "$WIZARD_PROJECT" -- --source "$SOURCE_DIR" --state "$STATE_FILE"; then
+    WIZARD_EXIT=0
+    dotnet run --project "$WIZARD_PROJECT" -- --source "$SOURCE_DIR" --state "$STATE_FILE" || WIZARD_EXIT=$?
+    if [ "$WIZARD_EXIT" -eq 0 ]; then
       exit 0
     fi
-    # If dotnet run failed (user quit or build error), check if state was written
-    if [ -s "$STATE_FILE" ]; then
-      exit 0
+    # Exit code 1 = user clicked Quit
+    if [ "$WIZARD_EXIT" -eq 1 ] && [ -s "$STATE_FILE" ]; then
+      exit 1
     fi
+    # Build error or other failure - fall back to plain prompts
     printf "Terminal UI unavailable, falling back to plain prompts.\n" >&2
   fi
 fi
