@@ -14,6 +14,9 @@ desktop.ini
 __pycache__/
 *.pyc
 
+# Node deps (pack resolver scripts; not committed)
+node_modules/
+
 # .NET build artifacts
 scripts/wizard/bin/
 scripts/wizard/obj/
