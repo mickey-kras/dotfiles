@@ -347,8 +347,8 @@ if [ -n "$CONTENT_WORKSPACE" ]; then
 fi
 if [ "$RUNTIME_PROFILE" = "custom" ]; then
   printf "  Custom base: ${C}%s${R}\n" "$PROFILE_BASE"
-  printf "  Custom enabled MCPs: ${D}%s${R}\n" "$(join_by ', ' "${CUSTOM_ENABLED_MCPS[@]}")"
-  printf "  Custom enabled permission groups: ${D}%s${R}\n" "$(join_by ', ' "${CUSTOM_ENABLED_PERMISSION_GROUPS[@]}")"
+  printf "  Custom enabled MCPs: ${D}%s${R}\n" "$(join_by ', ' ${CUSTOM_ENABLED_MCPS[@]+"${CUSTOM_ENABLED_MCPS[@]}"})"
+  printf "  Custom enabled permission groups: ${D}%s${R}\n" "$(join_by ', ' ${CUSTOM_ENABLED_PERMISSION_GROUPS[@]+"${CUSTOM_ENABLED_PERMISSION_GROUPS[@]}"})"
 fi
 NEEDS_BITWARDEN=false
 if contains_word github "${EFFECTIVE_MCPS[@]}" || contains_word aws "${EFFECTIVE_MCPS[@]}" || contains_word tailscale "${EFFECTIVE_MCPS[@]}" || contains_word exa "${EFFECTIVE_MCPS[@]}" || contains_word firecrawl "${EFFECTIVE_MCPS[@]}" || contains_word fal-ai "${EFFECTIVE_MCPS[@]}" || contains_word telegram "${EFFECTIVE_MCPS[@]}"; then
