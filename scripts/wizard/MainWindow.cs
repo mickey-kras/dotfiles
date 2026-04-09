@@ -144,6 +144,7 @@ public sealed class MainWindow : Window
     private static void AttachHover(View view)
     {
         view.SchemeName = "Dotfiles";
+        view.WantMousePositionReports = true;
         view.MouseEnter += (_, _) => { view.SchemeName = "DotfilesHover"; };
         view.MouseLeave += (_, _) => { view.SchemeName = "Dotfiles"; };
     }
