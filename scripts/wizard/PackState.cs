@@ -40,6 +40,7 @@ public sealed record CatalogItem
     [JsonPropertyName("description")] public string Description { get; init; } = "";
     [JsonPropertyName("needs_secrets")] public bool NeedsSecrets { get; init; }
     [JsonPropertyName("prompt_injection_risk")] public string PromptInjectionRisk { get; init; } = "";
+    [JsonPropertyName("required_tools")] public List<string> RequiredTools { get; init; } = [];
 }
 
 public sealed record SettingSchema

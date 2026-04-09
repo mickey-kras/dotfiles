@@ -71,6 +71,9 @@ public sealed class MainWindow : Window
         var selectedScheme = CreateSelectedScheme();
         SchemeManager.AddScheme("DotfilesSelected", selectedScheme);
 
+        var missingScheme = CreateMissingScheme();
+        SchemeManager.AddScheme("DotfilesMissing", missingScheme);
+
         BuildUi();
         CheckTerminalSize();
         Application.SizeChanging += (_, _) => CheckTerminalSize();
@@ -149,6 +152,26 @@ public sealed class MainWindow : Window
         };
     }
 
+    private static Scheme CreateMissingScheme()
+    {
+        var baseScheme = SchemeManager.GetScheme("Base");
+        var bg = ToColor(ThemeColors.Background);
+        var red = new Color(255, 90, 90);
+        var activeBg = ToColor(ThemeColors.ActiveBackground);
+        return baseScheme with
+        {
+            Normal = new Attribute(red, bg),
+            Focus = new Attribute(red, bg),
+            HotNormal = new Attribute(red, bg),
+            HotFocus = new Attribute(red, bg),
+            Disabled = new Attribute(new Color(128, 128, 128), bg),
+            Active = new Attribute(red, activeBg),
+            Highlight = new Attribute(red, activeBg),
+            Editable = new Attribute(red, new Color(88, 88, 88)),
+            ReadOnly = new Attribute(red, new Color(18, 18, 18)),
+        };
+    }
+
     private static Color ToColor(Rgb rgb) => new(rgb.R, rgb.G, rgb.B);
 
     private static void AttachHover(View view)
@@ -159,6 +182,14 @@ public sealed class MainWindow : Window
     private static void ApplySelectedScheme(View view, bool selected)
     {
         view.SchemeName = selected ? "DotfilesSelected" : "Dotfiles";
+    }
+
+    private static void ApplyMcpScheme(View view, bool selected, bool hasMissingTools)
+    {
+        // Missing tools take visual priority so users spot the blocker regardless of selection state.
+        view.SchemeName = hasMissingTools
+            ? "DotfilesMissing"
+            : (selected ? "DotfilesSelected" : "Dotfiles");
     }
 
     private static Dictionary<string, string> LoadChezmoiData()
@@ -515,16 +546,28 @@ public sealed class MainWindow : Window
             if (desc.Length > 60)
                 desc = desc[..57] + "...";
 
+            var missingTools = WizardHelpers.MissingTools(item.RequiredTools);
+            var hasMissing = missingTools.Count > 0;
+            var requirementSuffix = "";
+            if (item.RequiredTools.Count > 0)
+            {
+                if (hasMissing)
+                    requirementSuffix = $" ! requires {string.Join(", ", missingTools)}";
+                else
+                    requirementSuffix = $" (requires {string.Join(", ", item.RequiredTools)})";
+            }
+
             var cb = new CheckBox
             {
                 X = 1,
                 Y = y,
                 Width = Dim.Fill(1),
-                Text = $" {itemId} - {desc}",
+                Text = $" {itemId} - {desc}{requirementSuffix}",
                 CheckedState = enabled.Contains(itemId) ? CheckState.Checked : CheckState.UnChecked,
                 CanFocus = true,
             };
             var capturedId = itemId;
+            var capturedMissing = hasMissing;
             cb.CheckedStateChanged += (_, args) =>
             {
                 if (args.Value is CheckState.Checked)
@@ -536,13 +579,13 @@ public sealed class MainWindow : Window
                 {
                     _state.EnabledMcps.Remove(capturedId);
                 }
-                ApplySelectedScheme(cb, args.Value is CheckState.Checked);
+                ApplyMcpScheme(cb, args.Value is CheckState.Checked, capturedMissing);
                 SnapProfileIfNeeded();
                 UpdateSummary();
                 RebuildMcpSettingsContent();
             };
             AttachHover(cb);
-            ApplySelectedScheme(cb, cb.CheckedState == CheckState.Checked);
+            ApplyMcpScheme(cb, cb.CheckedState == CheckState.Checked, hasMissing);
             checks.Add(cb);
             mcpFrame.Add(cb);
             y++;

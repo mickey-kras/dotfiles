@@ -106,6 +106,8 @@ catalogs:
       transport: stdio
       needs_secrets: true
       prompt_injection_risk: medium
+      required_tools:
+        - bw
     azure-devops:
       label: Azure DevOps
       description: Azure DevOps MCP
@@ -127,6 +129,8 @@ catalogs:
       transport: stdio
       needs_secrets: false
       prompt_injection_risk: medium
+      required_tools:
+        - docker
     process:
       label: Process
       description: Local process inspection
@@ -151,36 +155,49 @@ catalogs:
       transport: stdio
       needs_secrets: false
       prompt_injection_risk: high
+      required_tools:
+        - uvx
     aws:
       label: AWS
       description: AWS API access via Bitwarden-backed credentials
       transport: stdio
       needs_secrets: true
       prompt_injection_risk: medium
+      required_tools:
+        - uvx
+        - bw
     tailscale:
       label: Tailscale
       description: Tailscale admin API access
       transport: stdio
       needs_secrets: true
       prompt_injection_risk: medium
+      required_tools:
+        - bw
     exa:
       label: Exa
       description: AI-powered web search
       transport: stdio
       needs_secrets: true
       prompt_injection_risk: high
+      required_tools:
+        - bw
     firecrawl:
       label: Firecrawl
       description: Web scraping and crawling
       transport: stdio
       needs_secrets: true
       prompt_injection_risk: high
+      required_tools:
+        - bw
     fal-ai:
       label: fal-ai
       description: External AI image generation service
       transport: stdio
       needs_secrets: true
       prompt_injection_risk: medium
+      required_tools:
+        - bw
 
   skills:
     context7-mcp:

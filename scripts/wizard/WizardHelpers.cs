@@ -36,6 +36,38 @@ public static class WizardHelpers
         _ => false,
     };
 
+    private static readonly Dictionary<string, bool> _toolCache = new();
+
+    /// <summary>Checks whether a CLI tool is on PATH. Result is cached per process.</summary>
+    public static bool IsToolAvailable(string tool)
+    {
+        if (_toolCache.TryGetValue(tool, out var cached))
+            return cached;
+
+        var pathEnv = Environment.GetEnvironmentVariable("PATH") ?? "";
+        var isWindows = Environment.OSVersion.Platform == PlatformID.Win32NT;
+        var separator = isWindows ? ';' : ':';
+        var extensions = isWindows ? new[] { ".exe", ".cmd", ".bat", "" } : new[] { "" };
+
+        foreach (var dir in pathEnv.Split(separator, StringSplitOptions.RemoveEmptyEntries))
+        {
+            foreach (var ext in extensions)
+            {
+                var candidate = Path.Combine(dir, tool + ext);
+                if (File.Exists(candidate))
+                {
+                    _toolCache[tool] = true;
+                    return true;
+                }
+            }
+        }
+        _toolCache[tool] = false;
+        return false;
+    }
+
+    public static List<string> MissingTools(IEnumerable<string> required) =>
+        required.Where(t => !IsToolAvailable(t)).ToList();
+
     public static Dictionary<string, string> ParseChezmoiToml(string configPath)
     {
         var data = new Dictionary<string, string>();

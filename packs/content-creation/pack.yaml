@@ -106,30 +106,40 @@ catalogs:
       transport: stdio
       needs_secrets: false
       prompt_injection_risk: high
+      required_tools:
+        - uvx
     exa:
       label: Exa
       description: AI web search for broader campaign discovery
       transport: stdio
       needs_secrets: true
       prompt_injection_risk: high
+      required_tools:
+        - bw
     firecrawl:
       label: Firecrawl
       description: Structured crawling and extraction for campaign research
       transport: stdio
       needs_secrets: true
       prompt_injection_risk: high
+      required_tools:
+        - bw
     fal-ai:
       label: fal-ai
       description: External image-generation service for concept iteration
       transport: stdio
       needs_secrets: true
       prompt_injection_risk: medium
+      required_tools:
+        - bw
     telegram:
       label: Telegram
       description: Telegram bot messaging for content distribution and audience interaction
       transport: stdio
       needs_secrets: true
       prompt_injection_risk: high
+      required_tools:
+        - bw
 
   skills:
     context-budget:
