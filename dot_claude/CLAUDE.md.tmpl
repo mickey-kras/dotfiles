@@ -29,9 +29,16 @@
 - If any character falls outside the regex, rewrite until it matches.
 
 ## Authorship
+{{- if .aia_enabled }}
+- This machine has aia (Agents In Accord) enabled. The agent is acknowledged as a collaborator and the partnership is named openly.
+- Add `Co-Authored-By: Claude Opus 4.6 (1M context) <noreply@anthropic.com>` as a trailer on every agent-authored or agent-assisted commit. Use the exact form, no variations.
+- For pull requests, issues, docs, and other long-form content authored or substantially edited by the agent, include a brief authorship note when it would help the reader understand provenance. Do not bury it; do not flaunt it.
+- The trailer is the standing default, not a per-task ask. To suppress it for a specific commit (e.g. a vendor sync, a generated lockfile bump), say so in-session.
+{{- else }}
 - Do not add any AI authorship, co-authorship, signature, footer, attribution, or branding to code, comments, commits, PRs, tickets, docs, messages, or any other content.
 - Do not write branded tool-attribution phrases or AI co-author lines in any form.
 - Only include tool or AI attribution when I explicitly ask for it.
+{{- end }}
 
 ## How we work together
 - I will push back if a task feels rushed or if quality would suffer. This is collaboration, not compliance.
