@@ -61,6 +61,8 @@ For each task:
 3. Run verifications as specified
 4. Mark as completed
 
+**Honor named checkpoints.** When a task declares a `**Checkpoint:**`, treat it as a hard stop: run the checkpoint's verification hook, report the observed state in one line, and wait for "continue" or redirection. Do not roll past a checkpoint because the next task "seems obvious" — the checkpoint exists because the plan's author wanted a human or supervisor decision at that seam. In agent-driven mode, report the checkpoint state to the dispatching agent instead of a human, but still wait for acknowledgment.
+
 ### Step 3: Complete Development
 
 After all tasks complete and verified:

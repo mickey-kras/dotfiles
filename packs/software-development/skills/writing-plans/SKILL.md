@@ -89,6 +89,10 @@ This structure informs the task decomposition. Each task should produce self-con
 
 **Tech Stack:** [Key technologies/libraries]
 
+**Existing Code Evidence:** [Required if this plan references or modifies existing code. See "Evidence for Existing Code" below.]
+
+**Checkpoints:** [Ordered list of named pause points where the executor stops and confirms before proceeding. See "Named Checkpoints" below.]
+
 ---
 ```
 
@@ -145,6 +149,51 @@ Every step must contain the actual content an engineer needs. These are **plan f
 - Steps that describe what to do without showing how (code blocks required for code steps)
 - References to types, functions, or methods not defined in any task
 
+## Evidence for Existing Code
+
+Any claim about existing code — a function's behavior, a file's contents, a type signature, a caller — must be backed by an evidence fragment in the plan itself. This is the structural guard against "imaginary code": a plan that references a symbol without evidence is invalid, not just risky.
+
+**Format for each referenced symbol, function, or file region:**
+
+- `path/to/file.ext:LINE[-LINE]` — exact location
+- A 1–5 line quoted fragment from a Read/Grep result showing the code as it exists today
+- Tool used (`Read`, `Grep`, `git show <sha>:path`)
+
+**Example:**
+
+> `src/smart_links/validator.py:42-47` (Read)
+> ```python
+> def validate_smart_link(link: SmartLink) -> ValidationResult:
+>     if link.url is None:
+>         return ValidationResult.failure("url required")
+>     return _check_duplicate(link)
+> ```
+
+Consolidate evidence either inline next to the task that uses it, or in a top-level **Existing Code Evidence** section under the header — whichever keeps the reference close to its use. The rule is that evidence exists somewhere in the document, not that it's duplicated.
+
+**Out of scope:** new files and new code you are adding. Evidence is only required for claims about what already exists.
+
+## Named Checkpoints
+
+A checkpoint is a pause point in the plan where the executor stops, reports state, and waits for a human or supervising agent to say "continue" or "redirect." Checkpoints are part of the plan — they're approved up front, not improvised mid-execution.
+
+**Rules:**
+- Every plan lists its checkpoints in the header so both the user and executor see exit ramps before work starts
+- Each checkpoint has a **semantic name** (what's now true, not "Step 3") and a **verification hook** (a command or observation that proves the pause state is sound)
+- Long tasks (>15 min of work) must contain at least one checkpoint
+- Checkpoints should align with testable seams — a failing test about to go green, a migration about to be applied, a module about to be wired into a caller
+
+**Format inside a task:**
+
+```markdown
+### Task N: [Component Name]
+
+**Checkpoint:** `migration-staged` — schema file written and `psql --dry-run` passes; DB not yet migrated
+**Verification:** `pg_dump --schema-only | diff -` shows the new table DDL
+```
+
+A checkpoint is not a comment. It is an instruction to the executor: at this point, stop, run the verification, report the result, and wait.
+
 ## Remember
 - Exact file paths always
 - Complete code in every step - if a step changes code, show the code
@@ -160,6 +209,8 @@ After writing the complete plan, look at the spec with fresh eyes and check the 
 **2. Placeholder scan:** Search your plan for red flags - any of the patterns from the "No Placeholders" section above. Fix them.
 
 **3. Type consistency:** Do the types, method signatures, and property names you used in later tasks match what you defined in earlier tasks? A function called `clearLayers()` in Task 3 but `clearFullLayers()` in Task 7 is a bug.
+
+**4. Evidence & checkpoints:** Does every reference to existing code have an evidence fragment? Does every long task have a named checkpoint with a verification hook? A plan that fails either check is a plan failure, same severity as a placeholder.
 
 If you find issues, fix them inline. No need to re-review - just fix and move on. If you find a spec requirement with no task, add the task.
 
