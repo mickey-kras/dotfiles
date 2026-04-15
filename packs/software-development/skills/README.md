@@ -21,6 +21,15 @@ This directory contains the managed first-party workflow skills used by the `sof
 - executing-plans
 - dispatching-parallel-agents
 
+## Figma Skill Set (ported + normalized)
+Ported from openai/skills .curated and normalized to the charset policy.
+Install as a set -- cross-references assume sibling layout.
+- figma-implement-design: Figma URL -> production code (React/TS). 7-step workflow: parse URL, get_design_context, get_screenshot, download assets, translate to project conventions, 1:1 parity, validate.
+- figma-generate-design: code or description -> full Figma screen, built section-by-section from the design system's components/variables/styles.
+- figma-create-design-system-rules: generate project-level CLAUDE.md rules that encode component paths, token locations, and the Figma-to-code flow.
+- figma-use: mandatory prerequisite for every use_figma call. Encodes Plugin API rules (color ranges, font loading, page context resets, atomic error recovery).
+Requires the Figma MCP server (mcp__figma__* tools).
+
 ## Normalization Rules
 - ASCII-safe content
 - no upstream plugin prefixes
