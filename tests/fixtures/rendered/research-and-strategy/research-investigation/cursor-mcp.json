@@ -38,6 +38,10 @@
     "firecrawl": {
       "command": "node",
       "args": ["/Users/mikhailkrasilnikov/.local/bin/bw-mcp", "firecrawl-api-key", "FIRECRAWL_API_KEY=password", "--", "npx", "-y", "firecrawl-mcp@3.11.0"]
+    },
+    "telegram": {
+      "command": "node",
+      "args": ["/Users/mikhailkrasilnikov/.local/bin/bw-mcp", "mcp-telegram", "TELEGRAM_BOT_TOKEN=password", "--", "npx", "-y", "@iqai/mcp-telegram@latest"]
     }
   }
 }

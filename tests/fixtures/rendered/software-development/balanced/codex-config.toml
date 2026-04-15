@@ -13,6 +13,14 @@ args = ["-y", "@playwright/mcp@0.0.68"]
 
 
 
+[mcp_servers.slack]
+type = "http"
+url = "https://mcp.slack.com/mcp"
+
+[mcp_servers.slack.oauth]
+clientId = "1601185624273.8899143856786"
+callbackPort = 3118
+
 
 
 [mcp_servers.atlassian]
@@ -89,6 +97,8 @@ url = "https://mcp.figma.com/mcp"
 [mcp_servers.github]
 command = "node"
 args = ["/Users/mikhailkrasilnikov/.local/bin/bw-mcp", "mcp-github", "GITHUB_PERSONAL_ACCESS_TOKEN=password", "--", "npx", "-y", "@modelcontextprotocol/server-github@2025.4.8"]
+
+
 
 
 

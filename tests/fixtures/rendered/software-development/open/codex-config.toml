@@ -13,6 +13,14 @@ args = ["-y", "@playwright/mcp@0.0.68"]
 
 
 
+[mcp_servers.slack]
+type = "http"
+url = "https://mcp.slack.com/mcp"
+
+[mcp_servers.slack.oauth]
+clientId = "1601185624273.8899143856786"
+callbackPort = 3118
+
 
 
 [mcp_servers.atlassian]
@@ -123,6 +131,8 @@ args = ["/Users/mikhailkrasilnikov/.local/bin/bw-mcp", "firecrawl-api-key", "FIR
 [mcp_servers.fal-ai]
 command = "node"
 args = ["/Users/mikhailkrasilnikov/.local/bin/bw-mcp", "fal-api-key", "FAL_KEY=password", "--", "npx", "-y", "fal-ai-mcp-server@2.1.4"]
+
+
 
 
 

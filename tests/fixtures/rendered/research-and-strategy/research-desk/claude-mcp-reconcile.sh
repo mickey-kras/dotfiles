@@ -2,12 +2,13 @@
 # Registers and reconciles MCP servers in Claude Code CLI and Claude Desktop App.
 # Idempotent and authoritative: keeps the managed set, removes unmanaged extras.
 #
-# hash: 273fe0f15bfefaf1cee8c112b383f97ff6a50338d92b560657ab2a52ff4a8f45
+# hash: e3c983475559f308071f700dfd083dbb8887c66574b68d3199d33917aa21a6aa
 
 set -euo pipefail
 
 FAILED=0
-HOME_SLASHED="/Users/mikhailkrasilnikov"RUNTIME_PROFILE="desk"
+HOME_SLASHED="/Users/mikhailkrasilnikov"
+RUNTIME_PROFILE="desk"
 PROFILE_BASE="desk"
 AZURE_DEVOPS_ORG="<no value>"
 MEMORY_PROVIDER="builtin"
@@ -68,7 +69,7 @@ if command -v claude >/dev/null 2>&1; then
       http|aws)
         command -v uvx >/dev/null 2>&1 && EFFECTIVE_MCP_NAMES+=("$name")
         ;;
-      github|tailscale|exa|firecrawl|fal-ai)
+      github|tailscale|exa|firecrawl|fal-ai|telegram)
         command -v bw >/dev/null 2>&1 && EFFECTIVE_MCP_NAMES+=("$name")
         ;;
       docker)
@@ -169,6 +170,10 @@ PY
 
   if contains_name "atlassian" "${EFFECTIVE_MCP_NAMES[@]}"; then
     add_mcp atlassian --transport http atlassian "https://mcp.atlassian.com/v1/mcp"
+  fi
+
+  if contains_name "slack" "${EFFECTIVE_MCP_NAMES[@]}"; then
+    add_mcp slack --transport http slack "https://mcp.slack.com/mcp"
   fi
 
   if contains_name "filesystem" "${EFFECTIVE_MCP_NAMES[@]}"; then
@@ -276,6 +281,15 @@ PY
       add_mcp fal-ai fal-ai -- node "$HOME/.local/bin/bw-mcp" fal-api-key FAL_KEY=password -- npx -y fal-ai-mcp-server@2.1.4
     else
       echo "  ! fal-ai (Bitwarden CLI not found)"
+      FAILED=$((FAILED + 1))
+    fi
+  fi
+
+  if contains_name "telegram" "${EFFECTIVE_MCP_NAMES[@]}"; then
+    if command -v bw >/dev/null 2>&1; then
+      add_mcp telegram telegram -- node "$HOME/.local/bin/bw-mcp" mcp-telegram TELEGRAM_BOT_TOKEN=password -- npx -y @iqai/mcp-telegram@latest
+    else
+      echo "  ! telegram (Bitwarden CLI not found)"
       FAILED=$((FAILED + 1))
     fi
   fi

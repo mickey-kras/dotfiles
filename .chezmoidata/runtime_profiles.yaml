@@ -64,6 +64,7 @@ mcp_sets:
     - process
     - terraform
     - kubernetes
+    - slack
   open:
     - playwright
     - context7
@@ -86,6 +87,7 @@ mcp_sets:
     - exa
     - firecrawl
     - fal-ai
+    - slack
 
 mcp_catalog:
   playwright:
@@ -298,6 +300,16 @@ mcp_catalog:
     mutates_local_system: false
     prompt_injection_risk: medium
     notes: External AI generation service.
+  slack:
+    transport: http
+    needs_secrets: false
+    reads_remote: true
+    writes_remote: true
+    reads_local: false
+    executes_local_processes: false
+    mutates_local_system: false
+    prompt_injection_risk: medium
+    notes: Slack workspace search and messaging via OAuth.
 
 permission_groups:
   core_read_write:

@@ -198,6 +198,12 @@ catalogs:
       prompt_injection_risk: medium
       required_tools:
         - bw
+    slack:
+      label: Slack
+      description: Slack workspace search and message access via OAuth
+      transport: http
+      needs_secrets: false
+      prompt_injection_risk: medium
 
   skills:
     context7-mcp:
@@ -469,6 +475,7 @@ profiles:
           - process
           - terraform
           - kubernetes
+          - slack
       skills:
         enabled:
           - context7-mcp
@@ -551,6 +558,7 @@ profiles:
           - exa
           - firecrawl
           - fal-ai
+          - slack
       skills:
         enabled:
           - context7-mcp

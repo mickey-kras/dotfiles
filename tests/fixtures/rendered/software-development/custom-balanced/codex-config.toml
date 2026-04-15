@@ -13,6 +13,14 @@ args = ["-y", "@playwright/mcp@0.0.68"]
 
 
 
+[mcp_servers.slack]
+type = "http"
+url = "https://mcp.slack.com/mcp"
+
+[mcp_servers.slack.oauth]
+clientId = "1601185624273.8899143856786"
+callbackPort = 3118
+
 
 
 [mcp_servers.atlassian]
@@ -103,6 +111,8 @@ args = ["/Users/mikhailkrasilnikov/.local/bin/bw-mcp", "mcp-github", "GITHUB_PER
 [mcp_servers.exa]
 command = "node"
 args = ["/Users/mikhailkrasilnikov/.local/bin/bw-mcp", "exa-api-key", "EXA_API_KEY=password", "--", "npx", "-y", "exa-mcp-server@3.1.9"]
+
+
 
 
 

@@ -98,3 +98,9 @@ args = ["/Users/mikhailkrasilnikov/.local/bin/bw-mcp", "fal-api-key", "FAL_KEY=p
 
 
 
+[mcp_servers.telegram]
+command = "node"
+args = ["/Users/mikhailkrasilnikov/.local/bin/bw-mcp", "mcp-telegram", "TELEGRAM_BOT_TOKEN=password", "--", "npx", "-y", "@iqai/mcp-telegram@latest"]
+
+
+
