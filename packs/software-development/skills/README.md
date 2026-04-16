@@ -72,28 +72,26 @@ overlap heavily and **must not be combined**. Pick ONE per project.
 - `minimalist` and `brutalist` are specialized aesthetics. Only use if
   the project explicitly calls for that look.
 
-### Design Intelligence (3 skills -- OVERLAP GROUP)
+### Design Intelligence (2 skills)
 
-Reference databases for design decisions. These overlap significantly.
+Reference databases for design decisions. No real overlap -- different
+scopes.
 
 | Skill | Scope | When to use |
 |-------|-------|-------------|
 | uiux-pro-max | 50+ styles, 161 palettes, 57 font pairings, 99 UX guidelines | **Primary reference.** Broadest coverage. Use for any design decision. |
-| uiux-design | Superset router: logo, CIP, slides, banners, icons, social photos | When the task is a specific design deliverable (logo, banner, etc.). Routes to sub-skills. |
 | uiux-ui-styling | shadcn/ui + Tailwind + canvas | When building React UI components with shadcn. |
 
-**Overlap notes:**
-- `uiux-design` is a router that delegates to `uiux-brand`,
-  `uiux-banner-design`, `uiux-slides`, `uiux-design-system`, and
-  `uiux-ui-styling`. If you know which sub-skill you need, call it
-  directly.
-- `uiux-pro-max` is the broadest reference. Consult it for palette/font/
-  style decisions; use `uiux-ui-styling` for shadcn implementation.
+### Design Deliverables (5 skills)
 
-### Design Sub-skills (4 skills, called by uiux-design or directly)
+Specialized skills for specific design artifacts. `uiux-design` is the
+umbrella that also contains built-in logo, CIP, icon, and social photo
+generators (with Gemini AI scripts). The others handle one deliverable
+type each. Call whichever matches the task directly.
 
 | Skill | When to use |
 |-------|-------------|
+| uiux-design | Logo generation, corporate identity programs (CIP), icon design, social photos. Has built-in Gemini scripts. Also routes to the 4 skills below for their domains. |
 | uiux-brand | Brand voice, visual identity, style guides, messaging frameworks. |
 | uiux-banner-design | Social media covers, ad banners, hero sections, print banners. |
 | uiux-slides | HTML presentations with Chart.js, copywriting formulas, layouts. |
