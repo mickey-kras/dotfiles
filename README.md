@@ -117,7 +117,7 @@ All versions are pinned for supply-chain safety. OAuth MCPs authenticate in the 
 | fal-ai 2.1.4 | open | stdio (npx) | API key | medium | AI image generation |
 | Telegram | campaign, investigation | stdio (npx) | Bitwarden item `mcp-telegram` | high | Telegram bot for content distribution and stakeholder updates |
 
-**Bitwarden-backed MCPs** require [Bitwarden CLI](https://bitwarden.com/help/cli/) plus a valid `~/.bw_session` file. Run `bw-login` after installing dotfiles to refresh the shared session cache used by Claude, Codex, and Cursor.
+**Bitwarden-backed MCPs** require [Bitwarden CLI](https://bitwarden.com/help/cli/) plus a valid `~/.bw_session` file. Run `bw-login` after installing dotfiles to refresh the shared session cache used by Claude, Codex, and Cursor. On macOS, dotfiles also installs `bw-gate` by default as an optional Touch ID and password-gated session cache; use `bw-gate unlock --sync-file` if you want to refresh `~/.bw_session` through the helper.
 
 Required Bitwarden items and structure:
 - `mcp-github`: login password = GitHub PAT
@@ -245,7 +245,7 @@ All profiles still keep:
 
 Global Git hooks are also installed at `~/.config/git/hooks` and enabled through `core.hooksPath`, so the same charset and no-AI-attribution rules are enforced before commit and before push across all local repositories.
 
-`~/.local/bin/bw-mcp` and `~/.local/bin/bw-login` are installed as shared helpers so Claude, Codex, and Cursor can all use the same Bitwarden-backed MCP definitions. `bw-login` writes the unlocked session token to `~/.bw_session`; export it into the current shell only when a shell-driven command needs it immediately.
+`~/.local/bin/bw-mcp` and `~/.local/bin/bw-login` are installed as shared helpers so Claude, Codex, and Cursor can all use the same Bitwarden-backed MCP definitions. `bw-login` writes the unlocked session token to `~/.bw_session`; export it into the current shell only when a shell-driven command needs it immediately. On macOS, `bw-gate` is also installed by default as an optional helper that keeps a Bitwarden session token in the Keychain behind Touch ID and password fallback, with no silent plaintext fallback.
 
 ## What gets configured
 
@@ -333,6 +333,7 @@ dot_local/
     executable_bw-mcp.cmd             # -> ~/.local/bin/bw-mcp.cmd (Windows compatibility)
     executable_bw-login               # -> ~/.local/bin/bw-login
     executable_bw-login.cmd           # -> ~/.local/bin/bw-login.cmd
+    executable_bw-gate                # -> ~/.local/bin/bw-gate (macOS, optional/default-on)
     executable_dotfiles-update        # -> ~/.local/bin/dotfiles-update
     executable_dotfiles-update.cmd    # -> ~/.local/bin/dotfiles-update.cmd
 scripts/

@@ -1,0 +1,85 @@
+#!/usr/bin/env bash
+# Compiles the optional macOS bw-gate helper.
+#
+# hash: {{ include "templates/resolved-state.json" | sha256sum }}:{{ include "scripts/lib/bw-gate/main.swift" | sha256sum }}:{{ include "dot_local/bin/executable_bw-gate" | sha256sum }}
+
+set -euo pipefail
+
+HOME_SLASHED="{{ replace "\\" "/" .chezmoi.homeDir }}"
+{{ $runtime := includeTemplate "templates/resolved-state.json" . | fromJson -}}
+{{ $resolved := $runtime.resolved -}}
+CAPABILITY_PACK="{{ index $resolved "pack_id" }}"
+BW_GATE_INSTALL="{{ index $resolved "settings" "bw_gate_install" }}"
+DOTFILES_DIR="$HOME_SLASHED/dotfiles"
+SOURCE_FILE="$DOTFILES_DIR/scripts/lib/bw-gate/main.swift"
+TARGET_DIR="$HOME_SLASHED/.local/bin"
+TARGET_FILE="$TARGET_DIR/bw-gate-helper"
+BUNDLE_ID="com.mickey-kras.bw-gate-helper"
+
+remove_helper() {
+  rm -f "$TARGET_FILE"
+}
+
+detect_codesign_identity() {
+  if [ -n "${BW_GATE_CODESIGN_IDENTITY:-}" ]; then
+    printf '%s' "$BW_GATE_CODESIGN_IDENTITY"
+    return 0
+  fi
+
+  command -v security >/dev/null 2>&1 || return 1
+  security find-identity -v -p codesigning 2>/dev/null | awk -F'"' '/Developer ID Application:/ { print $2; exit }'
+}
+
+if [ "$(uname -s 2>/dev/null)" != "Darwin" ]; then
+  remove_helper
+  echo "Skipping bw-gate helper install: macOS only."
+  exit 0
+fi
+
+if [ "$BW_GATE_INSTALL" != "enabled" ]; then
+  remove_helper
+  echo "Skipping bw-gate helper install: disabled for capability pack $CAPABILITY_PACK."
+  exit 0
+fi
+
+if ! command -v swiftc >/dev/null 2>&1; then
+  echo "  ! bw-gate helper not installed: swiftc not found"
+  exit 0
+fi
+
+if [ ! -f "$SOURCE_FILE" ]; then
+  echo "  ! bw-gate helper source missing: $SOURCE_FILE"
+  exit 0
+fi
+
+TMPDIR_BW_GATE="$(mktemp -d "${TMPDIR:-/tmp}/bw-gate.XXXXXX")"
+trap 'rm -rf "$TMPDIR_BW_GATE"' EXIT
+
+echo "Installing bw-gate helper for capability pack: $CAPABILITY_PACK"
+swiftc -O -o "$TMPDIR_BW_GATE/bw-gate-helper" "$SOURCE_FILE"
+
+if command -v codesign >/dev/null 2>&1; then
+  CODESIGN_IDENTITY="$(detect_codesign_identity || true)"
+  if [ -n "$CODESIGN_IDENTITY" ]; then
+    if codesign --force --sign "$CODESIGN_IDENTITY" --identifier "$BUNDLE_ID" --options runtime "$TMPDIR_BW_GATE/bw-gate-helper" >/dev/null 2>&1; then
+      echo "  + codesigned helper with Developer ID identity $CODESIGN_IDENTITY"
+    else
+      echo "  ! Developer ID codesign failed; attempting ad-hoc signing"
+      CODESIGN_IDENTITY=""
+    fi
+  fi
+
+  if [ -z "$CODESIGN_IDENTITY" ]; then
+    if codesign --force --sign - --identifier "$BUNDLE_ID" "$TMPDIR_BW_GATE/bw-gate-helper" >/dev/null 2>&1; then
+      echo "  + codesigned helper ad-hoc with identifier $BUNDLE_ID"
+    else
+      echo "  ! codesign failed; continuing with the unsigned helper"
+    fi
+  fi
+fi
+
+mkdir -p "$TARGET_DIR"
+mv "$TMPDIR_BW_GATE/bw-gate-helper" "$TARGET_FILE"
+chmod 755 "$TARGET_FILE"
+
+echo "bw-gate helper installed."

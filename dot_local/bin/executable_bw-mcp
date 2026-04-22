@@ -10,12 +10,15 @@ function fail(message) {
 }
 
 function getSession() {
-  if (process.env.BW_SESSION) {
-    return process.env.BW_SESSION.trim();
-  }
   const sessionPath = path.join(os.homedir(), ".bw_session");
   if (fs.existsSync(sessionPath)) {
-    return fs.readFileSync(sessionPath, "utf8").trim();
+    const session = fs.readFileSync(sessionPath, "utf8").trim();
+    if (session) {
+      return session;
+    }
+  }
+  if (process.env.BW_SESSION) {
+    return process.env.BW_SESSION.trim();
   }
   return "";
 }
@@ -107,7 +110,7 @@ if (!command) {
 
 const session = getSession();
 if (!session) {
-  fail("ERROR: Bitwarden session not found. Run bw-login or write a valid token to ~/.bw_session.");
+  fail("ERROR: Bitwarden session not found. Run bw-login, or on macOS run bw-gate unlock --sync-file, or write a valid token to ~/.bw_session.");
 }
 
 const item = resolveItem(itemName, session);

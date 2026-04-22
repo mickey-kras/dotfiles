@@ -1,0 +1,258 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SELF="${0##*/}"
+HELPER="${BW_GATE_HELPER_PATH:-$HOME/.local/bin/bw-gate-helper}"
+SESSION_FILE="${BW_GATE_SESSION_FILE:-$HOME/.bw_session}"
+
+fail() {
+  printf '%s\n' "$1" >&2
+  exit 1
+}
+
+note() {
+  printf '%s\n' "$1" >&2
+}
+
+detect_bw_status() {
+  local json status
+  json="$(bw status 2>/dev/null || true)"
+  status="$(printf '%s' "$json" | tr -d '\r\n ' | sed -n 's/.*"status":"\([^"]*\)".*/\1/p')"
+  if [ -n "$status" ]; then
+    printf '%s' "$status"
+  else
+    printf 'unauthenticated'
+  fi
+}
+
+require_helper() {
+  [ -x "$HELPER" ] || fail "ERROR: bw-gate-helper is not installed."
+}
+
+require_bw() {
+  command -v bw >/dev/null 2>&1 || fail "ERROR: Bitwarden CLI (bw) not found."
+}
+
+prompt_hidden() {
+  local prompt="$1"
+  local password=""
+
+  if ( : < /dev/tty ) 2>/dev/null && ( : > /dev/tty ) 2>/dev/null; then
+    printf '%s' "$prompt" >/dev/tty
+    IFS= read -rs password </dev/tty || return 1
+    printf '\n' >/dev/tty
+  elif [ -t 0 ]; then
+    printf '%s' "$prompt" >&2
+    IFS= read -rs password || return 1
+    printf '\n' >&2
+  else
+    fail "ERROR: no interactive TTY available for the Bitwarden master-password prompt."
+  fi
+
+  [ -n "$password" ] || return 1
+  printf '%s' "$password"
+}
+
+shell_export() {
+  local token="$1"
+  printf 'export BW_SESSION=%q\n' "$token"
+}
+
+write_session_file() {
+  local token="$1"
+  printf '%s\n' "$token" > "$SESSION_FILE"
+  chmod 600 "$SESSION_FILE" 2>/dev/null || true
+}
+
+ensure_authenticated() {
+  local status
+  status="$(detect_bw_status)"
+  if [ "$status" = "unauthenticated" ]; then
+    note "bw-gate: Bitwarden CLI login required. Running 'bw login' first."
+    bw login
+    status="$(detect_bw_status)"
+  fi
+  [ "$status" != "unauthenticated" ] || fail "ERROR: Bitwarden CLI is still unauthenticated after 'bw login'."
+}
+
+unlock_and_capture() {
+  local status password token
+  ensure_authenticated
+  status="$(detect_bw_status)"
+
+  if [ "$status" = "unlocked" ] && [ -n "${BW_SESSION:-}" ]; then
+    printf '%s' "$BW_SESSION"
+    return 0
+  fi
+
+  password="${BW_PASSWORD:-${BW_UNLOCK_PASSWORD:-}}"
+  if [ -z "$password" ]; then
+    note "bw-gate: enter your Bitwarden master password to refresh the cached Bitwarden session token."
+    password="$(prompt_hidden "Bitwarden master password (to refresh the cached session token): ")" || fail "ERROR: Bitwarden master password is required."
+  fi
+
+  export BW_UNLOCK_PASSWORD="$password"
+  token="$(bw unlock --passwordenv BW_UNLOCK_PASSWORD --raw 2>/dev/null || true)"
+  unset BW_UNLOCK_PASSWORD
+
+  [ -n "$token" ] || fail "ERROR: Bitwarden unlock failed. Check your master password and CLI login state."
+  printf '%s' "$token"
+}
+
+cmd_unlock() {
+  local sync_file="false"
+  local emit_export="false"
+  local token=""
+
+  require_bw
+  require_helper
+
+  while [ "$#" -gt 0 ]; do
+    case "$1" in
+      --sync-file)
+        sync_file="true"
+        ;;
+      --export)
+        emit_export="true"
+        ;;
+      *)
+        fail "ERROR: unknown option for unlock: $1"
+        ;;
+    esac
+    shift
+  done
+
+  token="$(unlock_and_capture)"
+  printf '%s' "$token" | "$HELPER" set
+
+  if [ "$sync_file" = "true" ]; then
+    write_session_file "$token"
+    note "bw-gate: wrote $SESSION_FILE"
+  fi
+
+  if [ "$emit_export" = "true" ]; then
+    shell_export "$token"
+  else
+    note "bw-gate: stored Bitwarden session token in the macOS Keychain."
+  fi
+}
+
+cmd_get() {
+  require_helper
+  note "bw-gate: authenticate with Touch ID or your Mac password to unlock the cached Bitwarden session."
+  "$HELPER" get
+}
+
+cmd_export() {
+  local token
+  require_helper
+  note "bw-gate: authenticate with Touch ID or your Mac password to unlock the cached Bitwarden session."
+  token="$("$HELPER" get)"
+  shell_export "$token"
+}
+
+cmd_sync_file() {
+  local token
+  require_helper
+  note "bw-gate: authenticate with Touch ID or your Mac password to unlock the cached Bitwarden session."
+  token="$("$HELPER" get)"
+  write_session_file "$token"
+  note "bw-gate: wrote $SESSION_FILE"
+}
+
+cmd_clear() {
+  require_helper
+  "$HELPER" clear
+  note "bw-gate: cleared cached token."
+}
+
+cmd_status() {
+  if [ -x "$HELPER" ]; then
+    printf 'helper: installed (%s)\n' "$HELPER"
+    if "$HELPER" has >/dev/null 2>&1; then
+      printf 'cached token: present\n'
+    else
+      printf 'cached token: absent\n'
+    fi
+  else
+    printf 'helper: missing (%s)\n' "$HELPER"
+    printf 'cached token: unavailable\n'
+  fi
+
+  if command -v bw >/dev/null 2>&1; then
+    printf 'bitwarden cli: %s\n' "$(detect_bw_status)"
+  else
+    printf 'bitwarden cli: missing\n'
+  fi
+
+  if [ -f "$SESSION_FILE" ]; then
+    printf 'session file: present (%s)\n' "$SESSION_FILE"
+  else
+    printf 'session file: absent (%s)\n' "$SESSION_FILE"
+  fi
+}
+
+usage() {
+  cat <<EOF
+$SELF — macOS Bitwarden session cache with Touch ID and password fallback
+
+usage:
+  $SELF unlock [--sync-file] [--export]
+  $SELF get
+  $SELF export
+  $SELF sync-file
+  $SELF clear
+  $SELF status
+
+commands:
+  unlock     prompt for the Bitwarden master password, unlock the vault, and store the session token behind Touch ID / password gating
+  get        print the cached Bitwarden session token after macOS authentication
+  export     print a shell-safe export line for BW_SESSION after macOS authentication
+  sync-file  write ~/.bw_session from the cached token after macOS authentication
+  clear      delete the cached token from the macOS Keychain
+  status     show helper, CLI, and session-file status
+
+notes:
+  - This is the current Path B design: LocalAuthentication gate plus a regular keychain item.
+  - The helper is macOS-only and intentionally has no silent plaintext fallback.
+EOF
+}
+
+main() {
+  local command="${1:-help}"
+  shift || true
+
+  case "$command" in
+    unlock)
+      cmd_unlock "$@"
+      ;;
+    get)
+      [ "$#" -eq 0 ] || fail "ERROR: get does not take arguments."
+      cmd_get
+      ;;
+    export)
+      [ "$#" -eq 0 ] || fail "ERROR: export does not take arguments."
+      cmd_export
+      ;;
+    sync-file)
+      [ "$#" -eq 0 ] || fail "ERROR: sync-file does not take arguments."
+      cmd_sync_file
+      ;;
+    clear)
+      [ "$#" -eq 0 ] || fail "ERROR: clear does not take arguments."
+      cmd_clear
+      ;;
+    status)
+      [ "$#" -eq 0 ] || fail "ERROR: status does not take arguments."
+      cmd_status
+      ;;
+    -h|--help|help)
+      usage
+      ;;
+    *)
+      fail "ERROR: unknown command: $command"
+      ;;
+  esac
+}
+
+main "$@"

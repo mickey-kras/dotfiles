@@ -1,6 +1,8 @@
 README.md
 LICENSE
 .github/
+{{ $runtime := includeTemplate "templates/resolved-state.json" . | fromJson -}}
+{{ $resolved := $runtime.resolved -}}
 
 # Ignore everything under scripts/ EXCEPT scripts/chezmoi/run_* which must
 # be visible to chezmoi so it can execute the run_onchange_ install scripts.
@@ -25,4 +27,8 @@ scripts/wizard-tests/
 dot_local/bin/executable_dotfiles-update.cmd
 dot_local/bin/executable_bw-login.cmd
 dot_local/bin/executable_bw-mcp.cmd
+{{ end }}
+
+{{ if or (ne .chezmoi.os "darwin") (ne (index $resolved "settings" "bw_gate_install") "enabled") }}
+dot_local/bin/executable_bw-gate
 {{ end }}

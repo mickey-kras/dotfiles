@@ -510,9 +510,9 @@ if [ "$NEEDS_BITWARDEN" = "true" ]; then
       # The run_onchange_ install scripts hash their own rendered content,
       # which doesn't depend on whether Bitwarden is unlocked - so chezmoi
       # would normally skip them on the second apply and secret-backed MCPs
-      # would never register. Clear the specific entryState entries so all
-      # three install scripts rerun exactly once with secrets available.
-      for script_entry in install-claude-mcps.sh install-claude-pack-assets.sh install-managed-skills.sh; do
+      # would never register. Clear the specific entryState entries so the
+      # managed install scripts rerun exactly once with secrets available.
+      for script_entry in install-claude-mcps.sh install-claude-pack-assets.sh install-managed-skills.sh install-bw-gate.sh; do
         chezmoi state delete --bucket=entryState --key="$HOME/scripts/chezmoi/$script_entry" >/dev/null 2>&1 || true
       done
       chezmoi apply

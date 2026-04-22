@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
-"""Rendering tests for the three run_onchange_after_install-* templates.
+"""Rendering tests for the run_onchange_after_install-* templates.
 
 These scripts are the only thing that actually installs Claude MCPs, pack
-assets, and managed skills. A whitespace bug in the template (for example
-`{{- ... -}}` collapsing an adjacent variable binding into the previous
-line) produces a script that parses but fails at runtime with `unbound
-variable`. The original bug that motivated these tests collapsed
-`HOME_SLASHED="..."` into the next variable assignment and broke every
-fresh bootstrap until it was spotted manually.
+assets, managed skills, and optional local helpers. A whitespace bug in the
+template (for example `{{- ... -}}` collapsing an adjacent variable binding
+into the previous line) produces a script that parses but fails at runtime
+with `unbound variable`. The original bug that motivated these tests
+collapsed `HOME_SLASHED="..."` into the next variable assignment and broke
+every fresh bootstrap until it was spotted manually.
 
 We render each template with a realistic software-development/balanced
 state and then assert:
@@ -35,6 +35,7 @@ INSTALL_TEMPLATES = [
     "run_onchange_after_install-claude-mcps.sh.tmpl",
     "run_onchange_after_install-claude-pack-assets.sh.tmpl",
     "run_onchange_after_install-managed-skills.sh.tmpl",
+    "run_onchange_after_install-bw-gate.sh.tmpl",
 ]
 
 
@@ -85,6 +86,7 @@ def _balanced_state() -> dict:
         "memory_provider": "builtin",
         "obsidian_vault_path": "",
         "azure_devops_org": "",
+        "bw_gate_install": "enabled",
         "content_workspace": "",
     }
 
@@ -149,6 +151,12 @@ class TestInstallScriptTemplates(unittest.TestCase):
                 'HOME_SLASHED="',
                 'CAPABILITY_PACK="',
                 'MANAGED_SKILLS_DIR="',
+            ],
+            "run_onchange_after_install-bw-gate.sh.tmpl": [
+                'HOME_SLASHED="',
+                'CAPABILITY_PACK="',
+                'BW_GATE_INSTALL="',
+                'BUNDLE_ID="',
             ],
         }
         for name, expected in expected_per_template.items():

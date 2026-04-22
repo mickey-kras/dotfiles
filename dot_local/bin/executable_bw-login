@@ -6,6 +6,20 @@ fail() {
   exit 1
 }
 
+note() {
+  printf '%s\n' "$1" >&2
+}
+
+bw_gate_helper() {
+  printf '%s' "${BW_GATE_HELPER_PATH:-$HOME/.local/bin/bw-gate-helper}"
+}
+
+has_bw_gate() {
+  [ "${BW_LOGIN_DISABLE_GATE:-0}" != "1" ] || return 1
+  command -v bw-gate >/dev/null 2>&1 || return 1
+  [ -x "$(bw_gate_helper)" ]
+}
+
 detect_bw_status() {
   local json status
   json="$(bw status 2>/dev/null || true)"
@@ -109,7 +123,48 @@ unlock_bw() {
 }
 
 main() {
-  local status login_method
+  local status login_method force_refresh="false"
+
+  while [ "$#" -gt 0 ]; do
+    case "$1" in
+      --refresh)
+        force_refresh="true"
+        ;;
+      -h|--help|help)
+        cat <<EOF
+bw-login — refresh ~/.bw_session for Bitwarden-backed MCP wrappers
+
+usage:
+  bw-login [--refresh]
+
+behavior:
+  - on macOS, if bw-gate is installed, bw-login uses it
+  - default: if bw-gate already has a cached token, load it via Touch ID/password into ~/.bw_session
+  - --refresh: perform a fresh Bitwarden unlock and update the bw-gate cache
+
+environment:
+  BW_LOGIN_DISABLE_GATE=1   bypass bw-gate and use the legacy direct unlock flow
+EOF
+        exit 0
+        ;;
+      *)
+        fail "ERROR: unknown argument: $1"
+        ;;
+    esac
+    shift
+  done
+
+  if has_bw_gate; then
+    if [ "$force_refresh" != "true" ] && "$(bw_gate_helper)" has >/dev/null 2>&1; then
+      note "bw-login: authenticate with Touch ID or your Mac password to load the cached Bitwarden session into ~/.bw_session."
+      bw-gate sync-file
+      exit 0
+    fi
+    note "bw-login: refreshing BW_SESSION via bw-gate."
+    bw-gate unlock --sync-file
+    exit 0
+  fi
+
   status="$(detect_bw_status)"
 
   if [ "$status" = "unauthenticated" ]; then

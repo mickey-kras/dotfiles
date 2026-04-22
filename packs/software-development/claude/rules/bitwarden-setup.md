@@ -34,6 +34,14 @@ Desktop, Claude Code, Codex, and Cursor can all use the same Bitwarden-backed
 helpers. Export `BW_SESSION` in the current shell when you want shell-driven
 operations like `chezmoi apply` to use the same session immediately.
 
+On macOS, the optional `bw-gate` helper can keep the session token in the
+Keychain behind Touch ID and password fallback:
+
+```bash
+bw-gate unlock --sync-file
+export BW_SESSION="$(cat ~/.bw_session)"
+```
+
 ## Required Bitwarden items
 
 Use **Login** items with the secret stored in the **Password** field unless

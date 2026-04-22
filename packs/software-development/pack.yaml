@@ -11,6 +11,7 @@ defaults:
       memory_provider: builtin
       obsidian_vault_path: ""
       azure_devops_org: ""
+      bw_gate_install: enabled
 
 ui:
   sections:
@@ -49,6 +50,15 @@ settings_schema:
     type: string
     label: Azure DevOps Org
     default: ""
+  bw_gate_install:
+    type: enum
+    label: Install bw-gate
+    default: enabled
+    options:
+      - value: enabled
+        label: Enabled
+      - value: disabled
+        label: Disabled
 
 catalogs:
   mcps:
