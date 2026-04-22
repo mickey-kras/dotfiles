@@ -1,0 +1,37 @@
+{
+  "id": "software-development",
+  "description": "Software delivery pack across planning, implementation, testing, review, documentation, and incident response.",
+  "claudeAgents": [
+    "delivery-orchestrator",
+    "planner",
+    "product-manager",
+    "workflow-architect",
+    "backend-engineer",
+    "frontend-engineer",
+    "staff-engineer",
+    "quality-engineer",
+    "code-reviewer",
+    "debugger",
+    "git-workflow-master",
+    "devops-engineer",
+    "security-engineer",
+    "technical-writer",
+    "incident-commander"
+  ],
+  "managedSkills": [
+    "context7-mcp",
+    "context-budget",
+    "dispatching-parallel-agents",
+    "executing-plans",
+    "obsidian-memory",
+    "receiving-code-review",
+    "requesting-code-review",
+    "systematic-debugging",
+    "test-driven-development",
+    "using-git-worktrees",
+    "verification-before-completion",
+    "writing-plans"
+  ],
+  "codexMode": "software-development",
+  "cursorMode": "software-development"
+}

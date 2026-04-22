@@ -1,0 +1,316 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Update dotfiles and verify MCP health
+# Managed by chezmoi -> installed at ~/.local/bin/dotfiles-update
+# Usage: dotfiles-update
+
+# --- Colors ---
+C='\033[1;36m'  G='\033[1;32m'  Y='\033[1;33m'
+D='\033[0;90m'  B='\033[1;37m'  R='\033[0m'
+RED='\033[1;31m'
+
+section() { printf "\n${B}%s${R}\n" "$1"; }
+ok()      { printf "  ${G}+${R} %s\n" "$1"; }
+warn()    { printf "  ${Y}>${R} %s\n" "$1"; }
+fail()    { printf "  ${RED}x${R} %s\n" "$1"; }
+
+read_chezmoi_value() {
+  local key="$1"
+  python3 - "$HOME/.config/chezmoi/chezmoi.toml" "$key" <<'PY' 2>/dev/null || true
+import pathlib, re, sys
+path = pathlib.Path(sys.argv[1])
+key = sys.argv[2]
+if not path.exists():
+    raise SystemExit(0)
+text = path.read_text()
+m = re.search(r'^\s*%s\s*=\s*"(.*)"\s*$' % re.escape(key), text, re.M)
+if m:
+    print(m.group(1))
+PY
+}
+
+read_chezmoi_array() {
+  local key="$1"
+  python3 - "$HOME/.config/chezmoi/chezmoi.toml" "$key" <<'PY' 2>/dev/null || true
+import pathlib, re, sys
+path = pathlib.Path(sys.argv[1])
+key = sys.argv[2]
+if not path.exists():
+    raise SystemExit(0)
+text = path.read_text()
+m = re.search(r'^\s*%s\s*=\s*\[(.*)\]\s*$' % re.escape(key), text, re.M)
+if not m:
+    raise SystemExit(0)
+items = [s.strip().strip('"') for s in m.group(1).split(',') if s.strip()]
+for item in items:
+    print(item)
+PY
+}
+
+contains_word() {
+  local needle="$1"; shift
+  local item
+  for item in "$@"; do
+    [ "$item" = "$needle" ] && return 0
+  done
+  return 1
+}
+
+printf "${C}"
+printf '  ____    _    ____ _____ \n'
+printf ' |  _ \\  / \\  / ___|_   _|\n'
+printf ' | |_) |/ _ \\| |     | |  \n'
+printf ' |  __// ___ \\ |___  | |  \n'
+printf ' |_|  /_/   \\_\\____| |_|  \n'
+printf "${R}\n"
+printf "${B}  People & AI Conduct Terms${R}\n"
+printf "${D}  dotfiles update${R}\n\n"
+
+# --- 1. Pull + apply ---
+section "1. Updating dotfiles"
+CHEZMOI_SRC="${HOME}/.local/share/chezmoi"
+DOTFILES_DIR="${HOME}/dotfiles"
+
+# Ensure chezmoi source is symlinked to ~/dotfiles
+if [ -d "$DOTFILES_DIR/.git" ] && [ -d "$CHEZMOI_SRC" ] && [ ! -L "$CHEZMOI_SRC" ]; then
+  warn "chezmoi source is a separate clone - consolidating"
+  rm -rf "$CHEZMOI_SRC"
+  ln -s "$DOTFILES_DIR" "$CHEZMOI_SRC"
+  ok "Source linked: $CHEZMOI_SRC -> $DOTFILES_DIR"
+fi
+
+if command -v chezmoi >/dev/null 2>&1; then
+  if chezmoi update --force 2>&1; then
+    ok "chezmoi update applied"
+  else
+    fail "chezmoi update failed - run 'chezmoi doctor' to diagnose"
+  fi
+else
+  fail "chezmoi not found"
+  exit 1
+fi
+
+# --- 2. Check pinned MCP versions ---
+section "2. Checking MCP versions"
+
+PINNED_PACKAGES=(
+  "@playwright/mcp:0.0.68"
+  "@azure-devops/mcp:2.5.0"
+  "exa-mcp-server:3.1.9"
+  "firecrawl-mcp:3.11.0"
+  "fal-ai-mcp-server:2.1.4"
+)
+
+STALE=0
+if command -v npm >/dev/null 2>&1; then
+  for entry in "${PINNED_PACKAGES[@]}"; do
+    pkg="${entry%%:*}"
+    pinned="${entry##*:}"
+    latest=$(npm view "$pkg" version 2>/dev/null || echo "?")
+    if [ "$latest" = "?" ]; then
+      warn "$pkg - could not fetch latest version"
+    elif [ "$pinned" = "$latest" ]; then
+      ok "$pkg@$pinned ${D}(latest)${R}"
+    else
+      warn "$pkg@$pinned -> ${C}$latest${R} available"
+      STALE=$((STALE + 1))
+    fi
+  done
+
+  if [ "$STALE" -gt 0 ]; then
+    printf "\n  ${Y}%d package(s) have newer versions.${R}\n" "$STALE"
+    printf "  ${D}Ask Claude to bump: \"update pinned MCP versions\"${R}\n"
+  fi
+else
+  warn "npm not found - skipping version checks"
+fi
+
+# --- 3. Security scan ---
+section "3. Security scan"
+if command -v npx >/dev/null 2>&1; then
+  if npx --yes @anthropic-ai/mcp-scan --help >/dev/null 2>&1; then
+    printf "  ${D}Running mcp-scan...${R}\n"
+    if npx --yes @anthropic-ai/mcp-scan 2>&1 | tail -5; then
+      ok "Scan complete"
+    else
+      warn "mcp-scan returned warnings - review output above"
+    fi
+  else
+    warn "mcp-scan not available - install: npx @anthropic-ai/mcp-scan"
+  fi
+else
+  warn "npx not found - skipping security scan"
+fi
+
+# --- 4. Verify MCPs ---
+section "4. Verifying MCP registration"
+if command -v claude >/dev/null 2>&1; then
+  RUNTIME_PROFILE="$(read_chezmoi_value runtime_profile)"
+  MEMORY_PROVIDER="$(read_chezmoi_value memory_provider)"
+  [ -z "$RUNTIME_PROFILE" ] && RUNTIME_PROFILE="balanced"
+  [ -z "$MEMORY_PROVIDER" ] && MEMORY_PROVIDER="builtin"
+
+  EXPECTED=()
+  while IFS= read -r mcp; do
+    [ -n "$mcp" ] && EXPECTED+=("$mcp")
+  done < <(read_chezmoi_array selection_enabled_mcps)
+
+  FILTERED=()
+  for mcp in "${EXPECTED[@]}"; do
+    case "$mcp" in
+      azure-devops)
+        [ -n "$(read_chezmoi_value azure_devops_org)" ] && FILTERED+=("$mcp")
+        ;;
+      http|aws)
+        if command -v uvx >/dev/null 2>&1; then FILTERED+=("$mcp"); fi
+        ;;
+      github|tailscale|exa|firecrawl|fal-ai)
+        if command -v bw >/dev/null 2>&1; then FILTERED+=("$mcp"); fi
+        ;;
+      docker)
+        if command -v docker >/dev/null 2>&1; then FILTERED+=("MCP_DOCKER"); fi
+        ;;
+      *)
+        FILTERED+=("$mcp")
+        ;;
+    esac
+  done
+  EXPECTED=("${FILTERED[@]}")
+
+  REGISTERED=$(claude mcp list 2>/dev/null || echo "")
+
+  ok "Runtime profile: $RUNTIME_PROFILE"
+  ok "Capability pack: $(read_chezmoi_value capability_pack)"
+  ok "Memory provider: $MEMORY_PROVIDER"
+
+  for mcp in "${EXPECTED[@]}"; do
+    if echo "$REGISTERED" | grep -qi "$mcp"; then
+      ok "$mcp"
+    else
+      fail "$mcp - not registered. Run: chezmoi apply"
+    fi
+  done
+
+  if [ "$MEMORY_PROVIDER" = "obsidian" ]; then
+    OBSIDIAN_VAULT_PATH="$(read_chezmoi_value obsidian_vault_path)"
+    if rg -q "@bitbonsai/mcpvault@latest" "$HOME/.claude.json" "$HOME/Library/Application Support/Claude/claude_desktop_config.json" 2>/dev/null; then
+      ok "claude memory provider rendered as obsidian"
+    else
+      fail "claude memory provider - expected obsidian rendering"
+    fi
+    if [ -n "$OBSIDIAN_VAULT_PATH" ] && rg -q "$OBSIDIAN_VAULT_PATH" "$HOME/.claude.json" "$HOME/Library/Application Support/Claude/claude_desktop_config.json" 2>/dev/null; then
+      ok "claude obsidian vault path"
+    else
+      fail "claude obsidian vault path - missing"
+    fi
+  fi
+else
+  warn "claude CLI not found - skipping MCP verification"
+fi
+
+# --- 5. Verify config files ---
+section "5. Verifying config files"
+FILES=(
+  "$HOME/.claude/CLAUDE.md"
+  "$HOME/.claude/settings.json"
+  "$HOME/.claude/hooks/scripts/block-no-verify.js"
+  "$HOME/.claude/hooks/scripts/config-protection.js"
+  "$HOME/.claude/hooks/scripts/governance-capture.js"
+  "$HOME/.claude/hooks/scripts/post-edit-format.js"
+  "$HOME/.claude/hooks/scripts/quality-gate.js"
+  "$HOME/.claude/hooks/scripts/security-review.py"
+  "$HOME/.claude/hooks/scripts/suggest-compact.js"
+)
+
+for f in "${FILES[@]}"; do
+  if [ -f "$f" ]; then
+    ok "$(basename "$f")"
+  else
+    fail "$(basename "$f") - missing at $f"
+  fi
+done
+
+if [ -d "$HOME/.cursor" ] || [ -d "/Applications/Cursor.app" ]; then
+  [ -f "$HOME/.cursor/mcp.json" ] && ok "cursor/mcp.json" || fail "cursor/mcp.json - missing"
+  [ -f "$HOME/.cursor/rules/global.mdc" ] && ok "cursor/rules/global.mdc" || fail "cursor/rules/global.mdc - missing"
+fi
+
+if command -v codex >/dev/null 2>&1; then
+  [ -f "$HOME/.codex/config.toml" ] && ok "codex/config.toml" || fail "codex/config.toml - missing"
+  [ -f "$HOME/.codex/AGENTS.md" ] && ok "codex/AGENTS.md" || fail "codex/AGENTS.md - missing"
+  if [ "$(read_chezmoi_value memory_provider)" = "obsidian" ] && rg -q "@bitbonsai/mcpvault@latest" "$HOME/.codex/config.toml" 2>/dev/null; then
+    ok "codex memory provider rendered as obsidian"
+  fi
+fi
+
+if [ -f "$HOME/.cursor/mcp.json" ] && [ "$(read_chezmoi_value memory_provider)" = "obsidian" ] && rg -q "@bitbonsai/mcpvault@latest" "$HOME/.cursor/mcp.json" 2>/dev/null; then
+  ok "cursor memory provider rendered as obsidian"
+fi
+
+CAPABILITY_PACK="$(read_chezmoi_value capability_pack)"
+[ -z "$CAPABILITY_PACK" ] && CAPABILITY_PACK="software-development"
+
+while IFS= read -r agent; do
+  [ -n "$agent" ] || continue
+  if [ -f "$HOME/.claude/agents/$agent.md" ]; then
+    ok "claude agent/$agent"
+  else
+    fail "claude agent/$agent - missing"
+  fi
+done < <(read_chezmoi_array selection_enabled_agents)
+
+while IFS= read -r rule; do
+  [ -n "$rule" ] || continue
+  if [ -f "$HOME/.claude/rules/$rule.md" ]; then
+    ok "claude rule/$rule"
+  else
+    fail "claude rule/$rule - missing"
+  fi
+done < <(read_chezmoi_array selection_enabled_rules)
+
+while IFS= read -r skill; do
+  [ -n "$skill" ] || continue
+  if [ -f "$HOME/.claude/skills/$skill/SKILL.md" ]; then
+    ok "claude skill/$skill"
+  else
+    fail "claude skill/$skill - missing"
+  fi
+
+  if command -v codex >/dev/null 2>&1; then
+    if [ -f "$HOME/.codex/skills/$skill/SKILL.md" ]; then
+      ok "codex skill/$skill"
+    else
+      fail "codex skill/$skill - missing"
+    fi
+  fi
+done < <(read_chezmoi_array selection_enabled_skills)
+
+[ -f "$HOME/.local/bin/bw-mcp" ] && ok "bw-mcp" || warn "bw-mcp - missing"
+[ -f "$HOME/.local/bin/bw-login" ] && ok "bw-login" || warn "bw-login - missing"
+
+# --- 6. Verify plugin state ---
+section "6. Verifying Claude plugin state"
+if [ -f "$HOME/.claude/plugins/installed_plugins.json" ]; then
+  PLUGINS_JSON="$HOME/.claude/plugins/installed_plugins.json"
+  PLUGIN_COUNT=$(python3 - "$PLUGINS_JSON" <<'PY' 2>/dev/null || echo "?"
+import json, pathlib, sys
+path = pathlib.Path(sys.argv[1])
+data = json.loads(path.read_text())
+plugins = data.get("plugins", {})
+print(sum(len(v) for v in plugins.values()))
+PY
+)
+  if [ "$PLUGIN_COUNT" = "0" ]; then
+    ok "claude/plugins - no installed plugins"
+  elif [ "$PLUGIN_COUNT" = "?" ]; then
+    warn "claude/plugins - could not inspect installed_plugins.json"
+  else
+    fail "claude/plugins - $PLUGIN_COUNT installed plugin(s) remain"
+  fi
+else
+  ok "claude/plugins - no installed_plugins.json found"
+fi
+
+# --- Summary ---
+printf "\n${G}+ Update complete${R}\n"

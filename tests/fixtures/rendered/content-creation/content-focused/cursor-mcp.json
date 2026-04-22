@@ -1,0 +1,23 @@
+{
+  "mcpServers": {
+    "context7": {
+      "url": "https://mcp.context7.com/mcp"
+    },
+    "filesystem": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem@2026.1.14", "/Users/mikhailkrasilnikov/Dev"]
+    },
+    "git": {
+      "command": "npx",
+      "args": ["-y", "@cyanheads/git-mcp-server@2.10.5"]
+    },
+    "thinking": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-sequential-thinking@2025.12.18"]
+    },
+    "memory": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-memory@2026.1.26"]
+    }
+  }
+}

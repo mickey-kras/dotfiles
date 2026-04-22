@@ -1,0 +1,403 @@
+version: 1
+
+id: research-and-strategy
+label: Research and Strategy
+description: Evidence gathering, source synthesis, strategic recommendation, and executive reporting pack.
+
+defaults:
+  profile: analyst
+  selection:
+    settings:
+      memory_provider: builtin
+      obsidian_vault_path: ""
+      research_workspace: ""
+
+ui:
+  sections:
+    - id: profiles
+      label: Profiles
+    - id: mcps
+      label: MCP Servers
+    - id: skills
+      label: Skills
+    - id: agents
+      label: Agents
+    - id: rules
+      label: Rules
+    - id: permissions
+      label: Permission Groups
+    - id: settings
+      label: Settings
+
+settings_schema:
+  memory_provider:
+    type: enum
+    label: Memory Provider
+    default: builtin
+    options:
+      - value: builtin
+        label: Builtin Memory
+      - value: obsidian
+        label: Obsidian
+  obsidian_vault_path:
+    type: string
+    label: Obsidian Vault Path
+    default: ""
+    visible_if:
+      memory_provider: obsidian
+  research_workspace:
+    type: string
+    label: Research Workspace Path
+    default: ""
+
+catalogs:
+  mcps:
+    context7:
+      label: Context7
+      description: Current library and framework docs
+      transport: http
+      needs_secrets: false
+      prompt_injection_risk: low
+    filesystem:
+      label: Filesystem
+      description: Local workspace browsing rooted narrowly
+      transport: stdio
+      needs_secrets: false
+      prompt_injection_risk: low
+    git:
+      label: Git
+      description: Repository inspection and history
+      transport: stdio
+      needs_secrets: false
+      prompt_injection_risk: low
+    memory:
+      label: Memory
+      description: Local memory store or Obsidian-backed memory
+      transport: stdio
+      needs_secrets: false
+      prompt_injection_risk: low
+    thinking:
+      label: Sequential Thinking
+      description: Structured reasoning for analysis and synthesis
+      transport: stdio
+      needs_secrets: false
+      prompt_injection_risk: low
+    playwright:
+      label: Playwright
+      description: Browser automation for structured research capture
+      transport: stdio
+      needs_secrets: false
+      prompt_injection_risk: medium
+    process:
+      label: Process
+      description: Local process inspection
+      transport: stdio
+      needs_secrets: false
+      prompt_injection_risk: low
+    http:
+      label: HTTP Fetch
+      description: Open remote content retrieval for investigation
+      transport: stdio
+      needs_secrets: false
+      prompt_injection_risk: high
+      required_tools:
+        - uvx
+    exa:
+      label: Exa
+      description: AI-powered web search for broader research
+      transport: stdio
+      needs_secrets: true
+      prompt_injection_risk: high
+      required_tools:
+        - bw
+    firecrawl:
+      label: Firecrawl
+      description: Structured crawling and extraction for evidence gathering
+      transport: stdio
+      needs_secrets: true
+      prompt_injection_risk: high
+      required_tools:
+        - bw
+    telegram:
+      label: Telegram
+      description: Telegram bot for research distribution and stakeholder updates
+      transport: stdio
+      needs_secrets: true
+      prompt_injection_risk: high
+      required_tools:
+        - bw
+
+  skills:
+    context-budget:
+      label: Context Budget
+    obsidian-memory:
+      label: Obsidian Memory
+    writing-plans:
+      label: Writing Plans
+    verification-before-completion:
+      label: Verification Before Completion
+    hypothesis-tracking:
+      label: Hypothesis Tracking
+    interview-synthesis:
+      label: Interview Synthesis
+    source-freshness-checker:
+      label: Source Freshness Checker
+
+  agents:
+    trend-researcher:
+      label: Trend Researcher
+    competitive-analyst:
+      label: Competitive Analyst
+    evidence-reviewer:
+      label: Evidence Reviewer
+    report-writer:
+      label: Report Writer
+    executive-summary-writer:
+      label: Executive Summary Writer
+    literature-reviewer:
+      label: Literature Reviewer
+    stakeholder-synthesizer:
+      label: Stakeholder Synthesizer
+    data-analyst:
+      label: Data Analyst
+
+  rules:
+    evidence-over-claims:
+      label: Evidence Over Claims
+    uncertainty-reporting:
+      label: Uncertainty Reporting
+    citation-discipline:
+      label: Citation Discipline
+    report-structure:
+      label: Report Structure
+    methodology-transparency:
+      label: Methodology Transparency
+    source-freshness:
+      label: Source Freshness
+
+  permissions:
+    core_read_write:
+      label: Core Read Write
+      allow:
+        - Read
+        - Edit
+        - Write
+    shell_readonly:
+      label: Shell Readonly
+      allow:
+        - Bash(ls *)
+        - Bash(cat *)
+        - Bash(head *)
+        - Bash(tail *)
+        - Bash(wc *)
+        - Bash(find *)
+        - Bash(grep *)
+        - Bash(rg *)
+        - Bash(jq *)
+    git_safe:
+      label: Git Safe
+      allow:
+        - Bash(git status*)
+        - Bash(git diff*)
+        - Bash(git log*)
+    local_file_mutation:
+      label: Local File Mutation
+      allow:
+        - Bash(mkdir *)
+        - Bash(cp *)
+        - Bash(mv *)
+        - Bash(touch *)
+        - Bash(chmod +x *)
+    web_access:
+      label: Web Access
+      allow:
+        - Bash(curl *)
+        - WebFetch
+        - WebSearch
+    secret_tools:
+      label: Secret Tools
+      allow:
+        - Bash(bw *)
+        - Bash(uvx *)
+
+guardrails:
+  hard_bans:
+    shared:
+      - Bash(sudo *)
+      - Bash(su *)
+      - Bash(rm -rf /)
+      - Bash(dd if=/dev/zero*)
+      - Bash(chmod 777 *)
+      - Bash(> /dev/sda*)
+
+profiles:
+  desk:
+    label: Desk
+    description: Low-risk reading and local synthesis.
+    selection:
+      mcps:
+        enabled:
+          - context7
+          - filesystem
+          - git
+          - memory
+          - thinking
+      skills:
+        enabled:
+          - context-budget
+          - writing-plans
+          - hypothesis-tracking
+          - source-freshness-checker
+      agents:
+        enabled:
+          - trend-researcher
+          - evidence-reviewer
+          - report-writer
+          - executive-summary-writer
+          - literature-reviewer
+          - data-analyst
+      rules:
+        enabled:
+          - evidence-over-claims
+          - uncertainty-reporting
+          - citation-discipline
+          - report-structure
+          - methodology-transparency
+          - source-freshness
+      permissions:
+        enabled:
+          - core_read_write
+          - shell_readonly
+          - git_safe
+      settings:
+        memory_provider: builtin
+        obsidian_vault_path: ""
+        research_workspace: ""
+
+  analyst:
+    label: Analyst
+    description: Broader repo, standards, and documentation research.
+    selection:
+      mcps:
+        enabled:
+          - context7
+          - filesystem
+          - git
+          - memory
+          - thinking
+          - playwright
+          - process
+      skills:
+        enabled:
+          - context-budget
+          - obsidian-memory
+          - writing-plans
+          - hypothesis-tracking
+          - interview-synthesis
+          - source-freshness-checker
+      agents:
+        enabled:
+          - trend-researcher
+          - competitive-analyst
+          - evidence-reviewer
+          - report-writer
+          - executive-summary-writer
+          - literature-reviewer
+          - stakeholder-synthesizer
+          - data-analyst
+      rules:
+        enabled:
+          - evidence-over-claims
+          - uncertainty-reporting
+          - citation-discipline
+          - report-structure
+          - methodology-transparency
+          - source-freshness
+      permissions:
+        enabled:
+          - core_read_write
+          - shell_readonly
+          - git_safe
+          - local_file_mutation
+      settings:
+        memory_provider: builtin
+        obsidian_vault_path: ""
+        research_workspace: ""
+
+  investigation:
+    label: Investigation
+    description: Wider crawling and search with stronger security constraints.
+    selection:
+      mcps:
+        enabled:
+          - context7
+          - filesystem
+          - git
+          - memory
+          - thinking
+          - playwright
+          - process
+          - http
+          - exa
+          - firecrawl
+          - telegram
+      skills:
+        enabled:
+          - context-budget
+          - obsidian-memory
+          - verification-before-completion
+          - writing-plans
+          - hypothesis-tracking
+          - interview-synthesis
+          - source-freshness-checker
+      agents:
+        enabled:
+          - trend-researcher
+          - competitive-analyst
+          - evidence-reviewer
+          - report-writer
+          - executive-summary-writer
+          - literature-reviewer
+          - stakeholder-synthesizer
+          - data-analyst
+      rules:
+        enabled:
+          - evidence-over-claims
+          - uncertainty-reporting
+          - citation-discipline
+          - report-structure
+          - methodology-transparency
+          - source-freshness
+      permissions:
+        enabled:
+          - core_read_write
+          - shell_readonly
+          - git_safe
+          - local_file_mutation
+          - web_access
+          - secret_tools
+      settings:
+        memory_provider: builtin
+        obsidian_vault_path: ""
+        research_workspace: ""
+
+tooling:
+  claude_agents:
+    - trend-researcher
+    - competitive-analyst
+    - evidence-reviewer
+    - report-writer
+    - executive-summary-writer
+    - literature-reviewer
+    - stakeholder-synthesizer
+    - data-analyst
+  managed_skills:
+    - context-budget
+    - obsidian-memory
+    - writing-plans
+    - verification-before-completion
+    - hypothesis-tracking
+    - interview-synthesis
+    - source-freshness-checker
+  codex_mode: research-and-strategy
+  cursor_mode: research-and-strategy

@@ -1,0 +1,32 @@
+{{- /* Chezmoi config - runs during `chezmoi init`. Re-run init to change. */ -}}
+
+{{- $userName := promptStringOnce . "user_name" "Display name for generated instructions" -}}
+{{- $userRoleSummary := promptStringOnce . "user_role_summary" "Short role summary for generated instructions" -}}
+{{- $userStackSummary := promptStringOnce . "user_stack_summary" "Current stack summary for generated instructions" -}}
+{{- $capabilityPack := promptStringOnce . "capability_pack" "Capability pack id (for example: software-development or content-creation)" -}}
+{{- $profileSelected := promptStringOnce . "profile_selected" "Preset profile id for the selected pack" -}}
+{{- $memoryProvider := promptStringOnce . "memory_provider" "Memory provider: builtin or obsidian" -}}
+{{- $obsidianVaultPath := promptStringOnce . "obsidian_vault_path" "Obsidian vault path (press Enter to skip)" -}}
+{{- $azureDevOpsOrg := promptStringOnce . "azure_devops_org" "Azure DevOps org name (press Enter to skip)" -}}
+{{- $contentWorkspace := promptStringOnce . "content_workspace" "Content workspace path (press Enter to skip)" -}}
+
+{{- /*
+  We intentionally DO NOT emit profile_selected, profile_mode, or any
+  selection_enabled_* arrays here. With only runtime_profile and profile_base
+  set, templates/resolved-state.json takes its `else` branch and reads the
+  selection from the pack YAML directly, so a manual `chezmoi init` still
+  produces a fully-populated set of MCPs, skills, agents, and rules.
+  The TUI wizard + bootstrap.sh overwrite this file with the full selection,
+  so the wizard path is unaffected.
+*/ -}}
+[data]
+  user_name = {{ $userName | quote }}
+  user_role_summary = {{ $userRoleSummary | quote }}
+  user_stack_summary = {{ $userStackSummary | quote }}
+  capability_pack = {{ $capabilityPack | quote }}
+  runtime_profile = {{ $profileSelected | quote }}
+  profile_base = {{ $profileSelected | quote }}
+  memory_provider = {{ $memoryProvider | quote }}
+  obsidian_vault_path = {{ $obsidianVaultPath | quote }}
+  azure_devops_org = {{ $azureDevOpsOrg | quote }}
+  content_workspace = {{ $contentWorkspace | quote }}

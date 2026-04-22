@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+script_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+repo_root=$(git rev-parse --show-toplevel)
+zero_oid=0000000000000000000000000000000000000000
+
+while read -r local_ref local_sha remote_ref remote_sha; do
+  [ -z "${local_ref:-}" ] && continue
+  [ "$local_sha" = "$zero_oid" ] && continue
+
+  if [ "$remote_sha" = "$zero_oid" ]; then
+    while IFS= read -r commit; do
+      [ -z "$commit" ] && continue
+      "$script_dir/_misha_git_policy.py" check-range --repo-root "$repo_root" "$commit^!"
+    done < <(git rev-list "$local_sha" --not --remotes)
+  else
+    "$script_dir/_misha_git_policy.py" check-range --repo-root "$repo_root" "$remote_sha..$local_sha"
+  fi
+done

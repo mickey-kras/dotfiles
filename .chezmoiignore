@@ -1,0 +1,28 @@
+README.md
+LICENSE
+.github/
+
+# Ignore everything under scripts/ EXCEPT scripts/chezmoi/run_* which must
+# be visible to chezmoi so it can execute the run_onchange_ install scripts.
+# We exclude specific children instead of the whole scripts/ directory,
+# because gitignore-style negation cannot re-include files inside an
+# already-excluded parent directory.
+scripts/__pycache__/
+scripts/bootstrap.sh
+scripts/bootstrap-wizard.sh
+scripts/lib/
+scripts/pack_state.py
+scripts/reset-ai-tooling.sh
+scripts/test_install_script_templates.py
+scripts/test_pack_state.py
+scripts/wizard/
+scripts/wizard-tests/
+
+{{ if eq .chezmoi.os "windows" }}
+{{ end }}
+
+{{ if ne .chezmoi.os "windows" }}
+dot_local/bin/executable_dotfiles-update.cmd
+dot_local/bin/executable_bw-login.cmd
+dot_local/bin/executable_bw-mcp.cmd
+{{ end }}

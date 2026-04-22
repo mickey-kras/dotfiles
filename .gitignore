@@ -1,0 +1,27 @@
+# Secrets (never commit)
+*.age
+key.txt
+.env*
+
+# Claude Code local settings (machine-specific, auto-generated)
+.claude/settings.local.json
+.claude/worktrees/
+
+# OS junk
+.DS_Store
+Thumbs.db
+desktop.ini
+__pycache__/
+*.pyc
+
+# Node deps (pack resolver scripts; not committed)
+node_modules/
+
+# .NET build artifacts
+scripts/wizard/bin/
+scripts/wizard/obj/
+scripts/wizard-tests/bin/
+scripts/wizard-tests/obj/
+
+# chezmoi local state
+.chezmoistate.boltdb

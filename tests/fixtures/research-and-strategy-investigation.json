@@ -1,0 +1,56 @@
+{
+  "capability_pack": "research-and-strategy",
+  "profile_selected": "investigation",
+  "profile_mode": "preset",
+  "selection_enabled_mcps": [
+    "context7",
+    "filesystem",
+    "git",
+    "memory",
+    "thinking",
+    "playwright",
+    "process",
+    "http",
+    "exa",
+    "firecrawl",
+    "telegram"
+  ],
+  "selection_enabled_skills": [
+    "context-budget",
+    "obsidian-memory",
+    "verification-before-completion",
+    "writing-plans",
+    "hypothesis-tracking",
+    "interview-synthesis",
+    "source-freshness-checker"
+  ],
+  "selection_enabled_agents": [
+    "trend-researcher",
+    "competitive-analyst",
+    "evidence-reviewer",
+    "report-writer",
+    "executive-summary-writer",
+    "literature-reviewer",
+    "stakeholder-synthesizer",
+    "data-analyst"
+  ],
+  "selection_enabled_rules": [
+    "evidence-over-claims",
+    "uncertainty-reporting",
+    "citation-discipline",
+    "report-structure",
+    "methodology-transparency",
+    "source-freshness"
+  ],
+  "selection_enabled_permissions": [
+    "core_read_write",
+    "shell_readonly",
+    "git_safe",
+    "local_file_mutation",
+    "web_access",
+    "secret_tools"
+  ],
+  "memory_provider": "builtin",
+  "obsidian_vault_path": "",
+  "research_workspace": "/Users/mikhailkrasilnikov/Research"
+}

@@ -1,0 +1,28 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git *)",
+      "Bash(gh *)",
+      "Bash(chezmoi *)",
+      "Bash(npm *)",
+      "Bash(npx *)",
+      "Bash(node *)",
+      "Bash(python3 *)",
+      "Bash(claude mcp *)",
+      "Bash(bash -n *)",
+      "Bash(ls *)",
+      "Bash(cat *)",
+      "Bash(head *)",
+      "Bash(chmod +x *)",
+      "Read",
+      "Edit",
+      "Write",
+      "WebFetch",
+      "WebSearch"
+    ],
+    "deny": [
+      "Bash(sudo *)",
+      "Bash(rm -rf /)"
+    ]
+  }
+}

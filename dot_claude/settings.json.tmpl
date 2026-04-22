@@ -1,0 +1,80 @@
+{{- $runtime := includeTemplate "templates/resolved-state.json" . | fromJson -}}
+{{- $state := $runtime.state -}}
+{{- $resolved := $runtime.resolved -}}
+{{- $requestedProfile := index $state "profile" "requested" -}}
+{{- $allow := index $resolved "permissions" "allow" | default (list) -}}
+{{- $deny := index $resolved "permissions" "deny" | default (list) -}}
+{
+  "permissions": {
+    "allow": [
+{{- range $i, $entry := $allow }}
+      {{ $entry | toJson }}{{ if lt (add1 $i) (len $allow) }},{{ end }}
+{{- end }}
+    ],
+    "deny": [
+{{- range $i, $entry := $deny }}
+      {{ $entry | toJson }}{{ if lt (add1 $i) (len $deny) }},{{ end }}
+{{- end }}
+    ]
+  },
+  "PreToolUse": [
+    {
+      "matcher": "Bash",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "node $HOME/.claude/hooks/scripts/block-no-verify.js"
+        },
+        {
+          "type": "command",
+          "command": "node $HOME/.claude/hooks/scripts/governance-capture.js"
+        }
+      ]
+    }{{ if ne $requestedProfile "open" }},{{ end }}
+{{- if ne $requestedProfile "open" }}
+    {
+      "matcher": "Write|Edit",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "node $HOME/.claude/hooks/scripts/config-protection.js"
+        }
+      ]
+    },
+{{- end }}
+    {
+      "matcher": "Write|Edit|MultiEdit",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "python3 $HOME/.claude/hooks/scripts/security-review.py"
+        }
+      ]
+    }
+  ],
+  "PostToolUse": [
+    {
+      "matcher": "*",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "node $HOME/.claude/hooks/scripts/quality-gate.js"
+        },
+        {
+          "type": "command",
+          "command": "node $HOME/.claude/hooks/scripts/post-edit-format.js"
+        },
+        {
+          "type": "command",
+          "command": "node $HOME/.claude/hooks/scripts/suggest-compact.js"
+        }
+      ]
+    }
+  ],
+  "env": {
+    "EDITOR": "code --wait",
+    "ENABLE_CLAUDEAI_MCP_SERVERS": "false",
+    "DOTFILES_RUNTIME_PROFILE": {{ index $resolved "profile_basis" | toJson }}
+  },
+  "model": "opus"
+}
