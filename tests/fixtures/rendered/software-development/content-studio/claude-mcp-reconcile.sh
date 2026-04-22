@@ -249,7 +249,7 @@ PY
 
   if contains_name "tailscale" "${EFFECTIVE_MCP_NAMES[@]}"; then
     if command -v bw >/dev/null 2>&1; then
-      add_mcp tailscale tailscale -- node "$HOME/.local/bin/bw-mcp" mcp-tailscale TAILSCALE_API_KEY=password,TAILSCALE_TAILNET=TAILSCALE_TAILNET -- npx -y @hexsleeves/tailscale-mcp-server@0.3.2
+      add_mcp tailscale tailscale -- node "$HOME/.local/bin/bw-mcp" mcp-tailscale TAILSCALE_API_KEY=password,TAILSCALE_TAILNET=TAILSCALE_TAILNET -- "$HOME/.local/bin/tailscale-mcp-server"
     else
       echo "  ! tailscale (Bitwarden CLI not found)"
       FAILED=$((FAILED + 1))

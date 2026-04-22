@@ -111,7 +111,7 @@ All versions are pinned for supply-chain safety. OAuth MCPs authenticate in the 
 | Kubernetes 3.4.0 | balanced, open | stdio (npx) | None | medium | Cluster and manifest inspection |
 | HTTP Fetch 2025.4.7 | open | stdio (uvx) | None | high | HTTP fetch and page retrieval |
 | AWS 1.3.26 | open | stdio (uvx) | Bitwarden item `mcp-aws` | high | AWS API access with key pair |
-| Tailscale 0.3.2 | open | stdio (npx) | Bitwarden item `mcp-tailscale` | high | Tailscale admin API access |
+| Tailscale 0.3.2 | open | stdio (managed launcher) | Bitwarden item `mcp-tailscale` | high | Tailscale admin API access |
 | Exa 3.1.9 | open | stdio (npx) | API key | high | AI-powered web search |
 | Firecrawl 3.11.0 | open | stdio (npx) | API key | high | Web scraping and crawling |
 | fal-ai 2.1.4 | open | stdio (npx) | API key | medium | AI image generation |
@@ -245,7 +245,7 @@ All profiles still keep:
 
 Global Git hooks are also installed at `~/.config/git/hooks` and enabled through `core.hooksPath`, so the same charset and no-AI-attribution rules are enforced before commit and before push across all local repositories.
 
-`~/.local/bin/bw-mcp` and `~/.local/bin/bw-login` are installed as shared helpers so Claude, Codex, and Cursor can all use the same Bitwarden-backed MCP definitions. `bw-login` writes the unlocked session token to `~/.bw_session`; export it into the current shell only when a shell-driven command needs it immediately. On macOS, `bw-gate` is also installed by default as an optional helper that keeps a Bitwarden session token in the Keychain behind Touch ID and password fallback, with no silent plaintext fallback.
+`~/.local/bin/bw-mcp`, `~/.local/bin/bw-login`, and `~/.local/bin/tailscale-mcp-server` are installed as shared helpers so Claude, Codex, and Cursor can all use the same Bitwarden-backed MCP definitions. The Tailscale launcher resolves the cached package entrypoint and forces a stdout-safe log level for stdio MCP clients. `bw-login` writes the unlocked session token to `~/.bw_session`; export it into the current shell only when a shell-driven command needs it immediately. On macOS, `bw-gate` is also installed by default as an optional helper that keeps a Bitwarden session token in the Keychain behind Touch ID and password fallback, with no silent plaintext fallback.
 
 ## What gets configured
 
@@ -333,6 +333,7 @@ dot_local/
     executable_bw-mcp.cmd             # -> ~/.local/bin/bw-mcp.cmd (Windows compatibility)
     executable_bw-login               # -> ~/.local/bin/bw-login
     executable_bw-login.cmd           # -> ~/.local/bin/bw-login.cmd
+    executable_tailscale-mcp-server   # -> ~/.local/bin/tailscale-mcp-server
     executable_bw-gate                # -> ~/.local/bin/bw-gate (macOS, optional/default-on)
     executable_dotfiles-update        # -> ~/.local/bin/dotfiles-update
     executable_dotfiles-update.cmd    # -> ~/.local/bin/dotfiles-update.cmd

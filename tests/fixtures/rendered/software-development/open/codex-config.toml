@@ -106,7 +106,7 @@ args = ["/Users/mikhailkrasilnikov/.local/bin/bw-mcp", "mcp-github", "GITHUB_PER
 
 [mcp_servers.tailscale]
 command = "node"
-args = ["/Users/mikhailkrasilnikov/.local/bin/bw-mcp", "mcp-tailscale", "TAILSCALE_API_KEY=password,TAILSCALE_TAILNET=TAILSCALE_TAILNET", "--", "npx", "-y", "@hexsleeves/tailscale-mcp-server@0.3.2"]
+args = ["/Users/mikhailkrasilnikov/.local/bin/bw-mcp", "mcp-tailscale", "TAILSCALE_API_KEY=password,TAILSCALE_TAILNET=TAILSCALE_TAILNET", "--", "/Users/mikhailkrasilnikov/.local/bin/tailscale-mcp-server"]
 
 
 

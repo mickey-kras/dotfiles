@@ -1,0 +1,70 @@
+#!/usr/bin/env node
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
+import { spawn } from "node:child_process";
+
+function fail(message) {
+  console.error(message);
+  process.exit(1);
+}
+
+function resolveEntrypoint() {
+  const npxRoot = path.join(os.homedir(), ".npm", "_npx");
+  if (!fs.existsSync(npxRoot)) {
+    fail(
+      "ERROR: Could not find ~/.npm/_npx. Run `npx --yes --package=@hexsleeves/tailscale-mcp-server@0.3.2 node -e \"\"` once to warm the cache."
+    );
+  }
+
+  const candidates = [];
+  for (const entry of fs.readdirSync(npxRoot, { withFileTypes: true })) {
+    if (!entry.isDirectory()) {
+      continue;
+    }
+
+    const candidate = path.join(
+      npxRoot,
+      entry.name,
+      "node_modules",
+      "@hexsleeves",
+      "tailscale-mcp-server",
+      "dist",
+      "index.js"
+    );
+
+    if (fs.existsSync(candidate)) {
+      candidates.push({
+        file: candidate,
+        mtimeMs: fs.statSync(candidate).mtimeMs
+      });
+    }
+  }
+
+  if (candidates.length === 0) {
+    fail(
+      "ERROR: Could not find @hexsleeves/tailscale-mcp-server in ~/.npm/_npx. Run `npx --yes --package=@hexsleeves/tailscale-mcp-server@0.3.2 node -e \"\"` once to warm the cache."
+    );
+  }
+
+  candidates.sort((left, right) => right.mtimeMs - left.mtimeMs);
+  return candidates[0].file;
+}
+
+const entrypoint = resolveEntrypoint();
+const child = spawn(process.execPath, [entrypoint, ...process.argv.slice(2)], {
+  stdio: "inherit",
+  env: { ...process.env, LOG_LEVEL: process.env.LOG_LEVEL || "2" }
+});
+
+child.on("error", (error) => {
+  fail(`ERROR: Failed to start Tailscale MCP server: ${error.message}`);
+});
+
+child.on("exit", (code, signal) => {
+  if (signal) {
+    process.kill(process.pid, signal);
+    return;
+  }
+  process.exit(code ?? 1);
+});
