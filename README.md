@@ -1,20 +1,11 @@
 # dotfiles
 [![CI](https://github.com/mickey-kras/dotfiles/actions/workflows/ci.yml/badge.svg)](https://github.com/mickey-kras/dotfiles/actions/workflows/ci.yml)
 
-AI development dotfiles for macOS and Linux, with Git Bash on Windows as secondary support. The repo manages one shared software-development toolchain across Claude Code, Codex, Cursor, Gemini CLI, Droid, and Obsidian with `chezmoi`.
+Shared AI development dotfiles managed with `chezmoi`.
 
-## What this repo does
+This repo sets up one software-development toolchain across Claude Code, Codex, Cursor, Gemini CLI, Droid, and Obsidian.
 
-- Uses one managed software-development toolchain
-- Starts with all managed MCPs, skills, agents, rules, and permission groups enabled
-- Removes the old pack/profile/restriction chooser from the installer flow
-- Defaults memory to Obsidian
-- Installs Obsidian when it is selected and missing, then reconciles the vault, community plugins, and managed plugin settings
-- Lets you optionally install Claude Code, Codex, Cursor, Gemini CLI, and Droid from the installer; these are off by default
-- Renders the same managed MCP surface for Claude, Codex, Cursor, Gemini, and Droid/Factory
-
-## Platforms
-
+Supported platforms:
 - macOS: primary target
 - Linux: supported
 - Windows: secondary; use Git Bash
@@ -27,7 +18,7 @@ Use Git Bash on Windows.
 bash <(curl -fsSL https://raw.githubusercontent.com/mickey-kras/dotfiles/main/scripts/bootstrap.sh)
 ```
 
-Already have `chezmoi`?
+If you already have `chezmoi`:
 
 ```bash
 chezmoi init --apply git@github.com:mickey-kras/dotfiles.git
@@ -39,27 +30,35 @@ Public HTTPS also works:
 chezmoi init --apply https://github.com/mickey-kras/dotfiles.git
 ```
 
-The bootstrap installs `chezmoi`, tries to launch the Terminal.Gui wizard when `.NET` is available, and falls back to plain prompts otherwise.
+The bootstrap installs `chezmoi`, opens the setup wizard when `.NET` is available, and falls back to plain prompts otherwise.
 
-## Installer flow
+## What you get
+
+- One managed development setup
+- All managed MCP servers, skills, agents, rules, and permission groups enabled by default
+- Obsidian as the default memory provider
+- Optional installation of Claude Code, Codex, Cursor, Gemini CLI, and Droid
+- The same managed MCP surface rendered for Claude, Codex, Cursor, Gemini, and Droid
+
+`MCP` here means Model Context Protocol server.
+
+## Setup wizard
 
 Tabs:
-
-1. `MCPs`
-2. `Skills`
-3. `Agents`
-4. `Rules`
-5. `Settings`
+- `MCPs`
+- `Skills`
+- `Agents`
+- `Rules`
+- `Settings`
 
 Everything starts selected. `Settings` contains:
-
 - display name, role summary, and stack summary
 - memory provider and Obsidian vault path
 - optional installs for Claude Code, Codex, Cursor, Gemini CLI, and Droid
 - `bw-gate` toggle on macOS
 - Stitch API key
 
-## Managed surfaces
+## What is managed
 
 - Claude Code: `~/.claude/CLAUDE.md`, `settings.json`, `agents/`, `rules/`, `skills/`, plus MCP registration reconciliation
 - Cursor: `~/.cursor/mcp.json`, `~/.cursor/rules/global.mdc`
@@ -70,8 +69,6 @@ Everything starts selected. `Settings` contains:
 
 ## Obsidian
 
-Obsidian is the default memory provider for this repo.
-
 - The wizard auto-detects an existing vault from current AI tool configs when possible
 - On macOS it prefers the iCloud vault path when present
 - Otherwise it defaults to `~/Obsidian/memory-vault`
@@ -80,13 +77,16 @@ Obsidian is the default memory provider for this repo.
 
 Managed community plugins currently include Tasks, Dataview, Templater, Calendar, Kanban, Homepage, Table Editor, Breadcrumbs, Obsidian Local REST API, Metadata Menu, QuickAdd, Smart Connections, and Strange New Worlds.
 
-## Credentials and host tools
+## After install
 
-Some selected MCPs need local host tools or credentials before they are usable.
+If you use Bitwarden-backed MCPs:
 
 - Bitwarden-backed MCPs require `bw` plus a valid `~/.bw_session`; run `bw-login` after bootstrap when needed
-- Some MCPs also expect local tools such as `docker`, `firebase`, or `uvx`
-- The repo still renders config when a host tool is missing; that MCP becomes usable once the tool and credentials exist
+
+Other notes:
+- Some MCPs expect local tools such as `docker`, `firebase`, or `uvx`
+- Missing host tools do not block config rendering; that MCP becomes usable once the tool exists
+- If Obsidian is your memory provider, open the vault once after install so the managed plugin setup can be used normally
 
 ## Updating
 
@@ -100,8 +100,8 @@ or:
 chezmoi apply
 ```
 
-## Repo pointers
+## Important files
 
-- `packs/software-development/pack.yaml` for the internal catalog and default selections
-- `obsidian/managed/config.json`
-- `scripts/bootstrap.sh`
+- `scripts/bootstrap.sh`: entry point
+- `packs/software-development/pack.yaml`: internal catalog and default selections
+- `obsidian/managed/config.json`: managed Obsidian app and plugin state
