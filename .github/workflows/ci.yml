@@ -60,5 +60,11 @@ jobs:
         with:
           dotnet-version: 10.0.x
 
+      - name: Install chezmoi
+        run: |
+          mkdir -p "$HOME/.local/bin"
+          sh -c "$(curl -fsLS get.chezmoi.io)" -- -b "$HOME/.local/bin"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
       - name: Run wizard tests
         run: dotnet test scripts/wizard-tests/DotfilesWizard.Tests.csproj --nologo --verbosity minimal

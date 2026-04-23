@@ -178,7 +178,8 @@ class TestInstallScriptTemplates(unittest.TestCase):
     def test_obsidian_script_tracks_managed_plugins(self):
         content = self.rendered["run_onchange_after_install-obsidian.sh.tmpl"]
         self.assertIn("obsidian-local-rest-api", content)
-        self.assertIn("smart-connections", content)
+        self.assertIn("community-plugins.json", content)
+        self.assertIn("plugin_versions", content)
         self.assertIn("Obsidian vault reconciled", content)
 
     def test_no_template_placeholders_leak_into_rendered_output(self):

@@ -8,7 +8,10 @@
 {{- $packPath := printf "packs/%s/pack.yaml" $packId -}}
 {{- $pack := include $packPath | fromYaml -}}
 {{- $defaultProfile := index $pack "defaults" "profile" | default "full" -}}
-{{- $requestedProfile := .runtime_profile | default $defaultProfile -}}
+{{- $requestedProfile := $defaultProfile -}}
+{{- if hasKey . "runtime_profile" -}}
+  {{- $requestedProfile = index . "runtime_profile" | default $defaultProfile -}}
+{{- end -}}
 {{- $selectedProfile := $requestedProfile -}}
 {{- $profileMode := "preset" -}}
 {{- $hasExplicitSelection := or (hasKey . "selection_enabled_mcps") (hasKey . "selection_enabled_skills") (hasKey . "selection_enabled_agents") (hasKey . "selection_enabled_rules") (hasKey . "selection_enabled_permissions") -}}
@@ -26,8 +29,10 @@
 {{- end -}}
 {{- if or (hasKey . "profile_selected") $hasExplicitSelection -}}
   {{- if hasKey . "profile_selected" -}}
-    {{- $selectedProfile = .profile_selected | default $defaultProfile -}}
-    {{- $profileMode = .profile_mode | default "preset" -}}
+    {{- $selectedProfile = index . "profile_selected" | default $defaultProfile -}}
+    {{- if hasKey . "profile_mode" -}}
+      {{- $profileMode = index . "profile_mode" | default "preset" -}}
+    {{- end -}}
   {{- end -}}
   {{- $profile := index $pack "profiles" $selectedProfile -}}
   {{- range $settingName, $value := index $profile "selection" "settings" | default (dict) -}}
@@ -56,7 +61,9 @@
 {{- else -}}
   {{- if eq $requestedProfile "custom" -}}
     {{- $profileMode = "custom" -}}
-    {{- $selectedProfile = .profile_base | default $defaultProfile -}}
+    {{- if hasKey . "profile_base" -}}
+      {{- $selectedProfile = index . "profile_base" | default $defaultProfile -}}
+    {{- end -}}
   {{- end -}}
   {{- $profile := index $pack "profiles" $selectedProfile -}}
   {{- range $settingName, $value := index $profile "selection" "settings" | default (dict) -}}
@@ -68,17 +75,25 @@
   {{- $selectedRules = index $profile "selection" "rules" "enabled" | default (list) -}}
   {{- $selectedPermissions = index $profile "selection" "permissions" "enabled" | default (list) -}}
   {{- if eq $requestedProfile "custom" -}}
-    {{- range .custom_enabled_mcps | default (list) -}}
-      {{- $selectedMcps = append $selectedMcps . -}}
+    {{- if hasKey . "custom_enabled_mcps" -}}
+      {{- range index . "custom_enabled_mcps" | default (list) -}}
+        {{- $selectedMcps = append $selectedMcps . -}}
+      {{- end -}}
     {{- end -}}
-    {{- range .custom_disabled_mcps | default (list) -}}
-      {{- $selectedMcps = without $selectedMcps . -}}
+    {{- if hasKey . "custom_disabled_mcps" -}}
+      {{- range index . "custom_disabled_mcps" | default (list) -}}
+        {{- $selectedMcps = without $selectedMcps . -}}
+      {{- end -}}
     {{- end -}}
-    {{- range .custom_enabled_permission_groups | default (list) -}}
-      {{- $selectedPermissions = append $selectedPermissions . -}}
+    {{- if hasKey . "custom_enabled_permission_groups" -}}
+      {{- range index . "custom_enabled_permission_groups" | default (list) -}}
+        {{- $selectedPermissions = append $selectedPermissions . -}}
+      {{- end -}}
     {{- end -}}
-    {{- range .custom_disabled_permission_groups | default (list) -}}
-      {{- $selectedPermissions = without $selectedPermissions . -}}
+    {{- if hasKey . "custom_disabled_permission_groups" -}}
+      {{- range index . "custom_disabled_permission_groups" | default (list) -}}
+        {{- $selectedPermissions = without $selectedPermissions . -}}
+      {{- end -}}
     {{- end -}}
   {{- end -}}
 {{- end -}}
