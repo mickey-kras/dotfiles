@@ -1,0 +1,263 @@
+#!/usr/bin/env bash
+# Installs and reconciles the managed Obsidian app + vault configuration.
+#
+# hash: {{ include "templates/resolved-state.json" | sha256sum }}:{{ include "obsidian/managed/config.json" | sha256sum }}
+
+set -euo pipefail
+
+HOME_SLASHED="{{ replace "\\" "/" .chezmoi.homeDir }}"
+{{ $runtime := includeTemplate "templates/resolved-state.json" . | fromJson -}}
+{{ $resolved := $runtime.resolved -}}
+MEMORY_PROVIDER="{{ index $resolved "settings" "memory_provider" }}"
+OBSIDIAN_VAULT_PATH="{{ index $resolved "settings" "obsidian_vault_path" }}"
+OBSIDIAN_SELECTED="{{ if has "obsidian" (index $resolved "mcps" "enabled") }}true{{ else }}false{{ end }}"
+MANAGED_CONFIG="$HOME_SLASHED/dotfiles/obsidian/managed/config.json"
+
+is_windows_gitbash() {
+  case "$(uname -s)" in
+    MINGW*|MSYS*|CYGWIN*) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+have_obsidian() {
+  if [ -d "/Applications/Obsidian.app" ] || command -v obsidian >/dev/null 2>&1; then
+    return 0
+  fi
+  if is_windows_gitbash; then
+    command -v obsidian.exe >/dev/null 2>&1 && return 0
+  fi
+  return 1
+}
+
+install_obsidian() {
+  if have_obsidian; then
+    return 0
+  fi
+
+  echo "Obsidian is not installed; attempting managed install..."
+
+  if [[ "$(uname -s)" == "Darwin" ]]; then
+    if command -v brew >/dev/null 2>&1; then
+      brew install --cask obsidian || true
+    else
+      echo "  ! Obsidian not installed: Homebrew not found"
+    fi
+  elif is_windows_gitbash; then
+    if command -v winget.exe >/dev/null 2>&1; then
+      winget.exe install -e --id Obsidian.Obsidian --accept-package-agreements --accept-source-agreements || true
+    elif command -v choco >/dev/null 2>&1; then
+      choco install obsidian -y || true
+    else
+      echo "  ! Obsidian not installed: winget/choco not found"
+    fi
+  else
+    if command -v flatpak >/dev/null 2>&1; then
+      flatpak install -y flathub md.obsidian.Obsidian || true
+    elif command -v snap >/dev/null 2>&1; then
+      sudo snap install obsidian --classic || true
+    else
+      echo "  ! Obsidian not installed: no supported Linux package manager found"
+    fi
+  fi
+
+  if have_obsidian; then
+    echo "  + Obsidian installed"
+  else
+    echo "  ! Obsidian install incomplete; continuing with vault reconciliation"
+  fi
+}
+
+if [ "$MEMORY_PROVIDER" != "obsidian" ] && [ "$OBSIDIAN_SELECTED" != "true" ]; then
+  echo "Skipping Obsidian reconciliation: Obsidian is not enabled."
+  exit 0
+fi
+
+if [ -z "$OBSIDIAN_VAULT_PATH" ]; then
+  echo "Skipping Obsidian reconciliation: no vault path configured."
+  exit 0
+fi
+
+install_obsidian
+
+mkdir -p "$OBSIDIAN_VAULT_PATH/.obsidian/plugins" "$OBSIDIAN_VAULT_PATH/Templates"
+
+python3 - "$MANAGED_CONFIG" "$OBSIDIAN_VAULT_PATH" <<'PY'
+import json
+import os
+import secrets
+import shutil
+import subprocess
+import sys
+import urllib.request
+from pathlib import Path
+
+CONFIG_PATH = Path(sys.argv[1])
+VAULT_PATH = Path(sys.argv[2])
+OBSIDIAN_DIR = VAULT_PATH / ".obsidian"
+PLUGINS_DIR = OBSIDIAN_DIR / "plugins"
+
+config = json.loads(CONFIG_PATH.read_text(encoding="utf-8"))
+
+def read_bw_password(name: str) -> str:
+    if not shutil.which("bw"):
+        return ""
+    if not (os.environ.get("BW_SESSION") or (Path.home() / ".bw_session").exists()):
+        return ""
+    try:
+        result = subprocess.run(
+            ["bw", "get", "password", name],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        return result.stdout.strip()
+    except Exception:
+        return ""
+
+def fetch_json(url: str):
+    with urllib.request.urlopen(url) as response:
+        return json.loads(response.read().decode("utf-8"))
+
+def fetch_bytes(url: str):
+    with urllib.request.urlopen(url) as response:
+        return response.read()
+
+def existing_obsidian_api_key() -> str:
+    path = PLUGINS_DIR / "obsidian-local-rest-api" / "data.json"
+    if path.exists():
+        try:
+            current = json.loads(path.read_text(encoding="utf-8"))
+        except Exception:
+            current = {}
+        value = current.get("apiKey")
+        if value and value != "__OBSIDIAN_API_KEY__":
+            return value
+    bw_value = read_bw_password("Obsidian Local REST API")
+    if bw_value:
+        return bw_value
+    return secrets.token_hex(32)
+
+top_level_files = {
+    "app.json": config["app"],
+    "appearance.json": config["appearance"],
+    "community-plugins.json": config["community_plugins"],
+    "core-plugins.json": config["core_plugins"],
+    "graph.json": config["graph"],
+    "types.json": config["types"],
+}
+
+for filename, payload in top_level_files.items():
+    target = OBSIDIAN_DIR / filename
+    target.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+registry = fetch_json("https://raw.githubusercontent.com/obsidianmd/obsidian-releases/master/community-plugins.json")
+registry_by_id = {entry["id"]: entry["repo"] for entry in registry}
+
+def resolve_release(repo: str, desired_version: str):
+    releases = fetch_json(f"https://api.github.com/repos/{repo}/releases?per_page=20")
+    for release in releases:
+        tag_name = (release.get("tag_name") or "").lstrip("v")
+        if tag_name == desired_version:
+            return release
+    raise RuntimeError(f"release {desired_version} not found for {repo}")
+
+for plugin_id in config["community_plugins"]:
+    version = config["plugin_versions"][plugin_id]
+    repo = registry_by_id.get(plugin_id)
+    if not repo:
+        print(f"  ! {plugin_id}: not found in Obsidian community registry")
+        continue
+
+    plugin_dir = PLUGINS_DIR / plugin_id
+    plugin_dir.mkdir(parents=True, exist_ok=True)
+
+    manifest_path = plugin_dir / "manifest.json"
+    existing_version = ""
+    if manifest_path.exists():
+        try:
+            existing_version = json.loads(manifest_path.read_text(encoding="utf-8")).get("version", "")
+        except Exception:
+            existing_version = ""
+
+    if existing_version != version or not (plugin_dir / "main.js").exists():
+        try:
+            release = resolve_release(repo, version)
+            assets = {asset["name"]: asset["browser_download_url"] for asset in release.get("assets", [])}
+            required_assets = {
+                "main.js": plugin_dir / "main.js",
+                "manifest.json": plugin_dir / "manifest.json",
+            }
+            optional_assets = {
+                "styles.css": plugin_dir / "styles.css",
+            }
+
+            for asset_name, target_path in required_assets.items():
+                download_url = assets.get(asset_name)
+                if not download_url:
+                    raise RuntimeError(f"missing asset {asset_name}")
+                target_path.write_bytes(fetch_bytes(download_url))
+
+            for asset_name, target_path in optional_assets.items():
+                download_url = assets.get(asset_name)
+                if download_url:
+                    target_path.write_bytes(fetch_bytes(download_url))
+
+            print(f"  + installed Obsidian plugin {plugin_id}@{version}")
+        except Exception as exc:
+            print(f"  ! failed to install Obsidian plugin {plugin_id}@{version}: {exc}")
+    else:
+        print(f"  + kept Obsidian plugin {plugin_id}@{version}")
+
+managed_plugin_data = config["plugin_data"]
+obsidian_api_key = existing_obsidian_api_key()
+
+for plugin_id, payload in managed_plugin_data.items():
+    plugin_dir = PLUGINS_DIR / plugin_id
+    plugin_dir.mkdir(parents=True, exist_ok=True)
+    plugin_payload = payload
+    if plugin_id == "obsidian-local-rest-api":
+        existing = {}
+        data_path = plugin_dir / "data.json"
+        if data_path.exists():
+            try:
+                existing = json.loads(data_path.read_text(encoding="utf-8"))
+            except Exception:
+                existing = {}
+        plugin_payload = {
+            **existing,
+            **payload,
+            "apiKey": obsidian_api_key,
+        }
+        if "crypto" in existing and "crypto" not in payload:
+            plugin_payload["crypto"] = existing["crypto"]
+    (plugin_dir / "data.json").write_text(
+        json.dumps(plugin_payload, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+
+print(f"  + Obsidian vault reconciled at {VAULT_PATH}")
+PY
+
+if command -v bw >/dev/null 2>&1 && [ -n "${BW_SESSION:-}" ]; then
+  OBSIDIAN_API_KEY="$(python3 - "$OBSIDIAN_VAULT_PATH" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+path = Path(sys.argv[1]) / ".obsidian" / "plugins" / "obsidian-local-rest-api" / "data.json"
+if path.exists():
+    data = json.loads(path.read_text(encoding="utf-8"))
+    print(data.get("apiKey", ""))
+PY
+)"
+  if [ -n "$OBSIDIAN_API_KEY" ] && ! bw get password "Obsidian Local REST API" >/dev/null 2>&1; then
+    TEMPLATE="$(bw get template item)"
+    echo "$TEMPLATE" | \
+      jq --arg name "Obsidian Local REST API" --arg pw "$OBSIDIAN_API_KEY" \
+        '.name = $name | .login.password = $pw | .type = 1' | \
+      bw encode | bw create item >/dev/null 2>&1 || true
+  fi
+fi
+
+echo "Obsidian reconciliation complete."

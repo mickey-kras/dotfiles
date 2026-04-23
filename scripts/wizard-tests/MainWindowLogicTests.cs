@@ -39,7 +39,7 @@ public class WizardHelpersTests
     }
 
     [Theory]
-    [InlineData("azure_devops_org", true)]
+    [InlineData("azure_devops_org", false)]
     [InlineData("memory_provider", false)]
     [InlineData("obsidian_vault_path", false)]
     [InlineData("user_name", false)]
@@ -215,6 +215,7 @@ public class WizardHelpersTests
             ["user_name"] = "Misha",
             ["user_role_summary"] = "Engineer",
             ["memory_provider"] = "obsidian",
+            ["install_cursor"] = "enabled",
         };
 
         WizardHelpers.PreFillSettingsFromChezmoi(state, chezmoi);
@@ -222,6 +223,7 @@ public class WizardHelpersTests
         Assert.Equal("Misha", state.Settings["user_name"]);
         Assert.Equal("Engineer", state.Settings["user_role_summary"]);
         Assert.Equal("obsidian", state.Settings["memory_provider"]);
+        Assert.Equal("enabled", state.Settings["install_cursor"]);
     }
 
     [Fact]
@@ -268,31 +270,28 @@ public class WizardHelpersTests
     {
         var state = new WizardState
         {
-            ProfileMode = "preset",
-            ProfileSelected = "balanced",
             EnabledMcps = ["github", "context7"],
             EnabledSkills = ["commit"],
             EnabledAgents = [],
             EnabledRules = ["security"],
+            Settings = new Dictionary<string, string> { ["memory_provider"] = "obsidian" },
         };
 
         var summary = WizardHelpers.GetSummaryText(state, "Software Development");
 
-        Assert.Contains("Pack: Software Development", summary);
-        Assert.Contains("Profile: balanced", summary);
+        Assert.Contains("Setup: Software Development", summary);
         Assert.Contains("MCPs: 2", summary);
         Assert.Contains("Skills: 1", summary);
         Assert.Contains("Agents: 0", summary);
         Assert.Contains("Rules: 1", summary);
+        Assert.Contains("Memory: obsidian", summary);
     }
 
     [Fact]
-    public void GetSummaryText_custom_mode()
+    public void GetSummaryText_defaults_memory_provider()
     {
         var state = new WizardState
         {
-            ProfileMode = "custom",
-            ProfileSelected = "balanced",
             EnabledMcps = [],
             EnabledSkills = [],
             EnabledAgents = [],
@@ -301,6 +300,6 @@ public class WizardHelpersTests
 
         var summary = WizardHelpers.GetSummaryText(state, "Test Pack");
 
-        Assert.Contains("Profile: custom (from balanced)", summary);
+        Assert.Contains("Memory: builtin", summary);
     }
 }

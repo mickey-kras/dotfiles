@@ -96,10 +96,15 @@ section "2. Checking MCP versions"
 
 PINNED_PACKAGES=(
   "@playwright/mcp:0.0.68"
-  "@azure-devops/mcp:2.5.0"
-  "exa-mcp-server:3.1.9"
-  "firecrawl-mcp:3.11.0"
-  "fal-ai-mcp-server:2.1.4"
+  "@modelcontextprotocol/server-filesystem:2026.1.14"
+  "@cyanheads/git-mcp-server:2.10.5"
+  "super-shell-mcp:2.0.15"
+  "terraform-mcp-server:0.13.0"
+  "mcp-server-kubernetes:3.4.0"
+  "@ai-capabilities-suite/mcp-process:1.5.10"
+  "@modelcontextprotocol/server-sequential-thinking:2025.12.18"
+  "@modelcontextprotocol/server-memory:2026.1.26"
+  "@modelcontextprotocol/server-github:2025.4.8"
 )
 
 STALE=0
@@ -146,10 +151,8 @@ fi
 # --- 4. Verify MCPs ---
 section "4. Verifying MCP registration"
 if command -v claude >/dev/null 2>&1; then
-  RUNTIME_PROFILE="$(read_chezmoi_value runtime_profile)"
   MEMORY_PROVIDER="$(read_chezmoi_value memory_provider)"
-  [ -z "$RUNTIME_PROFILE" ] && RUNTIME_PROFILE="balanced"
-  [ -z "$MEMORY_PROVIDER" ] && MEMORY_PROVIDER="builtin"
+  [ -z "$MEMORY_PROVIDER" ] && MEMORY_PROVIDER="obsidian"
 
   EXPECTED=()
   while IFS= read -r mcp; do
@@ -159,14 +162,17 @@ if command -v claude >/dev/null 2>&1; then
   FILTERED=()
   for mcp in "${EXPECTED[@]}"; do
     case "$mcp" in
-      azure-devops)
-        [ -n "$(read_chezmoi_value azure_devops_org)" ] && FILTERED+=("$mcp")
+      stitch)
+        [ -n "$(read_chezmoi_value stitch_api_key)" ] && FILTERED+=("$mcp")
         ;;
       http|aws)
         if command -v uvx >/dev/null 2>&1; then FILTERED+=("$mcp"); fi
         ;;
-      github|tailscale|exa|firecrawl|fal-ai)
+      github|tailscale|obsidian|magic|replicate)
         if command -v bw >/dev/null 2>&1; then FILTERED+=("$mcp"); fi
+        ;;
+      firebase)
+        if command -v firebase >/dev/null 2>&1; then FILTERED+=("$mcp"); fi
         ;;
       docker)
         if command -v docker >/dev/null 2>&1; then FILTERED+=("MCP_DOCKER"); fi
@@ -180,8 +186,6 @@ if command -v claude >/dev/null 2>&1; then
 
   REGISTERED=$(claude mcp list 2>/dev/null || echo "")
 
-  ok "Runtime profile: $RUNTIME_PROFILE"
-  ok "Capability pack: $(read_chezmoi_value capability_pack)"
   ok "Memory provider: $MEMORY_PROVIDER"
 
   for mcp in "${EXPECTED[@]}"; do
@@ -242,14 +246,56 @@ if command -v codex >/dev/null 2>&1; then
   if [ "$(read_chezmoi_value memory_provider)" = "obsidian" ] && rg -q "@bitbonsai/mcpvault@latest" "$HOME/.codex/config.toml" 2>/dev/null; then
     ok "codex memory provider rendered as obsidian"
   fi
+  if [ "$(read_chezmoi_value memory_provider)" = "obsidian" ] && rg -q "obsidian-mcp-server" "$HOME/.codex/config.toml" 2>/dev/null; then
+    ok "codex obsidian REST MCP configured"
+  fi
 fi
 
 if [ -f "$HOME/.cursor/mcp.json" ] && [ "$(read_chezmoi_value memory_provider)" = "obsidian" ] && rg -q "@bitbonsai/mcpvault@latest" "$HOME/.cursor/mcp.json" 2>/dev/null; then
   ok "cursor memory provider rendered as obsidian"
 fi
+if [ -f "$HOME/.cursor/mcp.json" ] && [ "$(read_chezmoi_value memory_provider)" = "obsidian" ] && rg -q "obsidian-mcp-server" "$HOME/.cursor/mcp.json" 2>/dev/null; then
+  ok "cursor obsidian REST MCP configured"
+fi
 
-CAPABILITY_PACK="$(read_chezmoi_value capability_pack)"
-[ -z "$CAPABILITY_PACK" ] && CAPABILITY_PACK="software-development"
+if [ -f "$HOME/.gemini/settings.json" ]; then
+  ok "gemini/settings.json"
+  if rg -q "obsidian-mcp-server" "$HOME/.gemini/settings.json" 2>/dev/null; then
+    ok "gemini obsidian REST MCP configured"
+  fi
+else
+  warn "gemini/settings.json - missing"
+fi
+
+if [ -f "$HOME/.factory/mcp.json" ]; then
+  ok "factory/mcp.json"
+  if rg -q "obsidian-mcp-server" "$HOME/.factory/mcp.json" 2>/dev/null; then
+    ok "droid obsidian REST MCP configured"
+  fi
+else
+  warn "factory/mcp.json - missing"
+fi
+
+if [ -f "$HOME/.factory/settings.json" ]; then
+  ok "factory/settings.json"
+else
+  warn "factory/settings.json - missing"
+fi
+
+if [ -d "$HOME/.factory/droids" ]; then
+  ok "factory/droids"
+else
+  warn "factory/droids - missing"
+fi
+
+if [ "$(read_chezmoi_value memory_provider)" = "obsidian" ]; then
+  OBSIDIAN_VAULT_PATH="$(read_chezmoi_value obsidian_vault_path)"
+  if [ -n "$OBSIDIAN_VAULT_PATH" ] && [ -f "$OBSIDIAN_VAULT_PATH/.obsidian/community-plugins.json" ]; then
+    ok "obsidian community-plugins.json"
+  else
+    fail "obsidian community-plugins.json - missing"
+  fi
+fi
 
 while IFS= read -r agent; do
   [ -n "$agent" ] || continue

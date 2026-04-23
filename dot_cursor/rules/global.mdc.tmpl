@@ -10,7 +10,6 @@ globs: ["**/*"]
 - Use `!` or `BREAKING CHANGE:` for breaking changes.
 - Feature branches. Squash-merge PRs.
 - Prefer CLI tools: gh, jq, curl, rg.
-- Capability pack: {{ .capability_pack | default "software-development" }}.
 - Use MCP only. Do not use connectors or connector-backed tools.
 - Ignore Sentry and any Sentry MCP, plugin, or config entry even if it appears locally. Do not use it, suggest it, or re-add it.
 - Allowed output regex: `^[A-Za-z--0-9 !"#$%&'()*+,\-./:;<=>?@[\\\]^_`{|}~\r\n\t]*$`

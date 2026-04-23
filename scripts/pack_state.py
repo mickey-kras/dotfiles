@@ -109,7 +109,7 @@ def legacy_config(source_dir, state):
     permissions = set(resolved["permissions"]["enabled"])
     base_permissions = set(base_profile["permissions"]["enabled"])
 
-    return {
+    config = {
         "capability_pack": resolved["pack_id"],
         "runtime_profile": runtime_profile,
         "profile_base": profile_base,
@@ -124,37 +124,28 @@ def legacy_config(source_dir, state):
         "selection_enabled_agents": resolved["agents"]["enabled"],
         "selection_enabled_rules": resolved["rules"]["enabled"],
         "selection_enabled_permissions": resolved["permissions"]["enabled"],
-        "memory_provider": resolved["settings"].get("memory_provider", "builtin"),
-        "obsidian_vault_path": resolved["settings"].get("obsidian_vault_path", ""),
-        "azure_devops_org": resolved["settings"].get("azure_devops_org", ""),
-        "content_workspace": resolved["settings"].get("content_workspace", ""),
-        "research_workspace": resolved["settings"].get("research_workspace", ""),
         "user_name": state.get("user_name", ""),
         "user_role_summary": state.get("user_role_summary", ""),
         "user_stack_summary": state.get("user_stack_summary", ""),
         "matched_profile": matched_profile,
     }
+    for setting_name, schema in pack.get("settings_schema", {}).items():
+        config[setting_name] = resolved["settings"].get(
+            setting_name, schema.get("default", "")
+        )
+    return config
 
 
 def list_packs(source_dir):
-    packs_dir = Path(source_dir) / "packs"
-    results = []
-    for path in sorted(packs_dir.iterdir()):
-        if not path.is_dir():
-            continue
-        pack_file = path / "pack.yaml"
-        if not pack_file.exists():
-            continue
-        pack = load_pack(source_dir, path.name)
-        results.append(
-            {
-                "id": pack["id"],
-                "label": pack["label"],
-                "description": pack["description"],
-                "default_profile": pack["defaults"]["profile"],
-            }
-        )
-    return sorted(results, key=lambda pack: (pack["id"] != "software-development", pack["id"]))
+    pack = load_pack(source_dir, "software-development")
+    return [
+        {
+            "id": pack["id"],
+            "label": pack["label"],
+            "description": pack["description"],
+            "default_profile": pack["defaults"]["profile"],
+        }
+    ]
 
 
 def usage():

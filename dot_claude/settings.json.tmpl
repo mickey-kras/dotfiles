@@ -1,7 +1,5 @@
 {{- $runtime := includeTemplate "templates/resolved-state.json" . | fromJson -}}
-{{- $state := $runtime.state -}}
 {{- $resolved := $runtime.resolved -}}
-{{- $requestedProfile := index $state "profile" "requested" -}}
 {{- $allow := index $resolved "permissions" "allow" | default (list) -}}
 {{- $deny := index $resolved "permissions" "deny" | default (list) -}}
 {
@@ -30,8 +28,7 @@
           "command": "node $HOME/.claude/hooks/scripts/governance-capture.js"
         }
       ]
-    }{{ if ne $requestedProfile "open" }},{{ end }}
-{{- if ne $requestedProfile "open" }}
+    },
     {
       "matcher": "Write|Edit",
       "hooks": [
@@ -41,7 +38,6 @@
         }
       ]
     },
-{{- end }}
     {
       "matcher": "Write|Edit|MultiEdit",
       "hooks": [
@@ -73,8 +69,7 @@
   ],
   "env": {
     "EDITOR": "code --wait",
-    "ENABLE_CLAUDEAI_MCP_SERVERS": "false",
-    "DOTFILES_RUNTIME_PROFILE": {{ index $resolved "profile_basis" | toJson }}
+    "ENABLE_CLAUDEAI_MCP_SERVERS": "false"
   },
   "model": "opus"
 }

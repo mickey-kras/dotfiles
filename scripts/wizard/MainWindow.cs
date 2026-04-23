@@ -271,12 +271,10 @@ public sealed class MainWindow : Window
         _tabView.Style.ShowTopLine = true;
         _tabView.Style.TabsOnBottom = false;
 
-        _tabView.AddTab(BuildPackProfileTab(), false);
         _tabView.AddTab(BuildMcpTab(), false);
         _tabView.AddTab(BuildCatalogTab("Skills", "skills", _state.EnabledSkills), false);
         _tabView.AddTab(BuildCatalogTab("Agents", "agents", _state.EnabledAgents), false);
         _tabView.AddTab(BuildCatalogTab("Rules", "rules", _state.EnabledRules), false);
-        _tabView.AddTab(BuildCatalogTab("Permissions", "permissions", _state.EnabledPermissions), false);
         _tabView.AddTab(BuildSettingsTab(), false);
 
         Add(_tabView);
@@ -320,9 +318,12 @@ public sealed class MainWindow : Window
         else
             parts.Add("[x] Claude Code");
 
-        if (Directory.Exists(Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".cursor"))
-            || Directory.Exists("/Applications/Cursor.app"))
+        if (Directory.Exists("/Applications/Obsidian.app") || ToolExists("obsidian"))
+            parts.Add("[+] Obsidian");
+        else
+            parts.Add("[x] Obsidian");
+
+        if (ToolExists("cursor-agent") || ToolExists("cursor") || Directory.Exists("/Applications/Cursor.app"))
             parts.Add("[+] Cursor");
         else
             parts.Add("[x] Cursor");
@@ -331,6 +332,16 @@ public sealed class MainWindow : Window
             parts.Add("[+] Codex");
         else
             parts.Add("[x] Codex");
+
+        if (ToolExists("gemini"))
+            parts.Add("[+] Gemini");
+        else
+            parts.Add("[x] Gemini");
+
+        if (ToolExists("droid"))
+            parts.Add("[+] Droid");
+        else
+            parts.Add("[x] Droid");
 
         return string.Join("  ", parts);
     }
@@ -791,105 +802,122 @@ public sealed class MainWindow : Window
         container.Add(profileFrame);
         y += 6;
 
-        var filteredSettings = _pack.SettingsSchema
-            .Where(kv => !IsMcpDependentSetting(kv.Key))
+        var visibleSettings = _pack.SettingsSchema
+            .Where(kv => !IsMcpDependentSetting(kv.Key) && !WizardHelpers.IsHiddenSetting(kv.Key))
+            .Where(kv => IsSettingVisible(kv.Value))
             .ToList();
 
-        if (filteredSettings.Count > 0)
+        var installSettings = visibleSettings.Where(kv => IsInstallSetting(kv.Key)).ToList();
+        var generalSettings = visibleSettings.Where(kv => !IsInstallSetting(kv.Key)).ToList();
+
+        if (installSettings.Count > 0)
         {
-            var visibleCount = 0;
-            foreach (var (key, schema) in filteredSettings)
-            {
-                if (schema.VisibleIf != null)
-                {
-                    var visible = schema.VisibleIf.All(kv =>
-                        _state.Settings.TryGetValue(kv.Key, out var val) && val == kv.Value);
-                    if (!visible)
-                        continue;
-                }
-                visibleCount += schema.Type == "enum" ? schema.Options.Count : 1;
-                visibleCount++;
-            }
+            y += AddSettingsFrame(container, "Tool Installation", installSettings, y, false);
+        }
 
-            var settingsFrame = new FrameView
+        if (generalSettings.Count > 0)
+            AddSettingsFrame(container, "General Settings", generalSettings, y, true);
+    }
+
+    private static bool IsInstallSetting(string key) =>
+        key.StartsWith("install_", StringComparison.Ordinal);
+
+    private bool IsSettingVisible(SettingSchema schema) =>
+        schema.VisibleIf == null || schema.VisibleIf.All(kv =>
+            _state.Settings.TryGetValue(kv.Key, out var val) && val == kv.Value);
+
+    private int AddSettingsFrame(
+        View container,
+        string title,
+        List<KeyValuePair<string, SettingSchema>> settings,
+        int y,
+        bool fillRemaining)
+    {
+        var contentRows = 0;
+        foreach (var (_, schema) in settings)
+        {
+            contentRows += schema.Type == "enum" && schema.Options.Count > 0
+                ? schema.Options.Count
+                : 1;
+            contentRows++;
+        }
+
+        var settingsFrame = new FrameView
+        {
+            Title = title,
+            X = 1,
+            Y = y,
+            Width = Dim.Fill(1),
+            Height = fillRemaining ? Dim.Fill() : contentRows + 2,
+            CanFocus = true,
+        };
+
+        var sy = 0;
+        foreach (var (key, schema) in settings)
+        {
+            var currentValue = _state.Settings.GetValueOrDefault(key, schema.Default ?? "");
+
+            var label = new Label
             {
-                Title = "Pack Settings",
-                X = 1, Y = y,
-                Width = Dim.Fill(1),
-                Height = Dim.Fill(),
-                CanFocus = true,
+                X = 1,
+                Y = sy,
+                Width = 25,
+                Text = schema.Label + ":",
             };
+            settingsFrame.Add(label);
 
-            var sy = 0;
-            foreach (var (key, schema) in filteredSettings)
+            if (schema.Type == "enum" && schema.Options.Count > 0)
             {
-                if (schema.VisibleIf != null)
-                {
-                    var visible = schema.VisibleIf.All(kv =>
-                        _state.Settings.TryGetValue(kv.Key, out var val) && val == kv.Value);
-                    if (!visible)
-                        continue;
-                }
+                var optionLabels = schema.Options.Select(o => o.Label).ToArray();
+                var currentIdx = schema.Options.FindIndex(o => o.Value == currentValue);
 
-                var currentValue = _state.Settings.GetValueOrDefault(key, schema.Default ?? "");
-
-                var label = new Label
+                var radio = new RadioGroup
                 {
-                    X = 1, Y = sy,
-                    Width = 25,
-                    Text = schema.Label + ":",
+                    X = 27,
+                    Y = sy,
+                    Width = Dim.Fill(1),
+                    RadioLabels = optionLabels,
+                    SelectedItem = Math.Max(0, currentIdx),
+                    DoubleClickAccepts = false,
+                    CanFocus = true,
                 };
-                settingsFrame.Add(label);
-
-                if (schema.Type == "enum" && schema.Options.Count > 0)
+                var capturedKey = key;
+                var capturedOptions = schema.Options;
+                radio.SelectedItemChanged += (_, args) =>
                 {
-                    var optionLabels = schema.Options.Select(o => o.Label).ToArray();
-                    var currentIdx = schema.Options.FindIndex(o => o.Value == currentValue);
-
-                    var radio = new RadioGroup
-                    {
-                        X = 27, Y = sy,
-                        Width = Dim.Fill(1),
-                        RadioLabels = optionLabels,
-                        SelectedItem = Math.Max(0, currentIdx),
-                        DoubleClickAccepts = false,
-                        CanFocus = true,
-                    };
-                    var capturedKey = key;
-                    var capturedOptions = schema.Options;
-                    radio.SelectedItemChanged += (_, args) =>
-                    {
-                        _state.Settings[capturedKey] = capturedOptions[args.SelectedItem ?? 0].Value;
-                        SnapProfileIfNeeded();
-                        RebuildSettingsContent();
-                    };
-                    settingsFrame.Add(radio);
-                    _settingControls.Add((key, radio));
-                    sy += schema.Options.Count;
-                }
-                else
+                    _state.Settings[capturedKey] = capturedOptions[args.SelectedItem ?? 0].Value;
+                    SnapProfileIfNeeded();
+                    RebuildSettingsContent();
+                };
+                settingsFrame.Add(radio);
+                _settingControls.Add((key, radio));
+                sy += schema.Options.Count;
+            }
+            else
+            {
+                var textField = new TextField
                 {
-                    var textField = new TextField
-                    {
-                        X = 27, Y = sy,
-                        Width = Dim.Fill(2),
-                        Text = currentValue,
-                        CanFocus = true,
-                    };
-                    var capturedKey = key;
-                    textField.TextChanged += (_, _) =>
-                    {
-                        _state.Settings[capturedKey] = textField.Text;
-                        SnapProfileIfNeeded();
-                    };
-                    settingsFrame.Add(textField);
-                    _settingControls.Add((key, textField));
-                    sy++;
-                }
+                    X = 27,
+                    Y = sy,
+                    Width = Dim.Fill(2),
+                    Text = currentValue,
+                    CanFocus = true,
+                };
+                var capturedKey = key;
+                textField.TextChanged += (_, _) =>
+                {
+                    _state.Settings[capturedKey] = textField.Text;
+                    SnapProfileIfNeeded();
+                };
+                settingsFrame.Add(textField);
+                _settingControls.Add((key, textField));
                 sy++;
             }
-            container.Add(settingsFrame);
+            sy++;
         }
+
+        container.Add(settingsFrame);
+        return fillRemaining ? 0 : contentRows + 3;
     }
 
     private void AddUserProfileField(View container, string key, string label, int y)

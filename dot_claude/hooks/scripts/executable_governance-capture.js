@@ -1,10 +1,8 @@
 #!/usr/bin/env node
-// Profile-aware shell governance hook.
-// Hook: PreToolUse (Bash) - blocks secrets everywhere, blocks more in stricter profiles.
+// Managed shell governance hook.
+// Hook: PreToolUse (Bash) - blocks secrets everywhere and stops obviously destructive commands.
 
 'use strict';
-
-const profile = process.env.DOTFILES_RUNTIME_PROFILE || 'balanced';
 
 const SECRET_PATTERNS = [
   /AKIA[0-9A-Z]{16}/,
@@ -22,16 +20,11 @@ const HARD_BLOCK_ALL = [
   /\bmkfs(\.\w+)?\b/,
 ];
 
-const HARD_BLOCK_RESTRICTED = [
+const HARD_BLOCK_PLATFORM = [
   /\bsudo\b/,
   /\bsu\b/,
   /\bgit\s+push\b.*\s--force(?:-with-lease)?\b/,
   /\bDROP\s+(?:TABLE|DATABASE)\b/i,
-];
-
-const HARD_BLOCK_BALANCED = [
-  /\bsudo\b/,
-  /\bgit\s+push\b.*\s--force(?:-with-lease)?\b/,
 ];
 
 const WARN_PATTERNS = [
@@ -74,17 +67,9 @@ process.stdin.on('end', () => {
       }
     }
 
-    if (profile === 'restricted') {
-      for (const pattern of HARD_BLOCK_RESTRICTED) {
-        if (pattern.test(cmd)) {
-          fail('Blocked: command is not allowed under the restricted runtime profile.');
-        }
-      }
-    } else if (profile === 'balanced') {
-      for (const pattern of HARD_BLOCK_BALANCED) {
-        if (pattern.test(cmd)) {
-          fail('Blocked: command is not allowed under the balanced runtime profile.');
-        }
+    for (const pattern of HARD_BLOCK_PLATFORM) {
+      if (pattern.test(cmd)) {
+        fail('Blocked: command matches a managed high-risk pattern.');
       }
     }
 

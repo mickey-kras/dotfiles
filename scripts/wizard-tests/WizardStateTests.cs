@@ -10,8 +10,8 @@ public class WizardStateTests
     {
         var profile = new PackProfile
         {
-            Label = "Balanced",
-            Description = "A balanced profile",
+            Label = "Full",
+            Description = "A full profile",
             Selection = new PackSelection
             {
                 Mcps = new EnabledList { Enabled = ["github", "context7"] },
@@ -22,10 +22,10 @@ public class WizardStateTests
             },
         };
 
-        var state = WizardState.FromProfile("software-development", "balanced", profile);
+        var state = WizardState.FromProfile("software-development", "full", profile);
 
         Assert.Equal("software-development", state.CapabilityPack);
-        Assert.Equal("balanced", state.ProfileSelected);
+        Assert.Equal("full", state.ProfileSelected);
         Assert.Equal("preset", state.ProfileMode);
         Assert.Equal(["github", "context7"], state.EnabledMcps);
         Assert.Equal(["commit"], state.EnabledSkills);
@@ -75,7 +75,7 @@ public class WizardStateTests
         var state = new WizardState
         {
             CapabilityPack = "software-development",
-            ProfileSelected = "balanced",
+            ProfileSelected = "full",
             ProfileMode = "preset",
             EnabledMcps = ["github"],
             EnabledSkills = ["commit"],
@@ -92,7 +92,7 @@ public class WizardStateTests
         var dict = state.ToDict();
 
         Assert.Equal("software-development", dict["capability_pack"]);
-        Assert.Equal("balanced", dict["profile_selected"]);
+        Assert.Equal("full", dict["profile_selected"]);
         Assert.Equal("preset", dict["profile_mode"]);
         Assert.Equal(new List<string> { "github" }, dict["selection_enabled_mcps"]);
         Assert.Equal(new List<string> { "commit" }, dict["selection_enabled_skills"]);

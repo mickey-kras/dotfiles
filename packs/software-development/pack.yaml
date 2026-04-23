@@ -5,18 +5,21 @@ label: Software Development
 description: Software delivery pack across planning, implementation, testing, review, docs, and incident response.
 
 defaults:
-  profile: balanced
+  profile: full
   selection:
     settings:
-      memory_provider: builtin
+      memory_provider: obsidian
       obsidian_vault_path: ""
-      azure_devops_org: ""
+      install_claude_code: disabled
+      install_codex: disabled
+      install_cursor: disabled
+      install_gemini_cli: disabled
+      install_droid: disabled
+      stitch_api_key: ""
       bw_gate_install: enabled
 
 ui:
   sections:
-    - id: profiles
-      label: Profiles
     - id: mcps
       label: MCP Servers
     - id: skills
@@ -34,7 +37,7 @@ settings_schema:
   memory_provider:
     type: enum
     label: Memory Provider
-    default: builtin
+    default: obsidian
     options:
       - value: builtin
         label: Builtin Memory
@@ -46,13 +49,58 @@ settings_schema:
     default: ""
     visible_if:
       memory_provider: obsidian
-  azure_devops_org:
+  install_claude_code:
+    type: enum
+    label: Install Claude Code CLI
+    default: disabled
+    options:
+      - value: disabled
+        label: Disabled
+      - value: enabled
+        label: Enabled
+  install_codex:
+    type: enum
+    label: Install Codex CLI
+    default: disabled
+    options:
+      - value: disabled
+        label: Disabled
+      - value: enabled
+        label: Enabled
+  install_cursor:
+    type: enum
+    label: Install Cursor CLI
+    default: disabled
+    options:
+      - value: disabled
+        label: Disabled
+      - value: enabled
+        label: Enabled
+  install_gemini_cli:
+    type: enum
+    label: Install Gemini CLI
+    default: disabled
+    options:
+      - value: disabled
+        label: Disabled
+      - value: enabled
+        label: Enabled
+  install_droid:
+    type: enum
+    label: Install Droid CLI
+    default: disabled
+    options:
+      - value: disabled
+        label: Disabled
+      - value: enabled
+        label: Enabled
+  stitch_api_key:
     type: string
-    label: Azure DevOps Org
+    label: Stitch API Key
     default: ""
   bw_gate_install:
     type: enum
-    label: Install bw-gate
+    label: Install bw-gate (macOS)
     default: enabled
     options:
       - value: enabled
@@ -80,12 +128,15 @@ catalogs:
       transport: http
       needs_secrets: false
       prompt_injection_risk: medium
-    atlassian:
-      label: Atlassian Rovo
-      description: Atlassian cloud context for Jira and Confluence
+    stitch:
+      label: Stitch
+      description: Google Stitch design generation MCP
       transport: http
-      needs_secrets: false
+      needs_secrets: true
       prompt_injection_risk: medium
+      requires:
+        settings:
+          - stitch_api_key
     filesystem:
       label: Filesystem
       description: Local file browsing rooted narrowly
@@ -118,15 +169,6 @@ catalogs:
       prompt_injection_risk: medium
       required_tools:
         - bw
-    azure-devops:
-      label: Azure DevOps
-      description: Azure DevOps MCP
-      transport: stdio
-      needs_secrets: true
-      prompt_injection_risk: medium
-      requires:
-        settings:
-          - azure_devops_org
     shell:
       label: Shell
       description: Controlled shell execution surface
@@ -167,6 +209,14 @@ catalogs:
       prompt_injection_risk: high
       required_tools:
         - uvx
+    firebase:
+      label: Firebase
+      description: Firebase MCP via Firebase CLI
+      transport: stdio
+      needs_secrets: false
+      prompt_injection_risk: medium
+      required_tools:
+        - firebase
     aws:
       label: AWS
       description: AWS API access via Bitwarden-backed credentials
@@ -184,36 +234,33 @@ catalogs:
       prompt_injection_risk: medium
       required_tools:
         - bw
-    exa:
-      label: Exa
-      description: AI-powered web search
-      transport: stdio
-      needs_secrets: true
-      prompt_injection_risk: high
-      required_tools:
-        - bw
-    firecrawl:
-      label: Firecrawl
-      description: Web scraping and crawling
-      transport: stdio
-      needs_secrets: true
-      prompt_injection_risk: high
-      required_tools:
-        - bw
-    fal-ai:
-      label: fal-ai
-      description: External AI image generation service
+    magic:
+      label: Magic
+      description: 21st.dev Magic MCP
       transport: stdio
       needs_secrets: true
       prompt_injection_risk: medium
       required_tools:
         - bw
-    slack:
-      label: Slack
-      description: Slack workspace search and message access via OAuth
-      transport: http
-      needs_secrets: false
+    replicate:
+      label: Replicate
+      description: Replicate image and model tooling MCP
+      transport: stdio
+      needs_secrets: true
       prompt_injection_risk: medium
+      required_tools:
+        - bw
+    obsidian:
+      label: Obsidian REST
+      description: Obsidian Local REST API MCP
+      transport: stdio
+      needs_secrets: true
+      prompt_injection_risk: medium
+      required_tools:
+        - bw
+      requires:
+        settings:
+          - obsidian_vault_path
 
   skills:
     context7-mcp:
@@ -364,6 +411,7 @@ catalogs:
       label: Cloud Extended
       allow:
         - Bash(aws *)
+        - Bash(firebase *)
         - Bash(gcloud *)
         - Bash(wrangler *)
     secret_tools:
@@ -398,177 +446,33 @@ guardrails:
       - Bash(winget install*)
 
 profiles:
-  restricted:
-    label: Restricted
-    description: No local or system mutation by default. Remote work systems are allowed.
+  full:
+    label: Full
+    description: Software development setup with the current shared AI toolchain enabled by default.
     selection:
       mcps:
         enabled:
           - playwright
           - context7
           - figma
+          - stitch
           - filesystem
           - git
           - memory
+          - obsidian
           - thinking
           - github
-          - azure-devops
-      skills:
-        enabled:
-          - context7-mcp
-          - context-budget
-          - dispatching-parallel-agents
-          - executing-plans
-          - obsidian-memory
-          - receiving-code-review
-          - requesting-code-review
-          - systematic-debugging
-          - test-driven-development
-          - using-git-worktrees
-          - verification-before-completion
-          - writing-plans
-      agents:
-        enabled:
-          - delivery-orchestrator
-          - planner
-          - product-manager
-          - workflow-architect
-          - backend-engineer
-          - frontend-engineer
-          - staff-engineer
-          - quality-engineer
-          - code-reviewer
-          - debugger
-          - git-workflow-master
-          - devops-engineer
-          - security-engineer
-          - technical-writer
-          - incident-commander
-      rules:
-        enabled:
-          - bitwarden-setup
-          - code-style
-          - development-workflow
-          - git-workflow
-          - performance
-          - security
-          - testing
-      permissions:
-        enabled:
-          - core_read_write
-          - shell_readonly
-          - git_safe
-          - gh_safe
-      settings:
-        memory_provider: builtin
-        obsidian_vault_path: ""
-        azure_devops_org: ""
-
-  balanced:
-    label: Balanced
-    description: Practical daily-driver profile with moderate local execution power.
-    selection:
-      mcps:
-        enabled:
-          - playwright
-          - context7
-          - figma
-          - atlassian
-          - filesystem
-          - git
-          - memory
-          - thinking
-          - github
-          - azure-devops
-          - shell
-          - docker
-          - process
-          - terraform
-          - kubernetes
-          - slack
-      skills:
-        enabled:
-          - context7-mcp
-          - context-budget
-          - dispatching-parallel-agents
-          - executing-plans
-          - obsidian-memory
-          - receiving-code-review
-          - requesting-code-review
-          - systematic-debugging
-          - test-driven-development
-          - using-git-worktrees
-          - verification-before-completion
-          - writing-plans
-      agents:
-        enabled:
-          - delivery-orchestrator
-          - planner
-          - product-manager
-          - workflow-architect
-          - backend-engineer
-          - frontend-engineer
-          - staff-engineer
-          - quality-engineer
-          - code-reviewer
-          - debugger
-          - git-workflow-master
-          - devops-engineer
-          - security-engineer
-          - technical-writer
-          - incident-commander
-      rules:
-        enabled:
-          - bitwarden-setup
-          - code-style
-          - development-workflow
-          - git-workflow
-          - performance
-          - security
-          - testing
-      permissions:
-        enabled:
-          - core_read_write
-          - shell_readonly
-          - git_full
-          - gh_full
-          - dev_runtime
-          - local_file_mutation
-          - containers
-          - infra_local
-      settings:
-        memory_provider: builtin
-        obsidian_vault_path: ""
-        azure_devops_org: ""
-
-  open:
-    label: Open
-    description: Full managed profile with broader web, cloud, and secret-backed capabilities.
-    selection:
-      mcps:
-        enabled:
-          - playwright
-          - context7
-          - figma
-          - atlassian
-          - filesystem
-          - git
-          - memory
-          - thinking
-          - github
-          - azure-devops
           - shell
           - docker
           - process
           - terraform
           - kubernetes
           - http
+          - firebase
           - aws
           - tailscale
-          - exa
-          - firecrawl
-          - fal-ai
-          - slack
+          - magic
+          - replicate
       skills:
         enabled:
           - context7-mcp
@@ -624,9 +528,14 @@ profiles:
           - secret_tools
           - web_access
       settings:
-        memory_provider: builtin
+        memory_provider: obsidian
         obsidian_vault_path: ""
-        azure_devops_org: ""
+        install_claude_code: disabled
+        install_codex: disabled
+        install_cursor: disabled
+        install_gemini_cli: disabled
+        install_droid: disabled
+        stitch_api_key: ""
 
 tooling:
   claude_agents:

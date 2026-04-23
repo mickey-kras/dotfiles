@@ -72,7 +72,7 @@ public class WizardIntegrationTests
             var state = new WizardState
             {
                 CapabilityPack = "software-development",
-                ProfileSelected = "balanced",
+                ProfileSelected = "full",
                 ProfileMode = "preset",
                 EnabledMcps = ["github"],
             };

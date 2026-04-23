@@ -3,26 +3,8 @@
 catalog_version: 1
 
 profiles:
-  restricted:
-    description: No local or system mutation by default. Remote work systems are allowed.
-    permission_groups:
-      - core_read_write
-      - shell_readonly
-      - git_safe
-      - gh_safe
-  balanced:
-    description: Practical daily-driver profile with moderate local execution power.
-    permission_groups:
-      - core_read_write
-      - shell_readonly
-      - git_full
-      - gh_full
-      - dev_runtime
-      - local_file_mutation
-      - containers
-      - infra_local
-  open:
-    description: Full managed profile with broader web, cloud, and secret-backed capabilities.
+  full:
+    description: Software-development default with the full managed toolchain enabled.
     permission_groups:
       - core_read_write
       - shell_readonly
@@ -38,56 +20,28 @@ profiles:
       - web_access
 
 mcp_sets:
-  restricted:
+  full:
     - playwright
     - context7
     - figma
+    - stitch
     - filesystem
     - git
     - memory
+    - obsidian
     - thinking
     - github
-    - azure-devops
-  balanced:
-    - playwright
-    - context7
-    - figma
-    - atlassian
-    - filesystem
-    - git
-    - memory
-    - thinking
-    - github
-    - azure-devops
-    - shell
-    - docker
-    - process
-    - terraform
-    - kubernetes
-    - slack
-  open:
-    - playwright
-    - context7
-    - figma
-    - atlassian
-    - filesystem
-    - git
-    - memory
-    - thinking
-    - github
-    - azure-devops
     - shell
     - docker
     - process
     - terraform
     - kubernetes
     - http
+    - firebase
     - aws
     - tailscale
-    - exa
-    - firecrawl
-    - fal-ai
-    - slack
+    - magic
+    - replicate
 
 mcp_catalog:
   playwright:
@@ -120,16 +74,16 @@ mcp_catalog:
     mutates_local_system: false
     prompt_injection_risk: medium
     notes: Remote design system access.
-  atlassian:
+  stitch:
     transport: http
-    needs_secrets: false
+    needs_secrets: true
     reads_remote: true
     writes_remote: true
     reads_local: false
     executes_local_processes: false
     mutates_local_system: false
     prompt_injection_risk: medium
-    notes: Official Atlassian Rovo remote MCP for Jira, Confluence, and related cloud context.
+    notes: Google Stitch remote MCP with API-key-authenticated headers.
   filesystem:
     transport: stdio
     needs_secrets: false
@@ -159,7 +113,17 @@ mcp_catalog:
     executes_local_processes: true
     mutates_local_system: true
     prompt_injection_risk: low
-    notes: Local MCP memory store.
+    notes: Local MCP memory store or Obsidian vault bridge.
+  obsidian:
+    transport: stdio
+    needs_secrets: true
+    reads_remote: false
+    writes_remote: true
+    reads_local: true
+    executes_local_processes: true
+    mutates_local_system: true
+    prompt_injection_risk: medium
+    notes: Obsidian Local REST API surfaced through a Bitwarden-backed API key.
   thinking:
     transport: stdio
     needs_secrets: false
@@ -180,16 +144,6 @@ mcp_catalog:
     mutates_local_system: false
     prompt_injection_risk: medium
     notes: Remote repository surface with user-generated content.
-  azure-devops:
-    transport: stdio
-    needs_secrets: true
-    reads_remote: true
-    writes_remote: true
-    reads_local: false
-    executes_local_processes: true
-    mutates_local_system: false
-    prompt_injection_risk: medium
-    notes: Remote work item and repo surface.
   shell:
     transport: stdio
     needs_secrets: false
@@ -250,6 +204,16 @@ mcp_catalog:
     mutates_local_system: false
     prompt_injection_risk: high
     notes: Open remote content fetch surface.
+  firebase:
+    transport: stdio
+    needs_secrets: false
+    reads_remote: true
+    writes_remote: true
+    reads_local: false
+    executes_local_processes: true
+    mutates_local_system: false
+    prompt_injection_risk: medium
+    notes: Firebase CLI-backed MCP surface.
   aws:
     transport: stdio
     needs_secrets: true
@@ -259,7 +223,7 @@ mcp_catalog:
     executes_local_processes: true
     mutates_local_system: false
     prompt_injection_risk: medium
-    notes: Cloud admin surface.
+    notes: AWS API surface through Bitwarden-managed credentials.
   tailscale:
     transport: stdio
     needs_secrets: true
@@ -269,28 +233,8 @@ mcp_catalog:
     executes_local_processes: true
     mutates_local_system: false
     prompt_injection_risk: medium
-    notes: Network admin surface.
-  exa:
-    transport: stdio
-    needs_secrets: true
-    reads_remote: true
-    writes_remote: false
-    reads_local: false
-    executes_local_processes: true
-    mutates_local_system: false
-    prompt_injection_risk: high
-    notes: Search over remote untrusted content.
-  firecrawl:
-    transport: stdio
-    needs_secrets: true
-    reads_remote: true
-    writes_remote: false
-    reads_local: false
-    executes_local_processes: true
-    mutates_local_system: false
-    prompt_injection_risk: high
-    notes: Crawling and scraping over remote untrusted content.
-  fal-ai:
+    notes: Tailscale admin API surface.
+  magic:
     transport: stdio
     needs_secrets: true
     reads_remote: true
@@ -299,93 +243,14 @@ mcp_catalog:
     executes_local_processes: true
     mutates_local_system: false
     prompt_injection_risk: medium
-    notes: External AI generation service.
-  slack:
-    transport: http
-    needs_secrets: false
+    notes: 21st.dev Magic MCP via Bitwarden-wrapped API key.
+  replicate:
+    transport: stdio
+    needs_secrets: true
     reads_remote: true
     writes_remote: true
     reads_local: false
-    executes_local_processes: false
+    executes_local_processes: true
     mutates_local_system: false
     prompt_injection_risk: medium
-    notes: Slack workspace search and messaging via OAuth.
-
-permission_groups:
-  core_read_write:
-    - Read
-    - Edit
-    - Write
-  shell_readonly:
-    - Bash(ls *)
-    - Bash(cat *)
-    - Bash(head *)
-    - Bash(tail *)
-    - Bash(wc *)
-    - Bash(find *)
-    - Bash(grep *)
-    - Bash(rg *)
-    - Bash(jq *)
-  git_safe:
-    - Bash(git status*)
-    - Bash(git diff*)
-    - Bash(git log*)
-  gh_safe:
-    - Bash(gh pr view*)
-    - Bash(gh pr checks*)
-  git_full:
-    - Bash(git *)
-  gh_full:
-    - Bash(gh *)
-  dev_runtime:
-    - Bash(node *)
-    - Bash(dotnet *)
-    - Bash(python3 *)
-    - Bash(pytest *)
-    - Bash(make *)
-    - Bash(k6 *)
-  local_file_mutation:
-    - Bash(mkdir *)
-    - Bash(cp *)
-    - Bash(mv *)
-    - Bash(touch *)
-    - Bash(chmod +x *)
-  containers:
-    - Bash(docker *)
-  infra_local:
-    - Bash(az *)
-    - Bash(terraform *)
-    - Bash(kubectl *)
-  package_runtime:
-    - Bash(npm *)
-    - Bash(npx *)
-    - Bash(pip *)
-  cloud_extended:
-    - Bash(aws *)
-    - Bash(gcloud *)
-    - Bash(wrangler *)
-  secret_tools:
-    - Bash(bw *)
-    - Bash(uvx *)
-  web_access:
-    - Bash(curl *)
-    - WebFetch
-    - WebSearch
-
-hard_bans:
-  shared:
-    - Bash(sudo *)
-    - Bash(su *)
-    - Bash(rm -rf /)
-    - Bash(dd if=/dev/zero*)
-    - Bash(chmod 777 *)
-    - Bash(> /dev/sda*)
-  restricted:
-    - Bash(uv *)
-    - Bash(uvx *)
-    - Bash(npm install*)
-    - Bash(npm i*)
-    - Bash(npx *)
-    - Bash(pip install*)
-    - Bash(choco install*)
-    - Bash(winget install*)
+    notes: Replicate MCP via Bitwarden-wrapped API token.

@@ -13,7 +13,7 @@ public class DataModelTests
                 "id": "software-development",
                 "label": "Software Development",
                 "description": "Dev pack",
-                "default_profile": "balanced"
+                "default_profile": "full"
             }
         """;
         var info = JsonSerializer.Deserialize<PackInfo>(json)!;
@@ -21,7 +21,7 @@ public class DataModelTests
         Assert.Equal("software-development", info.Id);
         Assert.Equal("Software Development", info.Label);
         Assert.Equal("Dev pack", info.Description);
-        Assert.Equal("balanced", info.DefaultProfile);
+        Assert.Equal("full", info.DefaultProfile);
     }
 
     [Fact]
@@ -29,8 +29,8 @@ public class DataModelTests
     {
         var json = """
             {
-                "label": "Balanced",
-                "description": "A balanced profile",
+                "label": "Full",
+                "description": "A full profile",
                 "selection": {
                     "mcps": { "enabled": ["github"] },
                     "skills": { "enabled": ["commit"] },
@@ -42,7 +42,7 @@ public class DataModelTests
         """;
         var profile = JsonSerializer.Deserialize<PackProfile>(json)!;
 
-        Assert.Equal("Balanced", profile.Label);
+        Assert.Equal("Full", profile.Label);
         Assert.Equal(["github"], profile.Selection.Mcps.Enabled);
         Assert.Equal(["commit"], profile.Selection.Skills.Enabled);
         Assert.Empty(profile.Selection.Agents.Enabled);

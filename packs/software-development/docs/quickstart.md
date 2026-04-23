@@ -1,6 +1,6 @@
 # Software Development Quickstart
 
-Use this pack for delivery work that spans planning, implementation, testing, review, docs, and incident response.
+This is the only supported pack in the repo. Start from the default `full` selection and only turn something off when you have a specific reason.
 
 ## Default flow
 
@@ -10,13 +10,12 @@ Use this pack for delivery work that spans planning, implementation, testing, re
 4. Run the relevant tests before claiming completion.
 5. Use code review mode for bug finding, risk, and missing coverage.
 
-## Profile guidance
+## Default setup
 
-| Profile | Use when | Key capabilities |
-| --- | --- | --- |
-| `restricted` | Read-heavy repo work or low-trust machines | Git read, GitHub/AzDO read, no local shell |
-| `balanced` | Daily driver for most development work | Full git, shell, docker, k8s, terraform |
-| `open` | Personal-machine mode for broader access | Cloud CLIs, web search, secret-backed MCPs |
+- Memory defaults to Obsidian
+- The wizard auto-detects an existing vault path when possible and otherwise uses `~/Obsidian/memory-vault`
+- Optional CLI installs exist for Claude Code, Codex, Cursor, Gemini CLI, and Droid; they are off by default
+- macOS is the primary target, Linux is supported, and Windows is secondary through Git Bash
 
 ## Model guidance
 

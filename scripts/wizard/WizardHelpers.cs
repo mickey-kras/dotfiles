@@ -1,3 +1,6 @@
+using System.Text.Json;
+using System.Text.RegularExpressions;
+
 namespace DotfilesWizard;
 
 /// <summary>RGB color value for scheme consistency checks.</summary>
@@ -32,7 +35,12 @@ public static class WizardHelpers
 
     public static bool IsMcpDependentSetting(string key) => key switch
     {
-        "azure_devops_org" => true,
+        _ => false,
+    };
+
+    public static bool IsHiddenSetting(string key) => key switch
+    {
+        "stitch_api_key" => true,
         _ => false,
     };
 
@@ -111,8 +119,15 @@ public static class WizardHelpers
 
         var settingsKeys = new[]
         {
-            "obsidian_vault_path", "azure_devops_org", "memory_provider",
-            "content_workspace", "research_workspace"
+            "obsidian_vault_path",
+            "memory_provider",
+            "install_claude_code",
+            "install_codex",
+            "install_cursor",
+            "install_gemini_cli",
+            "install_droid",
+            "stitch_api_key",
+            "bw_gate_install",
         };
         foreach (var key in settingsKeys)
         {
@@ -122,15 +137,93 @@ public static class WizardHelpers
                     state.Settings[key] = val;
             }
         }
+
+        if (string.IsNullOrEmpty(state.Settings.GetValueOrDefault("obsidian_vault_path")))
+        {
+            var detectedVaultPath = DetectObsidianVaultPath();
+            if (!string.IsNullOrEmpty(detectedVaultPath))
+                state.Settings["obsidian_vault_path"] = detectedVaultPath;
+        }
     }
 
     public static string GetSummaryText(WizardState state, string packLabel)
     {
-        var profileLine = state.ProfileMode == "preset"
-            ? state.ProfileSelected
-            : $"custom (from {state.ProfileSelected})";
-        return $"Pack: {packLabel} | Profile: {profileLine} | " +
-               $"MCPs: {state.EnabledMcps.Count} | Skills: {state.EnabledSkills.Count} | " +
-               $"Agents: {state.EnabledAgents.Count} | Rules: {state.EnabledRules.Count}";
+        var memoryProvider = state.Settings.GetValueOrDefault("memory_provider", "builtin");
+        return $"Setup: {packLabel} | MCPs: {state.EnabledMcps.Count} | Skills: {state.EnabledSkills.Count} | " +
+               $"Agents: {state.EnabledAgents.Count} | Rules: {state.EnabledRules.Count} | Memory: {memoryProvider}";
+    }
+
+    private static string DetectObsidianVaultPath()
+    {
+        var home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        var candidates = new[]
+        {
+            Path.Combine(home, ".gemini", "settings.json"),
+            Path.Combine(home, ".factory", "mcp.json"),
+            Path.Combine(home, ".claude.json"),
+            Path.Combine(home, ".cursor", "mcp.json"),
+            Path.Combine(home, ".codex", "config.toml"),
+        };
+
+        foreach (var path in candidates)
+        {
+            var value = ExtractObsidianVaultPath(path);
+            if (!string.IsNullOrEmpty(value))
+                return value;
+        }
+
+        if (OperatingSystem.IsMacOS())
+        {
+            var icloudVault = Path.Combine(
+                home,
+                "Library",
+                "Mobile Documents",
+                "iCloud~md~obsidian",
+                "Documents",
+                "memory-vault");
+            if (Directory.Exists(Path.GetDirectoryName(icloudVault)!))
+                return icloudVault;
+        }
+
+        return Path.Combine(home, "Obsidian", "memory-vault");
+    }
+
+    private static string ExtractObsidianVaultPath(string path)
+    {
+        if (!File.Exists(path))
+            return "";
+
+        try
+        {
+            if (path.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
+            {
+                using var document = JsonDocument.Parse(File.ReadAllText(path));
+                if (document.RootElement.TryGetProperty("mcpServers", out var servers))
+                {
+                    foreach (var serverName in new[] { "obsidian", "memory" })
+                    {
+                        if (servers.TryGetProperty(serverName, out var server) &&
+                            server.TryGetProperty("env", out var env) &&
+                            env.TryGetProperty("OBSIDIAN_VAULT_PATH", out var vaultPath))
+                        {
+                            return vaultPath.GetString() ?? "";
+                        }
+                    }
+                }
+            }
+
+            var match = Regex.Match(
+                File.ReadAllText(path),
+                "OBSIDIAN_VAULT_PATH\\s*=\\s*\"(?<path>[^\"]+)\"",
+                RegexOptions.Multiline);
+            if (match.Success)
+                return match.Groups["path"].Value;
+        }
+        catch
+        {
+            // Ignore malformed user files and keep searching.
+        }
+
+        return "";
     }
 }

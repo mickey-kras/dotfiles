@@ -1,15 +1,14 @@
 #!/usr/bin/env bash
-# Installs pack-owned Claude agents and rules as symlinks.
+# Installs the managed Claude agents and rules as symlinks.
 #
-# hash: {{ include "templates/resolved-state.json" | sha256sum }}:{{ include "packs/software-development/pack.yaml" | sha256sum }}:{{ include "packs/content-creation/pack.yaml" | sha256sum }}
+# hash: {{ include "templates/resolved-state.json" | sha256sum }}:{{ include "packs/software-development/pack.yaml" | sha256sum }}
 
 set -euo pipefail
 
 HOME_SLASHED="{{ replace "\\" "/" .chezmoi.homeDir }}"
 {{ $runtime := includeTemplate "templates/resolved-state.json" . | fromJson -}}
 {{ $resolved := $runtime.resolved -}}
-CAPABILITY_PACK="{{ index $resolved "pack_id" }}"
-PACK_CLAUDE_DIR="$HOME_SLASHED/dotfiles/packs/$CAPABILITY_PACK/claude"
+PACK_CLAUDE_DIR="$HOME_SLASHED/dotfiles/packs/software-development/claude"
 CLAUDE_AGENTS_DIR="$HOME_SLASHED/.claude/agents"
 CLAUDE_RULES_DIR="$HOME_SLASHED/.claude/rules"
 
@@ -66,11 +65,11 @@ install_selected_files() {
   done
 }
 
-echo "Reconciling Claude pack assets for capability pack: $CAPABILITY_PACK"
+echo "Reconciling managed Claude agents and rules..."
 
 cleanup_symlinked_targets "$CLAUDE_AGENTS_DIR"
 cleanup_symlinked_targets "$CLAUDE_RULES_DIR"
 install_selected_files "$PACK_CLAUDE_DIR/agents" "$CLAUDE_AGENTS_DIR" "agent" "${AGENT_IDS[@]}"
 install_selected_files "$PACK_CLAUDE_DIR/rules" "$CLAUDE_RULES_DIR" "rule" "${RULE_IDS[@]}"
 
-echo "Claude pack assets reconciled."
+echo "Managed Claude agents and rules reconciled."

@@ -1,16 +1,15 @@
 #!/usr/bin/env bash
 # Installs managed first-party skills for Claude and Codex.
 #
-# hash: {{ include "templates/resolved-state.json" | sha256sum }}:{{ include "packs/software-development/pack.yaml" | sha256sum }}:{{ include "packs/content-creation/pack.yaml" | sha256sum }}
+# hash: {{ include "templates/resolved-state.json" | sha256sum }}:{{ include "packs/software-development/pack.yaml" | sha256sum }}
 
 set -euo pipefail
 
 HOME_SLASHED="{{ replace "\\" "/" .chezmoi.homeDir }}"
 {{ $runtime := includeTemplate "templates/resolved-state.json" . | fromJson -}}
 {{ $resolved := $runtime.resolved -}}
-CAPABILITY_PACK="{{ index $resolved "pack_id" }}"
 DOTFILES_DIR="$HOME_SLASHED/dotfiles"
-MANAGED_SKILLS_DIR="$DOTFILES_DIR/packs/$CAPABILITY_PACK/skills"
+MANAGED_SKILLS_DIR="$DOTFILES_DIR/packs/software-development/skills"
 CLAUDE_SKILLS_DIR="$HOME_SLASHED/.claude/skills"
 CODEX_SKILLS_DIR="$HOME_SLASHED/.codex/skills"
 LEGACY_SUPERPOWERS_ROOT="$HOME_SLASHED/.claude/plugins/cache/claude-plugins-official/superpowers"
@@ -75,7 +74,7 @@ cleanup_managed_targets() {
   done
 }
 
-echo "Reconciling managed skills for capability pack: $CAPABILITY_PACK"
+echo "Reconciling managed skills..."
 
 rm -f "$CODEX_SKILLS_DIR/.DS_Store" "$CLAUDE_SKILLS_DIR/.DS_Store"
 

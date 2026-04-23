@@ -1,0 +1,13 @@
+{{- $servers := includeTemplate "templates/managed-mcp-servers.json" . | fromJson -}}
+{
+  "security": {
+    "auth": {
+      "selectedType": "oauth-personal"
+    }
+  },
+  "general": {
+    "defaultApprovalMode": "auto_edit",
+    "enableAutoUpdate": true
+  },
+  "mcpServers": {{ $servers | toPrettyJson | nindent 2 }}
+}

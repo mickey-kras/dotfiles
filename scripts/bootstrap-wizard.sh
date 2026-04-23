@@ -75,8 +75,7 @@ helper = sys.argv[3]
 if state_path.exists() and state_path.read_text(encoding="utf-8").strip():
     raise SystemExit(0)
 
-packs = json.loads(subprocess.check_output([sys.executable, helper, "list-packs", source_dir], text=True))
-default_pack = packs[0]["id"]
+default_pack = "software-development"
 pack = json.loads(subprocess.check_output([sys.executable, helper, "pack", source_dir, default_pack], text=True))
 default_profile = pack["defaults"]["profile"]
 selection = pack["profiles"][default_profile]["selection"]
@@ -281,10 +280,4 @@ PY
 
 state_init
 refresh_runtime
-
-local_pack_id="$(choose_pack)"
-set_profile "$local_pack_id" "$(get_default_profile "$local_pack_id")"
-refresh_runtime
-local_profile_id="$(choose_profile)"
-set_profile "$local_pack_id" "$local_profile_id"
 edit_settings

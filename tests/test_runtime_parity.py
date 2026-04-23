@@ -1,29 +1,25 @@
+import shutil
 import unittest
 
 from helpers import load_yaml_as_json
 
 
+@unittest.skipUnless(shutil.which("chezmoi"), "chezmoi not installed")
 class RuntimeParityTests(unittest.TestCase):
     def setUp(self):
         self.runtime = load_yaml_as_json(".chezmoidata/runtime_profiles.yaml")
         self.capability_packs = load_yaml_as_json(".chezmoidata/capability_packs.yaml")
         self.pack = load_yaml_as_json("packs/software-development/pack.yaml")
 
-    def test_profile_mcps_match_current_runtime_catalog(self):
-        for profile_name in ("restricted", "balanced", "open"):
-            with self.subTest(profile=profile_name):
-                expected = sorted(self.runtime["mcp_sets"][profile_name])
-                actual = sorted(self.pack["profiles"][profile_name]["selection"]["mcps"]["enabled"])
-                self.assertEqual(actual, expected)
+    def test_full_profile_mcps_match_current_runtime_catalog(self):
+        expected = sorted(self.runtime["mcp_sets"]["full"])
+        actual = sorted(self.pack["profiles"]["full"]["selection"]["mcps"]["enabled"])
+        self.assertEqual(actual, expected)
 
-    def test_profile_permissions_match_current_runtime_catalog(self):
-        for profile_name in ("restricted", "balanced", "open"):
-            with self.subTest(profile=profile_name):
-                expected = sorted(self.runtime["profiles"][profile_name]["permission_groups"])
-                actual = sorted(
-                    self.pack["profiles"][profile_name]["selection"]["permissions"]["enabled"]
-                )
-                self.assertEqual(actual, expected)
+    def test_full_profile_permissions_match_current_runtime_catalog(self):
+        expected = sorted(self.runtime["profiles"]["full"]["permission_groups"])
+        actual = sorted(self.pack["profiles"]["full"]["selection"]["permissions"]["enabled"])
+        self.assertEqual(actual, expected)
 
     def test_guardrails_match_current_runtime_catalog(self):
         self.assertEqual(

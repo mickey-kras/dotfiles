@@ -97,16 +97,20 @@ if ! command -v dotnet >/dev/null 2>&1 || ! dotnet --list-sdks 2>/dev/null | gre
   fi
 fi
 
-RUNTIME_PROFILE="balanced"
+RUNTIME_PROFILE="full"
 CAPABILITY_PACK="software-development"
-PROFILE_BASE="balanced"
-AZURE_DEVOPS_ORG=""
+PROFILE_BASE="full"
 USER_NAME=""
 USER_ROLE_SUMMARY=""
 USER_STACK_SUMMARY=""
-MEMORY_PROVIDER="builtin"
+MEMORY_PROVIDER="obsidian"
 OBSIDIAN_VAULT_PATH=""
-CONTENT_WORKSPACE=""
+STITCH_API_KEY=""
+INSTALL_CLAUDE_CODE="disabled"
+INSTALL_CODEX="disabled"
+INSTALL_CURSOR="disabled"
+INSTALL_GEMINI_CLI="disabled"
+INSTALL_DROID="disabled"
 CUSTOM_ENABLED_MCPS=()
 CUSTOM_DISABLED_MCPS=()
 CUSTOM_ENABLED_PERMISSION_GROUPS=()
@@ -134,6 +138,153 @@ contains_word() {
   return 1
 }
 
+setting_enabled() {
+  [ "${1:-disabled}" = "enabled" ]
+}
+
+have_claude_code() {
+  command -v claude >/dev/null 2>&1
+}
+
+have_codex() {
+  command -v codex >/dev/null 2>&1
+}
+
+have_cursor() {
+  if command -v cursor-agent >/dev/null 2>&1 || command -v cursor >/dev/null 2>&1; then
+    return 0
+  fi
+  if [ -d "/Applications/Cursor.app" ]; then
+    return 0
+  fi
+  if is_windows_gitbash && { command -v cursor-agent.exe >/dev/null 2>&1 || command -v cursor.exe >/dev/null 2>&1; }; then
+    return 0
+  fi
+  return 1
+}
+
+have_gemini_cli() {
+  command -v gemini >/dev/null 2>&1
+}
+
+have_droid() {
+  command -v droid >/dev/null 2>&1
+}
+
+have_obsidian() {
+  if [ -d "/Applications/Obsidian.app" ] || command -v obsidian >/dev/null 2>&1; then
+    return 0
+  fi
+  if is_windows_gitbash && command -v obsidian.exe >/dev/null 2>&1; then
+    return 0
+  fi
+  return 1
+}
+
+install_claude_code_cli() {
+  if have_claude_code; then
+    printf "  ${G}+${R} Claude Code already installed\n"
+    return 0
+  fi
+
+  printf "  ${Y}>${R} Installing Claude Code CLI...\n"
+  if is_windows_gitbash && command -v powershell.exe >/dev/null 2>&1; then
+    powershell.exe -NoProfile -Command "irm https://claude.ai/install.ps1 | iex" >/dev/null 2>&1 || true
+  elif command -v curl >/dev/null 2>&1; then
+    curl -fsSL https://claude.ai/install.sh | bash || true
+  elif [[ "$(uname -s)" == "Darwin" ]] && command -v brew >/dev/null 2>&1; then
+    brew install --cask claude-code || true
+  fi
+
+  if have_claude_code; then
+    printf "  ${G}+${R} Claude Code installed\n"
+  else
+    printf "  ${Y}>${R} Claude Code install did not complete - continue manually if needed\n"
+  fi
+}
+
+install_codex_cli() {
+  if have_codex; then
+    printf "  ${G}+${R} Codex already installed\n"
+    return 0
+  fi
+
+  printf "  ${Y}>${R} Installing Codex CLI...\n"
+  if command -v npm >/dev/null 2>&1; then
+    npm install -g @openai/codex || true
+  elif [[ "$(uname -s)" == "Darwin" ]] && command -v brew >/dev/null 2>&1; then
+    brew install --cask codex || true
+  fi
+
+  if have_codex; then
+    printf "  ${G}+${R} Codex installed\n"
+  else
+    printf "  ${Y}>${R} Codex install did not complete - continue manually if needed\n"
+  fi
+}
+
+install_cursor_cli() {
+  if have_cursor; then
+    printf "  ${G}+${R} Cursor already installed\n"
+    return 0
+  fi
+
+  printf "  ${Y}>${R} Installing Cursor CLI...\n"
+  if command -v curl >/dev/null 2>&1; then
+    curl https://cursor.com/install -fsS | bash || true
+  elif is_windows_gitbash && command -v winget.exe >/dev/null 2>&1; then
+    winget.exe install -e --id Cursor.Cursor --accept-package-agreements --accept-source-agreements || true
+  fi
+
+  if have_cursor; then
+    printf "  ${G}+${R} Cursor installed\n"
+  else
+    printf "  ${Y}>${R} Cursor install did not complete - continue manually if needed\n"
+  fi
+}
+
+install_gemini_cli() {
+  if have_gemini_cli; then
+    printf "  ${G}+${R} Gemini CLI already installed\n"
+    return 0
+  fi
+
+  printf "  ${Y}>${R} Installing Gemini CLI...\n"
+  if command -v brew >/dev/null 2>&1 && ! is_windows_gitbash; then
+    brew install gemini-cli || true
+  elif command -v npm >/dev/null 2>&1; then
+    npm install -g @google/gemini-cli || true
+  fi
+
+  if have_gemini_cli; then
+    printf "  ${G}+${R} Gemini CLI installed\n"
+  else
+    printf "  ${Y}>${R} Gemini CLI install did not complete - continue manually if needed\n"
+  fi
+}
+
+install_droid_cli() {
+  if have_droid; then
+    printf "  ${G}+${R} Droid already installed\n"
+    return 0
+  fi
+
+  printf "  ${Y}>${R} Installing Droid CLI...\n"
+  if is_windows_gitbash && command -v powershell.exe >/dev/null 2>&1; then
+    powershell.exe -NoProfile -Command "irm https://app.factory.ai/cli/windows | iex" >/dev/null 2>&1 || true
+  elif command -v curl >/dev/null 2>&1; then
+    curl -fsSL https://app.factory.ai/cli | sh || true
+  elif command -v npm >/dev/null 2>&1; then
+    npm install -g droid || true
+  fi
+
+  if have_droid; then
+    printf "  ${G}+${R} Droid installed\n"
+  else
+    printf "  ${Y}>${R} Droid install did not complete - continue manually if needed\n"
+  fi
+}
+
 detect_existing_value() {
   local key="$1"
   python3 - "$HOME/.config/chezmoi/chezmoi.toml" "$key" <<'PY' 2>/dev/null || true
@@ -149,38 +300,160 @@ if m:
 PY
 }
 
-detect_existing_azdo_org() {
+detect_existing_obsidian_vault_path() {
   local value=""
-  value="$(detect_existing_value azure_devops_org)"
+  value="$(detect_existing_value obsidian_vault_path)"
   if [ -n "$value" ]; then
     printf "%s" "$value"
     return 0
   fi
 
   python3 - <<'PY' 2>/dev/null || true
+import json
 import re
 from pathlib import Path
 
 paths = [
-    Path.home() / ".codex" / "config.toml",
-    Path.home() / ".cursor" / "mcp.json",
+    Path.home() / ".gemini" / "settings.json",
+    Path.home() / ".factory" / "mcp.json",
     Path.home() / ".claude.json",
-]
-
-patterns = [
-    re.compile(r'@azure-devops/mcp@[^"]*"\s*,\s*"([^"]+)"'),
-    re.compile(r'"azure-devops"\s*:\s*\{.*?"args"\s*:\s*\[[^\]]*"([^"]+)"\s*\]', re.S),
+    Path.home() / ".cursor" / "mcp.json",
 ]
 
 for path in paths:
     if not path.exists():
         continue
-    text = path.read_text(errors="ignore")
-    for pattern in patterns:
-        match = pattern.search(text)
-        if match and match.group(1):
-            print(match.group(1))
+    try:
+        data = json.loads(path.read_text())
+    except Exception:
+        continue
+    servers = data.get("mcpServers") or {}
+    for server_name in ("obsidian", "memory"):
+        server = servers.get(server_name) or {}
+        env = server.get("env") or {}
+        vault_path = env.get("OBSIDIAN_VAULT_PATH")
+        if vault_path:
+            print(vault_path)
             raise SystemExit(0)
+
+toml_path = Path.home() / ".codex" / "config.toml"
+if toml_path.exists():
+    match = re.search(r'OBSIDIAN_VAULT_PATH\s*=\s*"([^"]+)"', toml_path.read_text(errors="ignore"))
+    if match:
+        print(match.group(1))
+        raise SystemExit(0)
+
+mac_default = Path.home() / "Library" / "Mobile Documents" / "iCloud~md~obsidian" / "Documents" / "memory-vault"
+if (mac_default.parent).exists():
+    print(str(mac_default))
+    raise SystemExit(0)
+
+print(str(Path.home() / "Obsidian" / "memory-vault"))
+PY
+}
+
+detect_existing_stitch_api_key() {
+  local value=""
+  value="$(detect_existing_value stitch_api_key)"
+  if [ -n "$value" ]; then
+    printf "%s" "$value"
+    return 0
+  fi
+
+  python3 - <<'PY' 2>/dev/null || true
+import json
+from pathlib import Path
+
+paths = [
+    Path.home() / ".gemini" / "settings.json",
+    Path.home() / ".factory" / "mcp.json",
+]
+
+for path in paths:
+    if not path.exists():
+        continue
+    try:
+        data = json.loads(path.read_text())
+    except Exception:
+        continue
+    server = (data.get("mcpServers") or {}).get("stitch") or {}
+    headers = server.get("headers") or {}
+    api_key = headers.get("X-Goog-Api-Key")
+    if api_key:
+        print(api_key)
+        raise SystemExit(0)
+PY
+}
+
+detect_existing_server_env_secret() {
+  local server_name="$1"
+  local env_name="$2"
+  python3 - "$server_name" "$env_name" <<'PY' 2>/dev/null || true
+import json
+import re
+import sys
+from pathlib import Path
+
+server_name = sys.argv[1]
+env_name = sys.argv[2]
+
+json_paths = [
+    Path.home() / ".claude.json",
+    Path.home() / ".gemini" / "settings.json",
+    Path.home() / ".factory" / "mcp.json",
+]
+
+for path in json_paths:
+    if not path.exists():
+        continue
+    try:
+        data = json.loads(path.read_text())
+    except Exception:
+        continue
+    server = (data.get("mcpServers") or {}).get(server_name) or {}
+    env = server.get("env") or {}
+    value = env.get(env_name)
+    if value:
+        print(value)
+        raise SystemExit(0)
+
+toml_path = Path.home() / ".codex" / "config.toml"
+if toml_path.exists():
+    text = toml_path.read_text(errors="ignore")
+    pattern = re.compile(
+        rf'\[mcp_servers\.{re.escape(server_name)}\](?P<body>.*?)(?:\n\[|\Z)',
+        re.S,
+    )
+    match = pattern.search(text)
+    if match:
+        env_match = re.search(
+            rf'{re.escape(env_name)}\s*=\s*"([^"]+)"',
+            match.group('body'),
+        )
+        if env_match:
+            print(env_match.group(1))
+            raise SystemExit(0)
+PY
+}
+
+detect_existing_obsidian_api_key() {
+  local value=""
+  value="$(detect_existing_server_env_secret obsidian OBSIDIAN_API_KEY)"
+  if [ -n "$value" ]; then
+    printf "%s" "$value"
+    return 0
+  fi
+
+  python3 - <<'PY' 2>/dev/null || true
+import json
+from pathlib import Path
+
+path = Path.home() / "Library" / "Mobile Documents" / "iCloud~md~obsidian" / "Documents" / "memory-vault" / ".obsidian" / "plugins" / "obsidian-local-rest-api" / "data.json"
+if path.exists():
+    data = json.loads(path.read_text())
+    value = data.get("apiKey")
+    if value:
+        print(value)
 PY
 }
 
@@ -218,7 +491,7 @@ PY
 }
 
 write_chezmoi_config() {
-  python3 - "$CONFIG_STATE_JSON" "$USER_NAME" "$USER_ROLE_SUMMARY" "$USER_STACK_SUMMARY" > "$HOME/.config/chezmoi/chezmoi.toml" <<'PY'
+  python3 - "$CONFIG_STATE_JSON" "$USER_NAME" "$USER_ROLE_SUMMARY" "$USER_STACK_SUMMARY" "$MEMORY_PROVIDER" "$OBSIDIAN_VAULT_PATH" "$INSTALL_CLAUDE_CODE" "$INSTALL_CODEX" "$INSTALL_CURSOR" "$INSTALL_GEMINI_CLI" "$INSTALL_DROID" "$STITCH_API_KEY" > "$HOME/.config/chezmoi/chezmoi.toml" <<'PY'
 import json
 import sys
 from pathlib import Path
@@ -227,20 +500,19 @@ config = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
 config["user_name"] = sys.argv[2]
 config["user_role_summary"] = sys.argv[3]
 config["user_stack_summary"] = sys.argv[4]
+config["memory_provider"] = sys.argv[5]
+config["obsidian_vault_path"] = sys.argv[6]
+config["install_claude_code"] = sys.argv[7]
+config["install_codex"] = sys.argv[8]
+config["install_cursor"] = sys.argv[9]
+config["install_gemini_cli"] = sys.argv[10]
+config["install_droid"] = sys.argv[11]
+config["stitch_api_key"] = sys.argv[12]
 
 order = [
     "user_name",
     "user_role_summary",
     "user_stack_summary",
-    "runtime_profile",
-    "capability_pack",
-    "profile_base",
-    "profile_selected",
-    "profile_mode",
-    "custom_enabled_mcps",
-    "custom_disabled_mcps",
-    "custom_enabled_permission_groups",
-    "custom_disabled_permission_groups",
     "selection_enabled_mcps",
     "selection_enabled_skills",
     "selection_enabled_agents",
@@ -248,8 +520,13 @@ order = [
     "selection_enabled_permissions",
     "memory_provider",
     "obsidian_vault_path",
-    "azure_devops_org",
-    "content_workspace",
+    "install_claude_code",
+    "install_codex",
+    "install_cursor",
+    "install_gemini_cli",
+    "install_droid",
+    "stitch_api_key",
+    "bw_gate_install",
 ]
 
 bool_keys = set()
@@ -282,42 +559,19 @@ bash "$BOOTSTRAP_SOURCE/scripts/bootstrap-wizard.sh" --source "$BOOTSTRAP_SOURCE
 
 python3 "$BOOTSTRAP_SOURCE/scripts/pack_state.py" legacy-config "$BOOTSTRAP_SOURCE" "$STATE_FILE" > "$CONFIG_STATE_JSON"
 
-RUNTIME_PROFILE="$(json_value "$CONFIG_STATE_JSON" runtime_profile)"
-CAPABILITY_PACK="$(json_value "$CONFIG_STATE_JSON" capability_pack)"
-PROFILE_BASE="$(json_value "$CONFIG_STATE_JSON" profile_base)"
 MEMORY_PROVIDER="$(json_value "$CONFIG_STATE_JSON" memory_provider)"
 OBSIDIAN_VAULT_PATH="$(json_value "$CONFIG_STATE_JSON" obsidian_vault_path)"
-AZURE_DEVOPS_ORG="$(json_value "$CONFIG_STATE_JSON" azure_devops_org)"
-CONTENT_WORKSPACE="$(json_value "$CONFIG_STATE_JSON" content_workspace)"
-CUSTOM_ENABLED_MCPS=()
-while IFS= read -r line; do
-  [ -n "$line" ] && CUSTOM_ENABLED_MCPS+=("$line")
-done < <(json_array_lines "$CONFIG_STATE_JSON" custom_enabled_mcps)
-
-CUSTOM_DISABLED_MCPS=()
-while IFS= read -r line; do
-  [ -n "$line" ] && CUSTOM_DISABLED_MCPS+=("$line")
-done < <(json_array_lines "$CONFIG_STATE_JSON" custom_disabled_mcps)
-
-CUSTOM_ENABLED_PERMISSION_GROUPS=()
-while IFS= read -r line; do
-  [ -n "$line" ] && CUSTOM_ENABLED_PERMISSION_GROUPS+=("$line")
-done < <(json_array_lines "$CONFIG_STATE_JSON" custom_enabled_permission_groups)
-
-CUSTOM_DISABLED_PERMISSION_GROUPS=()
-while IFS= read -r line; do
-  [ -n "$line" ] && CUSTOM_DISABLED_PERMISSION_GROUPS+=("$line")
-done < <(json_array_lines "$CONFIG_STATE_JSON" custom_disabled_permission_groups)
+INSTALL_CLAUDE_CODE="$(json_value "$CONFIG_STATE_JSON" install_claude_code)"
+INSTALL_CODEX="$(json_value "$CONFIG_STATE_JSON" install_codex)"
+INSTALL_CURSOR="$(json_value "$CONFIG_STATE_JSON" install_cursor)"
+INSTALL_GEMINI_CLI="$(json_value "$CONFIG_STATE_JSON" install_gemini_cli)"
+INSTALL_DROID="$(json_value "$CONFIG_STATE_JSON" install_droid)"
+STITCH_API_KEY="$(json_value "$CONFIG_STATE_JSON" stitch_api_key)"
 
 EFFECTIVE_MCPS=()
 while IFS= read -r line; do
   [ -n "$line" ] && EFFECTIVE_MCPS+=("$line")
 done < <(json_array_lines "$CONFIG_STATE_JSON" selection_enabled_mcps)
-
-EFFECTIVE_PERMISSION_GROUPS=()
-while IFS= read -r line; do
-  [ -n "$line" ] && EFFECTIVE_PERMISSION_GROUPS+=("$line")
-done < <(json_array_lines "$CONFIG_STATE_JSON" selection_enabled_permissions)
 
 # User profile fields now come from the wizard Settings tab
 USER_NAME="$(json_value "$CONFIG_STATE_JSON" user_name 2>/dev/null || true)"
@@ -328,14 +582,20 @@ if [ -z "$USER_NAME" ]; then
   USER_NAME="$(whoami)"
 fi
 
+if [ -z "$OBSIDIAN_VAULT_PATH" ]; then
+  OBSIDIAN_VAULT_PATH="$(detect_existing_obsidian_vault_path)"
+fi
+
 if [ "$MEMORY_PROVIDER" = "obsidian" ] && [ -z "$OBSIDIAN_VAULT_PATH" ]; then
   printf "  ${Y}>${R} Obsidian selected without a vault path - falling back to builtin memory\n"
   MEMORY_PROVIDER="builtin"
 fi
 
+if [ -z "$STITCH_API_KEY" ]; then
+  STITCH_API_KEY="$(detect_existing_stitch_api_key)"
+fi
+
 printf "\n${B}Planned configuration${R}\n"
-printf "  Runtime profile: ${C}%s${R}\n" "$RUNTIME_PROFILE"
-printf "  Capability pack: ${C}%s${R}\n" "$CAPABILITY_PACK"
 printf "  Display name: ${C}%s${R}\n" "$USER_NAME"
 printf "  Role: ${D}%s${R}\n" "$USER_ROLE_SUMMARY"
 printf "  Stack: ${D}%s${R}\n" "$USER_STACK_SUMMARY"
@@ -343,23 +603,27 @@ printf "  Memory provider: ${C}%s${R}\n" "$MEMORY_PROVIDER"
 if [ "$MEMORY_PROVIDER" = "obsidian" ] && [ -n "$OBSIDIAN_VAULT_PATH" ]; then
   printf "  Obsidian vault: ${D}%s${R}\n" "$OBSIDIAN_VAULT_PATH"
 fi
-if [ -n "$AZURE_DEVOPS_ORG" ]; then
-  printf "  Azure DevOps org: ${C}%s${R}\n" "$AZURE_DEVOPS_ORG"
+if [ -n "$STITCH_API_KEY" ]; then
+  printf "  Stitch API key: ${D}configured${R}\n"
+else
+  printf "  Stitch API key: ${D}not configured${R}\n"
 fi
-if [ -n "$CONTENT_WORKSPACE" ]; then
-  printf "  Content workspace: ${D}%s${R}\n" "$CONTENT_WORKSPACE"
-fi
-if [ "$RUNTIME_PROFILE" = "custom" ]; then
-  printf "  Custom base: ${C}%s${R}\n" "$PROFILE_BASE"
-  printf "  Custom enabled MCPs: ${D}%s${R}\n" "$(join_by ', ' ${CUSTOM_ENABLED_MCPS[@]+"${CUSTOM_ENABLED_MCPS[@]}"})"
-  printf "  Custom enabled permission groups: ${D}%s${R}\n" "$(join_by ', ' ${CUSTOM_ENABLED_PERMISSION_GROUPS[@]+"${CUSTOM_ENABLED_PERMISSION_GROUPS[@]}"})"
+OPTIONAL_INSTALLS=()
+if setting_enabled "$INSTALL_CLAUDE_CODE"; then OPTIONAL_INSTALLS+=("claude"); fi
+if setting_enabled "$INSTALL_CODEX"; then OPTIONAL_INSTALLS+=("codex"); fi
+if setting_enabled "$INSTALL_CURSOR"; then OPTIONAL_INSTALLS+=("cursor"); fi
+if setting_enabled "$INSTALL_GEMINI_CLI"; then OPTIONAL_INSTALLS+=("gemini"); fi
+if setting_enabled "$INSTALL_DROID"; then OPTIONAL_INSTALLS+=("droid"); fi
+if [ ${#OPTIONAL_INSTALLS[@]} -gt 0 ]; then
+  printf "  Optional installs: ${D}%s${R}\n" "$(join_by ', ' "${OPTIONAL_INSTALLS[@]}")"
+else
+  printf "  Optional installs: ${D}none${R}\n"
 fi
 NEEDS_BITWARDEN=false
-if contains_word github "${EFFECTIVE_MCPS[@]}" || contains_word aws "${EFFECTIVE_MCPS[@]}" || contains_word tailscale "${EFFECTIVE_MCPS[@]}" || contains_word exa "${EFFECTIVE_MCPS[@]}" || contains_word firecrawl "${EFFECTIVE_MCPS[@]}" || contains_word fal-ai "${EFFECTIVE_MCPS[@]}" || contains_word telegram "${EFFECTIVE_MCPS[@]}"; then
+if contains_word github "${EFFECTIVE_MCPS[@]}" || contains_word aws "${EFFECTIVE_MCPS[@]}" || contains_word tailscale "${EFFECTIVE_MCPS[@]}" || contains_word obsidian "${EFFECTIVE_MCPS[@]}" || contains_word magic "${EFFECTIVE_MCPS[@]}" || contains_word replicate "${EFFECTIVE_MCPS[@]}"; then
   NEEDS_BITWARDEN=true
 fi
 printf "  Effective MCPs: ${D}%s${R}\n" "$(join_by ', ' "${EFFECTIVE_MCPS[@]}")"
-printf "  Permission groups: ${D}%s${R}\n" "$(join_by ', ' "${EFFECTIVE_PERMISSION_GROUPS[@]}")"
 
 MISSING=()
 command -v git  >/dev/null 2>&1 || MISSING+=("git")
@@ -368,15 +632,39 @@ command -v npx  >/dev/null 2>&1 || MISSING+=("npx")
 if contains_word http "${EFFECTIVE_MCPS[@]}" || contains_word aws "${EFFECTIVE_MCPS[@]}"; then
   command -v uvx >/dev/null 2>&1 || MISSING+=("uvx")
 fi
+if contains_word firebase "${EFFECTIVE_MCPS[@]}"; then
+  command -v firebase >/dev/null 2>&1 || MISSING+=("firebase")
+fi
 
 if [ ${#MISSING[@]} -gt 0 ]; then
   printf "  ${Y}>${R} Missing tools: ${MISSING[*]}\n"
   if contains_word uvx "${MISSING[@]}"; then
-    printf "  ${D}uvx is only needed for MCPs in profiles that include http or aws.${R}\n"
+    printf "  ${D}uvx is only needed when the selected MCP set includes http or aws.${R}\n"
   fi
 fi
 
 printf "\n"
+
+# --- Optional tool installs ---
+printf "${B}Installing selected tools${R}\n"
+if setting_enabled "$INSTALL_CLAUDE_CODE"; then
+  install_claude_code_cli
+fi
+if setting_enabled "$INSTALL_CODEX"; then
+  install_codex_cli
+fi
+if setting_enabled "$INSTALL_CURSOR"; then
+  install_cursor_cli
+fi
+if setting_enabled "$INSTALL_GEMINI_CLI"; then
+  install_gemini_cli
+fi
+if setting_enabled "$INSTALL_DROID"; then
+  install_droid_cli
+fi
+if [ "$MEMORY_PROVIDER" = "obsidian" ] && ! have_obsidian; then
+  printf "  ${D}Obsidian will be installed during chezmoi apply if it is still missing.${R}\n"
+fi
 
 # --- Write chezmoi config (Bitwarden-backed MCPs disabled for initial apply) ---
 printf "\n${D}Writing chezmoi config...${R}\n"
@@ -446,17 +734,14 @@ if [ "$NEEDS_BITWARDEN" = "true" ]; then
 
       # --- Ensure required Bitwarden items exist ---
       BW_ITEMS=()
-      if contains_word exa "${EFFECTIVE_MCPS[@]}"; then
-        BW_ITEMS+=("exa-api-key:Exa:https://exa.ai")
+      if contains_word magic "${EFFECTIVE_MCPS[@]}"; then
+        BW_ITEMS+=("magic-api-key:Magic:https://21st.dev")
       fi
-      if contains_word firecrawl "${EFFECTIVE_MCPS[@]}"; then
-        BW_ITEMS+=("firecrawl-api-key:Firecrawl:https://firecrawl.dev")
+      if contains_word replicate "${EFFECTIVE_MCPS[@]}"; then
+        BW_ITEMS+=("replicate-api-token:Replicate:https://replicate.com")
       fi
-      if contains_word fal-ai "${EFFECTIVE_MCPS[@]}"; then
-        BW_ITEMS+=("fal-api-key:fal.ai:https://fal.ai")
-      fi
-      if contains_word telegram "${EFFECTIVE_MCPS[@]}"; then
-        BW_ITEMS+=("mcp-telegram:Telegram Bot:https://t.me/BotFather")
+      if contains_word obsidian "${EFFECTIVE_MCPS[@]}"; then
+        BW_ITEMS+=("Obsidian Local REST API:Obsidian Local REST API:https://127.0.0.1:27124")
       fi
       ITEMS_MISSING=false
       if [ ${#BW_ITEMS[@]} -gt 0 ]; then
@@ -471,7 +756,7 @@ if [ "$NEEDS_BITWARDEN" = "true" ]; then
 
       if [ "$ITEMS_MISSING" = "true" ] && [ ${#BW_ITEMS[@]} -gt 0 ]; then
         printf "\n${B}API key setup${R}\n"
-        printf "  ${D}Create free accounts and paste API keys below.${R}\n"
+        printf "  ${D}Create free accounts or reuse the existing local config and paste any missing keys below.${R}\n"
         printf "  ${D}Press Enter to skip any service.${R}\n\n"
         for entry in "${BW_ITEMS[@]}"; do
           ITEM_NAME="${entry%%:*}"
@@ -481,6 +766,31 @@ if [ "$NEEDS_BITWARDEN" = "true" ]; then
           if bw get password "$ITEM_NAME" >/dev/null 2>&1; then
             printf "  ${G}+${R} %s - already configured\n" "$ITEM_LABEL"
           else
+            EXISTING_SECRET=""
+            case "$ITEM_NAME" in
+              magic-api-key)
+                EXISTING_SECRET="$(detect_existing_server_env_secret magic API_KEY)"
+                ;;
+              replicate-api-token)
+                EXISTING_SECRET="$(detect_existing_server_env_secret replicate REPLICATE_API_TOKEN)"
+                ;;
+              "Obsidian Local REST API")
+                EXISTING_SECRET="$(detect_existing_obsidian_api_key)"
+                ;;
+            esac
+
+            if [ -n "$EXISTING_SECRET" ]; then
+              TEMPLATE=$(bw get template item)
+              echo "$TEMPLATE" | \
+                jq --arg name "$ITEM_NAME" --arg pw "$EXISTING_SECRET" \
+                  '.name = $name | .login.password = $pw | .type = 1' | \
+                bw encode | bw create item >/dev/null 2>&1
+              if bw get password "$ITEM_NAME" >/dev/null 2>&1; then
+                printf "  ${G}+${R} %s imported from existing local config\n" "$ITEM_LABEL"
+                continue
+              fi
+            fi
+
             printf "  ${C}%s${R} ${D}(%s)${R}\n" "$ITEM_LABEL" "$ITEM_URL"
             printf "  API key: "
             read -rs API_KEY
@@ -512,7 +822,7 @@ if [ "$NEEDS_BITWARDEN" = "true" ]; then
       # would normally skip them on the second apply and secret-backed MCPs
       # would never register. Clear the specific entryState entries so the
       # managed install scripts rerun exactly once with secrets available.
-      for script_entry in install-claude-mcps.sh install-claude-pack-assets.sh install-managed-skills.sh install-bw-gate.sh; do
+      for script_entry in install-claude-mcps.sh install-claude-pack-assets.sh install-managed-skills.sh install-bw-gate.sh install-obsidian.sh; do
         chezmoi state delete --bucket=entryState --key="$HOME/scripts/chezmoi/$script_entry" >/dev/null 2>&1 || true
       done
       chezmoi apply

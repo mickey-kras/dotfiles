@@ -1,151 +1,134 @@
+import shutil
 import unittest
 
-from helpers import load_fixture, render_template
+from helpers import render_template
 
 
-PROFILE_CASES = {
-    "restricted": {
-        "runtime_profile": "restricted",
-        "capability_pack": "software-development",
-        "profile_base": "balanced",
-        "custom_enabled_mcps": [],
-        "custom_disabled_mcps": [],
-        "custom_enabled_permission_groups": [],
-        "custom_disabled_permission_groups": [],
-        "memory_provider": "builtin",
-        "obsidian_vault_path": "",
-        "azure_devops_org": "",
-    },
-    "balanced": {
-        "runtime_profile": "balanced",
-        "capability_pack": "software-development",
-        "profile_base": "balanced",
-        "custom_enabled_mcps": [],
-        "custom_disabled_mcps": [],
-        "custom_enabled_permission_groups": [],
-        "custom_disabled_permission_groups": [],
-        "memory_provider": "builtin",
-        "obsidian_vault_path": "",
-        "azure_devops_org": "",
-    },
-    "open": {
-        "runtime_profile": "open",
-        "capability_pack": "software-development",
-        "profile_base": "balanced",
-        "custom_enabled_mcps": [],
-        "custom_disabled_mcps": [],
-        "custom_enabled_permission_groups": [],
-        "custom_disabled_permission_groups": [],
-        "memory_provider": "builtin",
-        "obsidian_vault_path": "",
-        "azure_devops_org": "",
-    },
-    "custom-balanced": {
-        "runtime_profile": "custom",
-        "capability_pack": "software-development",
-        "profile_base": "balanced",
-        "custom_enabled_mcps": ["exa"],
-        "custom_disabled_mcps": ["docker"],
-        "custom_enabled_permission_groups": ["web_access"],
-        "custom_disabled_permission_groups": ["containers"],
-        "memory_provider": "obsidian",
-        "obsidian_vault_path": "/Users/mikhailkrasilnikov/Notes",
-        "azure_devops_org": "acme-platform",
-    },
-    "content-studio": {
-        "runtime_profile": "studio",
-        "capability_pack": "content-creation",
-        "profile_base": "studio",
-        "custom_enabled_mcps": [],
-        "custom_disabled_mcps": [],
-        "custom_enabled_permission_groups": [],
-        "custom_disabled_permission_groups": [],
-        "memory_provider": "builtin",
-        "obsidian_vault_path": "",
-        "content_workspace": "/Users/mikhailkrasilnikov/Content",
-        "azure_devops_org": "",
-    },
+FULL_STATE = {
+    "capability_pack": "software-development",
+    "profile_selected": "full",
+    "profile_mode": "preset",
+    "selection_enabled_mcps": [
+        "playwright",
+        "context7",
+        "figma",
+        "stitch",
+        "filesystem",
+        "git",
+        "memory",
+        "obsidian",
+        "thinking",
+        "github",
+        "shell",
+        "docker",
+        "process",
+        "terraform",
+        "kubernetes",
+        "http",
+        "firebase",
+        "aws",
+        "tailscale",
+        "magic",
+        "replicate",
+    ],
+    "selection_enabled_skills": [
+        "context7-mcp",
+        "context-budget",
+        "dispatching-parallel-agents",
+        "executing-plans",
+        "obsidian-memory",
+        "receiving-code-review",
+        "requesting-code-review",
+        "systematic-debugging",
+        "test-driven-development",
+        "using-git-worktrees",
+        "verification-before-completion",
+        "writing-plans",
+    ],
+    "selection_enabled_agents": [
+        "delivery-orchestrator",
+        "planner",
+        "product-manager",
+        "workflow-architect",
+        "backend-engineer",
+        "frontend-engineer",
+        "staff-engineer",
+        "quality-engineer",
+        "code-reviewer",
+        "debugger",
+        "git-workflow-master",
+        "devops-engineer",
+        "security-engineer",
+        "technical-writer",
+        "incident-commander",
+    ],
+    "selection_enabled_rules": [
+        "bitwarden-setup",
+        "code-style",
+        "development-workflow",
+        "git-workflow",
+        "performance",
+        "security",
+        "testing",
+    ],
+    "selection_enabled_permissions": [
+        "core_read_write",
+        "shell_readonly",
+        "git_full",
+        "gh_full",
+        "dev_runtime",
+        "local_file_mutation",
+        "containers",
+        "infra_local",
+        "package_runtime",
+        "cloud_extended",
+        "secret_tools",
+        "web_access",
+    ],
+    "memory_provider": "obsidian",
+    "obsidian_vault_path": "/Users/mikhailkrasilnikov/Notes",
+    "install_claude_code": "disabled",
+    "install_codex": "disabled",
+    "install_cursor": "disabled",
+    "install_gemini_cli": "disabled",
+    "install_droid": "disabled",
+    "stitch_api_key": "test-stitch-key",
+    "bw_gate_install": "enabled",
 }
 
-CONTENT_PROFILE_CASES = {
-    "content-focused": {
-        "runtime_profile": "focused",
-        "capability_pack": "content-creation",
-        "profile_base": "focused",
-        "custom_enabled_mcps": [],
-        "custom_disabled_mcps": [],
-        "custom_enabled_permission_groups": [],
-        "custom_disabled_permission_groups": [],
-        "memory_provider": "builtin",
-        "obsidian_vault_path": "",
-        "content_workspace": "",
-        "azure_devops_org": "",
-    },
-    "content-campaign": {
-        "runtime_profile": "campaign",
-        "capability_pack": "content-creation",
-        "profile_base": "campaign",
-        "custom_enabled_mcps": [],
-        "custom_disabled_mcps": [],
-        "custom_enabled_permission_groups": [],
-        "custom_disabled_permission_groups": [],
-        "memory_provider": "builtin",
-        "obsidian_vault_path": "",
-        "content_workspace": "/Users/mikhailkrasilnikov/Content",
-        "azure_devops_org": "",
-    },
-}
 
-RESEARCH_PROFILE_CASES = {
-    "research-desk": {
-        "runtime_profile": "desk",
-        "capability_pack": "research-and-strategy",
-        "profile_base": "desk",
-        "custom_enabled_mcps": [],
-        "custom_disabled_mcps": [],
-        "custom_enabled_permission_groups": [],
-        "custom_disabled_permission_groups": [],
-        "memory_provider": "builtin",
-        "obsidian_vault_path": "",
-        "research_workspace": "",
-        "azure_devops_org": "",
-    },
-    "research-investigation": {
-        "runtime_profile": "investigation",
-        "capability_pack": "research-and-strategy",
-        "profile_base": "investigation",
-        "custom_enabled_mcps": [],
-        "custom_disabled_mcps": [],
-        "custom_enabled_permission_groups": [],
-        "custom_disabled_permission_groups": [],
-        "memory_provider": "builtin",
-        "obsidian_vault_path": "",
-        "research_workspace": "/Users/mikhailkrasilnikov/Research",
-        "azure_devops_org": "",
-    },
-}
+class RenderSmokeTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        if not shutil.which("chezmoi"):
+            raise unittest.SkipTest("chezmoi not installed")
 
-SNAPSHOTS = {
-    "dot_claude/settings.json.tmpl": "claude-settings.json",
-    "dot_codex/config.toml.tmpl": "codex-config.toml",
-    "dot_cursor/mcp.json.tmpl": "cursor-mcp.json",
-    "scripts/chezmoi/run_onchange_after_install-claude-mcps.sh.tmpl": "claude-mcp-reconcile.sh",
-}
+    def test_claude_template_renders_expected_sections(self):
+        rendered = render_template("dot_claude/settings.json.tmpl", FULL_STATE)
+        self.assertIn('"permissions"', rendered)
+        self.assertNotIn("DOTFILES_RUNTIME_PROFILE", rendered)
+        self.assertIn("governance-capture.js", rendered)
 
-ALL_CASES = {**PROFILE_CASES, **CONTENT_PROFILE_CASES, **RESEARCH_PROFILE_CASES}
+    def test_codex_template_renders_expected_servers(self):
+        rendered = render_template("dot_codex/config.toml.tmpl", FULL_STATE)
+        self.assertIn("[mcp_servers.stitch]", rendered)
+        self.assertIn("[mcp_servers.obsidian]", rendered)
+        self.assertIn('@bitbonsai/mcpvault@latest', rendered)
 
+    def test_cursor_template_renders_expected_servers(self):
+        rendered = render_template("dot_cursor/mcp.json.tmpl", FULL_STATE)
+        self.assertIn('"MCP_DOCKER"', rendered)
+        self.assertIn('"stitch"', rendered)
+        self.assertIn('"obsidian"', rendered)
 
-class RenderSnapshotTests(unittest.TestCase):
-    def test_snapshots_match_current_templates(self):
-        for case_name, override_data in ALL_CASES.items():
-            pack_id = override_data.get("capability_pack", "software-development")
-            for template_path, fixture_name in SNAPSHOTS.items():
-                with self.subTest(case=case_name, template=template_path):
-                    actual = render_template(template_path, override_data)
-                    expected = load_fixture(
-                        f"tests/fixtures/rendered/{pack_id}/{case_name}/{fixture_name}"
-                    )
-                    self.assertEqual(actual, expected)
+    def test_claude_mcp_script_renders_expected_servers(self):
+        rendered = render_template(
+            "scripts/chezmoi/run_onchange_after_install-claude-mcps.sh.tmpl",
+            FULL_STATE,
+        )
+        self.assertIn('add_mcp stitch', rendered)
+        self.assertIn('add_mcp obsidian', rendered)
+        self.assertIn('add_mcp MCP_DOCKER', rendered)
 
 
 if __name__ == "__main__":

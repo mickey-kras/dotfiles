@@ -55,17 +55,24 @@ export function stateFromFlatData(pack, flatData = {}) {
         permissions: {
           enabled: flatData.selection_enabled_permissions || []
         },
-        settings: {
-          memory_provider: flatData.memory_provider,
-          obsidian_vault_path: flatData.obsidian_vault_path,
-          azure_devops_org: flatData.azure_devops_org,
-          content_workspace: flatData.content_workspace
-        }
+        settings: settingsFromFlatData(pack, flatData)
       }
     };
   }
 
   return legacyDataToSelection(pack, flatData);
+}
+
+function settingsFromFlatData(pack, flatData = {}) {
+  const settings = {};
+
+  for (const settingId of Object.keys(pack.settings_schema || {})) {
+    if (Object.prototype.hasOwnProperty.call(flatData, settingId)) {
+      settings[settingId] = flatData[settingId];
+    }
+  }
+
+  return settings;
 }
 
 export function defaultSettings(pack) {
@@ -195,9 +202,9 @@ function removeValues(values, valuesToRemove = []) {
 }
 
 export function legacyDataToSelection(pack, legacyData = {}) {
-  const defaultProfile = pack.defaults?.profile || "balanced";
+  const defaultProfile = pack.defaults?.profile || "full";
   const runtimeProfile = legacyData.runtime_profile || defaultProfile;
-  const baseProfile = legacyData.profile_base || pack.defaults?.profile || "balanced";
+  const baseProfile = legacyData.profile_base || pack.defaults?.profile || "full";
   const profileId = runtimeProfile === "custom" ? baseProfile : runtimeProfile;
 
   const selection = getProfileSelection(pack, profileId);
@@ -216,9 +223,7 @@ export function legacyDataToSelection(pack, legacyData = {}) {
 
   selection.settings = {
     ...(selection.settings || {}),
-    memory_provider: legacyData.memory_provider || selection.settings?.memory_provider,
-    obsidian_vault_path: legacyData.obsidian_vault_path || selection.settings?.obsidian_vault_path,
-    azure_devops_org: legacyData.azure_devops_org || selection.settings?.azure_devops_org
+    ...settingsFromFlatData(pack, legacyData)
   };
 
   return {
@@ -253,7 +258,7 @@ function resolvedHardBans(pack, profileId) {
 }
 
 export function resolveState(pack, inputState) {
-  const requestedProfileId = inputState?.profile?.selected || pack.defaults?.profile || "balanced";
+  const requestedProfileId = inputState?.profile?.selected || pack.defaults?.profile || "full";
   const requestedMode = inputState?.profile?.mode || "preset";
   const normalizedSelection = normalizeSelection(pack, inputState?.selection || {});
   const matchedProfile = matchProfile(pack, normalizedSelection);

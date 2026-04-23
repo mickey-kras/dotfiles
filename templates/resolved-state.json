@@ -7,10 +7,11 @@
 {{- end -}}
 {{- $packPath := printf "packs/%s/pack.yaml" $packId -}}
 {{- $pack := include $packPath | fromYaml -}}
-{{- $defaultProfile := index $pack "defaults" "profile" | default "balanced" -}}
+{{- $defaultProfile := index $pack "defaults" "profile" | default "full" -}}
 {{- $requestedProfile := .runtime_profile | default $defaultProfile -}}
 {{- $selectedProfile := $requestedProfile -}}
 {{- $profileMode := "preset" -}}
+{{- $hasExplicitSelection := or (hasKey . "selection_enabled_mcps") (hasKey . "selection_enabled_skills") (hasKey . "selection_enabled_agents") (hasKey . "selection_enabled_rules") (hasKey . "selection_enabled_permissions") -}}
 {{- $selectedMcps := list -}}
 {{- $selectedSkills := list -}}
 {{- $selectedAgents := list -}}
@@ -23,18 +24,35 @@
 {{- range $settingName, $value := index $pack "defaults" "selection" "settings" | default (dict) -}}
   {{- $_ := set $defaultSettings $settingName $value -}}
 {{- end -}}
-{{- if hasKey . "profile_selected" -}}
-  {{- $selectedProfile = .profile_selected | default $defaultProfile -}}
-  {{- $profileMode = .profile_mode | default "preset" -}}
+{{- if or (hasKey . "profile_selected") $hasExplicitSelection -}}
+  {{- if hasKey . "profile_selected" -}}
+    {{- $selectedProfile = .profile_selected | default $defaultProfile -}}
+    {{- $profileMode = .profile_mode | default "preset" -}}
+  {{- end -}}
   {{- $profile := index $pack "profiles" $selectedProfile -}}
   {{- range $settingName, $value := index $profile "selection" "settings" | default (dict) -}}
     {{- $_ := set $defaultSettings $settingName $value -}}
   {{- end -}}
-  {{- $selectedMcps = .selection_enabled_mcps | default (list) -}}
-  {{- $selectedSkills = .selection_enabled_skills | default (list) -}}
-  {{- $selectedAgents = .selection_enabled_agents | default (list) -}}
-  {{- $selectedRules = .selection_enabled_rules | default (list) -}}
-  {{- $selectedPermissions = .selection_enabled_permissions | default (list) -}}
+  {{- $selectedMcps = index $profile "selection" "mcps" "enabled" | default (list) -}}
+  {{- $selectedSkills = index $profile "selection" "skills" "enabled" | default (list) -}}
+  {{- $selectedAgents = index $profile "selection" "agents" "enabled" | default (list) -}}
+  {{- $selectedRules = index $profile "selection" "rules" "enabled" | default (list) -}}
+  {{- $selectedPermissions = index $profile "selection" "permissions" "enabled" | default (list) -}}
+  {{- if hasKey . "selection_enabled_mcps" -}}
+    {{- $selectedMcps = .selection_enabled_mcps | default $selectedMcps -}}
+  {{- end -}}
+  {{- if hasKey . "selection_enabled_skills" -}}
+    {{- $selectedSkills = .selection_enabled_skills | default $selectedSkills -}}
+  {{- end -}}
+  {{- if hasKey . "selection_enabled_agents" -}}
+    {{- $selectedAgents = .selection_enabled_agents | default $selectedAgents -}}
+  {{- end -}}
+  {{- if hasKey . "selection_enabled_rules" -}}
+    {{- $selectedRules = .selection_enabled_rules | default $selectedRules -}}
+  {{- end -}}
+  {{- if hasKey . "selection_enabled_permissions" -}}
+    {{- $selectedPermissions = .selection_enabled_permissions | default $selectedPermissions -}}
+  {{- end -}}
 {{- else -}}
   {{- if eq $requestedProfile "custom" -}}
     {{- $profileMode = "custom" -}}
