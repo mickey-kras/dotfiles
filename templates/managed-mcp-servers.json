@@ -24,7 +24,7 @@
       "--"
       "/bin/bash"
       "-c"
-      "exec npx -y mcp-remote@latest https://stitch.googleapis.com/mcp --header \"X-Goog-Api-Key:$STITCH_API_KEY\""
+      "exec npx -y mcp-remote@latest https://stitch.googleapis.com/mcp --header \"X-Goog-Api-Key:$STITCH_API_KEY\" 2> >(grep --line-buffered -v 'Using custom headers' >&2)"
     )
   ) -}}
 {{- end -}}
