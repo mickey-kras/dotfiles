@@ -1,22 +1,40 @@
 import json
+import os
 import subprocess
 import tempfile
+from contextlib import contextmanager
 from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
+STUBBED_TOOLS = ("bw", "docker", "firebase", "uvx")
+
+
+@contextmanager
+def _stubbed_env():
+    with tempfile.TemporaryDirectory(prefix="dotfiles-bin-") as bin_dir:
+        for name in STUBBED_TOOLS:
+            target = Path(bin_dir) / name
+            target.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
+            target.chmod(0o755)
+
+        env = os.environ.copy()
+        env["PATH"] = f"{bin_dir}:{env.get('PATH', '')}"
+        yield env
 
 
 def run_chezmoi(*args, input_text=None):
     command = ["chezmoi", "execute-template", "--source", str(ROOT), *args]
-    result = subprocess.run(
-        command,
-        input=input_text,
-        text=True,
-        capture_output=True,
-        check=True,
-    )
-    return result.stdout
+    with _stubbed_env() as env:
+        result = subprocess.run(
+            command,
+            input=input_text,
+            text=True,
+            capture_output=True,
+            check=True,
+            env=env,
+        )
+        return result.stdout
 
 
 def load_yaml_as_json(path):
