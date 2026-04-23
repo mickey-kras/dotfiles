@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+# bw-session-set — get the Bitwarden session from the Keychain and publish it
+# via `launchctl setenv` so every process in this login session can read it
+# without triggering Touch ID again.
+#
+# Usage:  bw-session-set
+#
+# The session is held only in the launchd-level env (not on disk). Goes away
+# on logout/reboot, which is what we want.
+set -euo pipefail
+
+HELPER="$HOME/.local/bin/bw-gate-helper"
+if [ ! -x "$HELPER" ]; then
+  echo "ERROR: bw-gate-helper not found at $HELPER" >&2
+  exit 1
+fi
+
+BW="$("$HELPER" get 2>/dev/null || true)"
+if [ -z "$BW" ]; then
+  echo "ERROR: could not get a Bitwarden session from Keychain. Run 'bw-gate unlock' first." >&2
+  exit 1
+fi
+
+/bin/launchctl setenv BW_SESSION "$BW"
+echo "✔ BW_SESSION set for this login session (via launchctl). New shells and MCP servers will inherit it."

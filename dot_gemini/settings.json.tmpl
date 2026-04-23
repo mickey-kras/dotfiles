@@ -1,13 +1,80 @@
+{{- $runtime := includeTemplate "templates/resolved-state.json" . | fromJson -}}
+{{- $resolved := $runtime.resolved -}}
 {{- $servers := includeTemplate "templates/managed-mcp-servers.json" . | fromJson -}}
+{{- $allow := index $resolved "permissions" "allow" | default (list) -}}
+{{- $deny := index $resolved "permissions" "deny" | default (list) -}}
 {
-  "security": {
-    "auth": {
-      "selectedType": "oauth-personal"
-    }
+  "permissions": {
+    "allow": [
+{{- range $i, $entry := $allow }}
+      {{ $entry | toJson }}{{ if lt (add1 $i) (len $allow) }},{{ end }}
+{{- end }}
+    ],
+    "deny": [
+{{- range $i, $entry := $deny }}
+      {{ $entry | toJson }}{{ if lt (add1 $i) (len $deny) }},{{ end }}
+{{- end }}
+    ]
   },
   "general": {
     "defaultApprovalMode": "auto_edit",
-    "enableAutoUpdate": true
+    "enableAutoUpdate": false
   },
-  "mcpServers": {{ $servers | toPrettyJson | nindent 2 }}
+  "mcpServers": {{ $servers | toPrettyJson | nindent 2 }},
+  "hooks": {
+    "BeforeTool": [
+      {
+        "matcher": "run_shell_command",
+        "hooks": [
+          {
+            "name": "block-no-verify",
+            "type": "command",
+            "command": "node $HOME/.claude/hooks/scripts/block-no-verify.js"
+          },
+          {
+            "name": "governance-capture",
+            "type": "command",
+            "command": "node $HOME/.claude/hooks/scripts/governance-capture.js"
+          }
+        ]
+      },
+      {
+        "matcher": "write_file|replace",
+        "hooks": [
+          {
+            "name": "config-protection",
+            "type": "command",
+            "command": "node $HOME/.claude/hooks/scripts/config-protection.js"
+          }
+        ]
+      },
+      {
+        "matcher": "write_file|replace|edit_file",
+        "hooks": [
+          {
+            "name": "security-review",
+            "type": "command",
+            "command": "python3 $HOME/.claude/hooks/scripts/security-review.py"
+          }
+        ]
+      }
+    ],
+    "AfterTool": [
+      {
+        "matcher": ".*",
+        "hooks": [
+          {
+            "name": "quality-gate",
+            "type": "command",
+            "command": "node $HOME/.claude/hooks/scripts/quality-gate.js"
+          },
+          {
+            "name": "post-edit-format",
+            "type": "command",
+            "command": "node $HOME/.claude/hooks/scripts/post-edit-format.js"
+          }
+        ]
+      }
+    ]
+  }
 }

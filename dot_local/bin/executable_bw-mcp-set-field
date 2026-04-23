@@ -1,0 +1,131 @@
+#!/usr/bin/env node
+// bw-mcp-set-field — update a single custom field on a bw item in place.
+//
+// Usage:
+//   bw-mcp-set-field <bw-item-name> <field-name>
+//
+// Reads the new value from stdin with echo off (so it isn't logged).
+// The secret never lands on disk; it streams from terminal → process env →
+// bw edit. Session comes from the macOS Keychain via bw-gate-helper.
+//
+// Example:
+//   bw-mcp-set-field mcp-github GITHUB_PERSONAL_ACCESS_TOKEN
+//   # prompt: paste the new value, press Enter.
+
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
+import { spawnSync } from "node:child_process";
+
+function fail(message) {
+  console.error(message);
+  process.exit(1);
+}
+
+function getSession() {
+  if (process.env.BW_SESSION) return process.env.BW_SESSION.trim();
+  if (process.platform === "darwin") {
+    const helperPath = path.join(os.homedir(), ".local/bin/bw-gate-helper");
+    if (fs.existsSync(helperPath)) {
+      const helper = spawnSync(helperPath, ["get"], {
+        encoding: "utf8",
+        stdio: ["inherit", "pipe", "inherit"],
+      });
+      if (helper.status === 0 && helper.stdout) return helper.stdout.trim();
+    }
+  }
+  return "";
+}
+
+function runBw(args, session) {
+  return spawnSync("bw", args, {
+    encoding: "utf8",
+    env: { ...process.env, BW_SESSION: session },
+  });
+}
+
+// Prompt without echo. Returns a Promise<string>.
+function promptHidden(prompt) {
+  return new Promise((resolve, reject) => {
+    if (!process.stdin.isTTY) {
+      reject(new Error("stdin is not a TTY; cannot prompt for hidden input"));
+      return;
+    }
+    process.stderr.write(prompt);
+    const wasRaw = process.stdin.isRaw;
+    process.stdin.setRawMode(true);
+    process.stdin.resume();
+    let buf = "";
+    const onData = (chunk) => {
+      for (const byte of chunk) {
+        if (byte === 0x03) {           // Ctrl-C
+          process.stdin.setRawMode(wasRaw);
+          process.stdin.removeListener("data", onData);
+          process.stderr.write("\n");
+          process.exit(130);
+        }
+        if (byte === 0x0a || byte === 0x0d) {  // LF or CR
+          process.stdin.setRawMode(wasRaw);
+          process.stdin.pause();
+          process.stdin.removeListener("data", onData);
+          process.stderr.write("\n");
+          resolve(buf);
+          return;
+        }
+        if (byte === 0x7f || byte === 0x08) {  // Backspace / Delete
+          buf = buf.slice(0, -1);
+          continue;
+        }
+        if (byte < 0x20) continue;      // ignore other control chars
+        buf += String.fromCharCode(byte);
+      }
+    };
+    process.stdin.on("data", onData);
+  });
+}
+
+const [, , itemName, fieldName] = process.argv;
+if (!itemName || !fieldName) {
+  fail("Usage: bw-mcp-set-field <bw-item-name> <field-name>");
+}
+
+const session = getSession();
+if (!session) fail("ERROR: No Bitwarden session. Run 'bw-gate unlock' first.");
+
+const status = runBw(["status", "--session", session], session);
+let payload;
+try { payload = JSON.parse(status.stdout); }
+catch { fail("ERROR: could not parse bw status output."); }
+if (payload.status !== "unlocked") {
+  fail(`ERROR: Bitwarden status is '${payload.status}'. Run 'bw-gate unlock'.`);
+}
+
+const listed = runBw(["list", "items", "--search", itemName, "--session", session], session);
+if (listed.status !== 0) fail(`ERROR: bw list failed: ${listed.stderr || listed.stdout}`);
+const items = JSON.parse(listed.stdout);
+const exact = items.filter((i) => i.name === itemName);
+if (exact.length === 0) fail(`ERROR: Bitwarden item '${itemName}' not found.`);
+if (exact.length > 1) fail(`ERROR: Multiple items matched '${itemName}'. Rename or use IDs.`);
+const id = exact[0].id;
+
+const get = runBw(["get", "item", id, "--session", session], session);
+if (get.status !== 0) fail(`ERROR: bw get failed: ${get.stderr || get.stdout}`);
+const item = JSON.parse(get.stdout);
+
+const newValue = await promptHidden(`New value for '${fieldName}' on '${itemName}' (hidden): `);
+if (!newValue) fail("ERROR: empty value; aborting.");
+
+item.fields = item.fields || [];
+const existing = item.fields.find((f) => f.name === fieldName);
+if (existing) {
+  existing.value = newValue;
+  if (existing.type == null) existing.type = 1;
+} else {
+  item.fields.push({ name: fieldName, value: newValue, type: 1, linkedId: null });
+}
+
+const encoded = Buffer.from(JSON.stringify(item)).toString("base64");
+const edit = runBw(["edit", "item", id, encoded, "--session", session], session);
+if (edit.status !== 0) fail(`ERROR: bw edit failed: ${edit.stderr || edit.stdout}`);
+
+console.error(`✔ updated '${fieldName}' on '${itemName}'`);

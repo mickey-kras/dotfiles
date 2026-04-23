@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+# bw-aws-export — print shell export commands for AWS credentials from Bitwarden.
+#
+# Usage:  eval "$(bw-aws-export)"
+#
+# Reads custom fields AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY from the
+# 'mcp-aws' Bitwarden item. Session comes from the macOS Keychain via bw-gate
+# (Touch ID). No credentials are ever written to disk.
+set -euo pipefail
+exec "$HOME/.local/bin/bw-mcp" mcp-aws \
+  "AWS_ACCESS_KEY_ID=AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY=AWS_SECRET_ACCESS_KEY" -- \
+  /bin/bash -c 'printf "export AWS_ACCESS_KEY_ID=%q\nexport AWS_SECRET_ACCESS_KEY=%q\n" "$AWS_ACCESS_KEY_ID" "$AWS_SECRET_ACCESS_KEY"'

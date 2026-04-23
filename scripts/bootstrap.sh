@@ -741,7 +741,7 @@ if [ "$NEEDS_BITWARDEN" = "true" ]; then
         BW_ITEMS+=("replicate-api-token:Replicate:https://replicate.com")
       fi
       if contains_word obsidian "${EFFECTIVE_MCPS[@]}"; then
-        BW_ITEMS+=("Obsidian Local REST API:Obsidian Local REST API:https://127.0.0.1:27124")
+        BW_ITEMS+=("mcp-obsidian:Obsidian Local REST API:https://127.0.0.1:27124")
       fi
       ITEMS_MISSING=false
       if [ ${#BW_ITEMS[@]} -gt 0 ]; then
@@ -774,7 +774,7 @@ if [ "$NEEDS_BITWARDEN" = "true" ]; then
               replicate-api-token)
                 EXISTING_SECRET="$(detect_existing_server_env_secret replicate REPLICATE_API_TOKEN)"
                 ;;
-              "Obsidian Local REST API")
+              mcp-obsidian)
                 EXISTING_SECRET="$(detect_existing_obsidian_api_key)"
                 ;;
             esac

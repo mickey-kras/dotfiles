@@ -133,7 +133,7 @@ def existing_obsidian_api_key() -> str:
         value = current.get("apiKey")
         if value and value != "__OBSIDIAN_API_KEY__":
             return value
-    bw_value = read_bw_password("Obsidian Local REST API")
+    bw_value = read_bw_password("mcp-obsidian")
     if bw_value:
         return bw_value
     return secrets.token_hex(32)
@@ -251,10 +251,10 @@ if path.exists():
     print(data.get("apiKey", ""))
 PY
 )"
-  if [ -n "$OBSIDIAN_API_KEY" ] && ! bw get password "Obsidian Local REST API" >/dev/null 2>&1; then
+  if [ -n "$OBSIDIAN_API_KEY" ] && ! bw get password "mcp-obsidian" >/dev/null 2>&1; then
     TEMPLATE="$(bw get template item)"
     echo "$TEMPLATE" | \
-      jq --arg name "Obsidian Local REST API" --arg pw "$OBSIDIAN_API_KEY" \
+      jq --arg name "mcp-obsidian" --arg pw "$OBSIDIAN_API_KEY" \
         '.name = $name | .login.password = $pw | .type = 1' | \
       bw encode | bw create item >/dev/null 2>&1 || true
   fi

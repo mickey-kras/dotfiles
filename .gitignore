@@ -25,3 +25,6 @@ scripts/wizard-tests/obj/
 
 # chezmoi local state
 .chezmoistate.boltdb
+
+# Locally-downloaded chezmoi binary (fetched on demand by scripts/bootstrap.sh)
+/bin/

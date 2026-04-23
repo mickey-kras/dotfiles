@@ -330,6 +330,14 @@ while IFS= read -r skill; do
       fail "codex skill/$skill - missing"
     fi
   fi
+
+  if command -v gemini >/dev/null 2>&1; then
+    if [ -f "$HOME/.gemini/skills/$skill/SKILL.md" ]; then
+      ok "gemini skill/$skill"
+    else
+      fail "gemini skill/$skill - missing"
+    fi
+  fi
 done < <(read_chezmoi_array selection_enabled_skills)
 
 [ -f "$HOME/.local/bin/bw-mcp" ] && ok "bw-mcp" || warn "bw-mcp - missing"

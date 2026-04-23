@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# Installs the global git hooks path and ensures gitleaks is installed.
+#
+# hash: {{ include "dot_config/git-hooks/executable_pre-commit" | sha256sum }}
+
+set -euo pipefail
+
+HOOKS_DIR="$HOME/.config/git-hooks"
+
+# Point git at the shared hooks dir (chezmoi renders the hook into $HOOKS_DIR).
+if command -v git >/dev/null 2>&1; then
+  current="$(git config --global --get core.hooksPath 2>/dev/null || true)"
+  if [ "$current" != "$HOOKS_DIR" ]; then
+    git config --global core.hooksPath "$HOOKS_DIR"
+    echo "[git-hooks] set core.hooksPath = $HOOKS_DIR"
+  fi
+fi
+
+# Ensure gitleaks is installed; if missing, the hook exits silently but won't
+# actually scan. Hint the user on macOS.
+if ! command -v gitleaks >/dev/null 2>&1; then
+  if [ "$(uname -s)" = "Darwin" ] && command -v brew >/dev/null 2>&1; then
+    echo "[git-hooks] installing gitleaks via Homebrew..."
+    brew install gitleaks >/dev/null || echo "[git-hooks] gitleaks install failed; hook will skip scanning"
+  else
+    echo "[git-hooks] gitleaks not found. Install manually: https://github.com/gitleaks/gitleaks"
+  fi
+fi

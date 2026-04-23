@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+# Global pre-commit hook — blocks commits containing secrets.
+# Installed via `git config --global core.hooksPath ~/.config/git-hooks`.
+# Works for every repo on this machine.
+#
+# Emergency bypass: `git commit --no-verify` (DISCOURAGED — see AGENTS.md §6).
+
+set -euo pipefail
+
+# Skip if gitleaks is not installed (don't block commits on a missing tool).
+if ! command -v gitleaks >/dev/null 2>&1; then
+  echo "[pre-commit] gitleaks not installed; skipping secret scan. brew install gitleaks" >&2
+  exit 0
+fi
+
+# Respect per-repo opt-out via git config: `git config hooks.skip-gitleaks true`
+if [ "$(git config --bool hooks.skip-gitleaks 2>/dev/null)" = "true" ]; then
+  echo "[pre-commit] gitleaks skipped by repo config (hooks.skip-gitleaks=true)" >&2
+  exit 0
+fi
+
+# Run gitleaks on staged content only
+if ! gitleaks git --staged --no-banner --redact=50 --exit-code 1; then
+  echo "" >&2
+  echo "[pre-commit] ❌ gitleaks detected potential secrets in staged changes." >&2
+  echo "[pre-commit] Remove them before committing, or rotate the leaked credential if already exposed." >&2
+  echo "[pre-commit] Move secrets to Bitwarden and load via bw-mcp (see AGENTS.md)." >&2
+  echo "[pre-commit] Bypass (not recommended): git commit --no-verify" >&2
+  exit 1
+fi
+
+exit 0

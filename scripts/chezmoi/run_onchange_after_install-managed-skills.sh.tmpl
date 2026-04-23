@@ -12,7 +12,9 @@ DOTFILES_DIR="$HOME_SLASHED/dotfiles"
 MANAGED_SKILLS_DIR="$DOTFILES_DIR/packs/software-development/skills"
 CLAUDE_SKILLS_DIR="$HOME_SLASHED/.claude/skills"
 CODEX_SKILLS_DIR="$HOME_SLASHED/.codex/skills"
+GEMINI_SKILLS_DIR="$HOME_SLASHED/.gemini/skills"
 LEGACY_SUPERPOWERS_ROOT="$HOME_SLASHED/.claude/plugins/cache/claude-plugins-official/superpowers"
+
 
 MANAGED_SKILLS=(
 {{- range index $resolved "skills" "enabled" }}
@@ -76,12 +78,14 @@ cleanup_managed_targets() {
 
 echo "Reconciling managed skills..."
 
-rm -f "$CODEX_SKILLS_DIR/.DS_Store" "$CLAUDE_SKILLS_DIR/.DS_Store"
+rm -f "$CODEX_SKILLS_DIR/.DS_Store" "$CLAUDE_SKILLS_DIR/.DS_Store" "$GEMINI_SKILLS_DIR/.DS_Store"
 
 cleanup_legacy_codex_skills
 cleanup_managed_targets "$CLAUDE_SKILLS_DIR"
 cleanup_managed_targets "$CODEX_SKILLS_DIR"
+cleanup_managed_targets "$GEMINI_SKILLS_DIR"
 install_managed_skill_set "$CLAUDE_SKILLS_DIR" "Claude"
 install_managed_skill_set "$CODEX_SKILLS_DIR" "Codex"
+install_managed_skill_set "$GEMINI_SKILLS_DIR" "Gemini"
 
 echo "Managed skills reconciled."

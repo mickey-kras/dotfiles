@@ -2,7 +2,7 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { spawnSync } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 
 function fail(message) {
   console.error(message);
@@ -10,16 +10,29 @@ function fail(message) {
 }
 
 function getSession() {
-  const sessionPath = path.join(os.homedir(), ".bw_session");
-  if (fs.existsSync(sessionPath)) {
-    const session = fs.readFileSync(sessionPath, "utf8").trim();
-    if (session) {
-      return session;
-    }
-  }
+  // Policy: the Bitwarden session must never live in a file on disk.
+  //         It is resolved from the environment or from the Keychain
+  //         via bw-gate-helper (Touch ID / Mac password gated).
+
+  // 1. Process environment (inherited from a shell that already holds one).
   if (process.env.BW_SESSION) {
     return process.env.BW_SESSION.trim();
   }
+
+  // 2. macOS Keychain via bw-gate-helper.
+  if (process.platform === "darwin") {
+    const helperPath = path.join(os.homedir(), ".local/bin/bw-gate-helper");
+    if (fs.existsSync(helperPath)) {
+      const helper = spawnSync(helperPath, ["get"], {
+        encoding: "utf8",
+        stdio: ["inherit", "pipe", "inherit"],
+      });
+      if (helper.status === 0 && helper.stdout) {
+        return helper.stdout.trim();
+      }
+    }
+  }
+
   return "";
 }
 
@@ -45,30 +58,79 @@ function runBw(args, session) {
   });
 }
 
+function firstLine(text) {
+  return String(text || "")
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .find(Boolean) || "";
+}
+
+function failForBwResult(result, action, itemRef) {
+  const stdout = String(result?.stdout || "").trim();
+  const stderr = String(result?.stderr || "").trim();
+  const combined = [stderr, stdout].filter(Boolean).join("\n");
+  const target = itemRef ? ` '${itemRef}'` : "";
+
+  if (/you are not logged in|unauthenticated/i.test(combined)) {
+    fail("ERROR: Bitwarden CLI is not logged in. Run 'bw login', then 'bw-gate unlock'.");
+  }
+
+  if (/vault is locked|master password|bw unlock|unlock your vault/i.test(combined)) {
+    fail("ERROR: Bitwarden vault is locked. Run 'bw-gate unlock'.");
+  }
+
+  if (/invalid session|session key|mac failed|session has expired/i.test(combined)) {
+    fail("ERROR: Bitwarden session is stale or invalid. Run 'bw-gate unlock'.");
+  }
+
+  const detail = firstLine(stderr) || firstLine(stdout);
+  fail(`ERROR: Bitwarden returned unexpected output while ${action}${target}.${detail ? ` ${detail}` : ""}`);
+}
+
+function parseBwJson(result, action, itemRef) {
+  try {
+    return JSON.parse(result.stdout);
+  } catch {
+    failForBwResult(result, action, itemRef);
+  }
+}
+
+function validateSession(session) {
+  const status = runBw(["status", "--session", session], session);
+  if (status.status !== 0) {
+    failForBwResult(status, "checking status", "");
+  }
+
+  const payload = parseBwJson(status, "checking status", "");
+  switch (payload?.status) {
+    case "unlocked":
+      return;
+    case "locked":
+      fail("ERROR: Bitwarden vault is locked. Run 'bw-gate unlock'.");
+      break;
+    case "unauthenticated":
+      fail("ERROR: Bitwarden CLI is not logged in. Run 'bw login', then 'bw-gate unlock'.");
+      break;
+    default:
+      return;
+  }
+}
+
 function resolveItem(itemRef, session) {
   if (looksLikeUuid(itemRef)) {
     const direct = runBw(["get", "item", itemRef, "--session", session], session);
     if (direct.status !== 0) {
-      fail((direct.stderr || `ERROR: Could not fetch Bitwarden item '${itemRef}'.`).trim());
+      failForBwResult(direct, "fetching item", itemRef);
     }
-    try {
-      return JSON.parse(direct.stdout);
-    } catch (error) {
-      fail(`ERROR: Failed to parse Bitwarden item '${itemRef}': ${error.message}`);
-    }
+    return parseBwJson(direct, "fetching item", itemRef);
   }
 
   const listed = runBw(["list", "items", "--search", itemRef, "--session", session], session);
   if (listed.status !== 0) {
-    fail((listed.stderr || `ERROR: Could not search Bitwarden for '${itemRef}'.`).trim());
+    failForBwResult(listed, "searching for item", itemRef);
   }
 
-  let items;
-  try {
-    items = JSON.parse(listed.stdout);
-  } catch (error) {
-    fail(`ERROR: Failed to parse Bitwarden search results for '${itemRef}': ${error.message}`);
-  }
+  const items = parseBwJson(listed, "searching for item", itemRef);
 
   const exactMatches = items.filter((item) => item?.name === itemRef);
   if (exactMatches.length === 0) {
@@ -82,13 +144,9 @@ function resolveItem(itemRef, session) {
   const resolvedId = exactMatches[0].id;
   const direct = runBw(["get", "item", resolvedId, "--session", session], session);
   if (direct.status !== 0) {
-    fail((direct.stderr || `ERROR: Could not fetch Bitwarden item '${resolvedId}'.`).trim());
+    failForBwResult(direct, "fetching item", resolvedId);
   }
-  try {
-    return JSON.parse(direct.stdout);
-  } catch (error) {
-    fail(`ERROR: Failed to parse Bitwarden item '${resolvedId}': ${error.message}`);
-  }
+  return parseBwJson(direct, "fetching item", resolvedId);
 }
 
 const args = process.argv.slice(2);
@@ -110,8 +168,10 @@ if (!command) {
 
 const session = getSession();
 if (!session) {
-  fail("ERROR: Bitwarden session not found. Run bw-login, or on macOS run bw-gate unlock --sync-file, or write a valid token to ~/.bw_session.");
+  fail("ERROR: Bitwarden session not found. Run 'bw-gate unlock' (macOS Keychain) or set $BW_SESSION in the environment.");
 }
+
+validateSession(session);
 
 const item = resolveItem(itemName, session);
 
@@ -133,12 +193,29 @@ for (const entry of mapping.split(",")) {
   childEnv[envName] = value;
 }
 
-const child = spawnSync(command, commandArgs, {
+const child = spawn(command, commandArgs, {
   stdio: "inherit",
   env: childEnv
 });
 
-if (child.error) {
-  fail(`ERROR: Failed to start '${command}': ${child.error.message}`);
+child.on("error", (error) => {
+  fail(`ERROR: Failed to start '${command}': ${error.message}`);
+});
+
+child.on("exit", (code, signal) => {
+  if (signal) {
+    process.kill(process.pid, signal);
+  } else {
+    process.exit(code ?? 1);
+  }
+});
+
+// Proxy signals to child
+const signals = ["SIGINT", "SIGTERM", "SIGHUP"];
+for (const sig of signals) {
+  process.on(sig, () => {
+    if (!child.killed) {
+      child.kill(sig);
+    }
+  });
 }
-process.exit(child.status ?? 1);

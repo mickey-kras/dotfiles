@@ -14,10 +14,18 @@
 {{- if has "figma" $selectedMcps -}}
   {{- $_ := set $servers "figma" (dict "url" "https://mcp.figma.com/mcp") -}}
 {{- end -}}
-{{- if and (has "stitch" $selectedMcps) (index $settings "stitch_api_key") -}}
+{{- if and (has "stitch" $selectedMcps) (lookPath "bw") -}}
   {{- $_ := set $servers "stitch" (dict
-    "url" "https://stitch.googleapis.com/mcp"
-    "headers" (dict "X-Goog-Api-Key" (index $settings "stitch_api_key"))
+    "command" "node"
+    "args" (list
+      (printf "%s/.local/bin/bw-mcp" $home)
+      "mcp-stitch"
+      "STITCH_API_KEY=API_KEY"
+      "--"
+      "/bin/bash"
+      "-c"
+      "exec npx -y mcp-remote@latest https://stitch.googleapis.com/mcp --header \"X-Goog-Api-Key:$STITCH_API_KEY\""
+    )
   ) -}}
 {{- end -}}
 {{- if has "filesystem" $selectedMcps -}}
@@ -51,7 +59,7 @@
 {{- if and (has "obsidian" $selectedMcps) (index $settings "obsidian_vault_path") (lookPath "bw") -}}
   {{- $_ := set $servers "obsidian" (dict
     "command" "node"
-    "args" (list (printf "%s/.local/bin/bw-mcp" $home) "Obsidian Local REST API" "OBSIDIAN_API_KEY=API Key" "--" "npx" "-y" "obsidian-mcp-server")
+    "args" (list (printf "%s/.local/bin/bw-mcp" $home) "mcp-obsidian" "OBSIDIAN_API_KEY=API Key" "--" "npx" "-y" "obsidian-mcp-server")
     "env" (dict
       "OBSIDIAN_BASE_URL" "https://127.0.0.1:27124"
       "OBSIDIAN_VERIFY_SSL" "false"
@@ -67,19 +75,19 @@
   {{- $_ := set $servers "firebase" (dict "command" "firebase" "args" (list "experimental:mcp")) -}}
 {{- end -}}
 {{- if and (has "github" $selectedMcps) (lookPath "bw") -}}
-  {{- $_ := set $servers "github" (dict "command" "node" "args" (list (printf "%s/.local/bin/bw-mcp" $home) "mcp-github" "GITHUB_PERSONAL_ACCESS_TOKEN=password" "--" "npx" "-y" "@modelcontextprotocol/server-github@2025.4.8")) -}}
+  {{- $_ := set $servers "github" (dict "command" "node" "args" (list (printf "%s/.local/bin/bw-mcp" $home) "mcp-github" "GITHUB_PERSONAL_ACCESS_TOKEN=GITHUB_PERSONAL_ACCESS_TOKEN" "--" "npx" "-y" "@modelcontextprotocol/server-github@2025.4.8")) -}}
 {{- end -}}
 {{- if and (has "aws" $selectedMcps) (lookPath "bw") (lookPath "uvx") -}}
   {{- $_ := set $servers "aws" (dict "command" "node" "args" (list (printf "%s/.local/bin/bw-mcp" $home) "mcp-aws" "AWS_ACCESS_KEY_ID=AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY=AWS_SECRET_ACCESS_KEY" "--" "uvx" "awslabs.aws-api-mcp-server==1.3.26")) -}}
 {{- end -}}
 {{- if and (has "tailscale" $selectedMcps) (lookPath "bw") -}}
-  {{- $_ := set $servers "tailscale" (dict "command" "node" "args" (list (printf "%s/.local/bin/bw-mcp" $home) "mcp-tailscale" "TAILSCALE_API_KEY=password,TAILSCALE_TAILNET=TAILSCALE_TAILNET" "--" (printf "%s/.local/bin/tailscale-mcp-server" $home))) -}}
+  {{- $_ := set $servers "tailscale" (dict "command" "node" "args" (list (printf "%s/.local/bin/bw-mcp" $home) "mcp-tailscale" "TAILSCALE_API_KEY=TAILSCALE_API_KEY,TAILSCALE_TAILNET=TAILSCALE_TAILNET" "--" (printf "%s/.local/bin/tailscale-mcp-server" $home))) -}}
 {{- end -}}
 {{- if and (has "magic" $selectedMcps) (lookPath "bw") -}}
-  {{- $_ := set $servers "magic" (dict "command" "node" "args" (list (printf "%s/.local/bin/bw-mcp" $home) "magic-api-key" "API_KEY=password" "--" "npx" "-y" "@21st-dev/magic@latest")) -}}
+  {{- $_ := set $servers "magic" (dict "command" "node" "args" (list (printf "%s/.local/bin/bw-mcp" $home) "mcp-magic" "API_KEY=MAGIC_API_KEY" "--" "npx" "-y" "@21st-dev/magic@latest")) -}}
 {{- end -}}
 {{- if and (has "replicate" $selectedMcps) (lookPath "bw") -}}
-  {{- $_ := set $servers "replicate" (dict "command" "node" "args" (list (printf "%s/.local/bin/bw-mcp" $home) "replicate-api-token" "REPLICATE_API_TOKEN=password" "--" "npx" "-y" "replicate-mcp")) -}}
+  {{- $_ := set $servers "replicate" (dict "command" "node" "args" (list (printf "%s/.local/bin/bw-mcp" $home) "mcp-replicate" "REPLICATE_API_TOKEN=token" "--" "npx" "-y" "replicate-mcp")) -}}
 {{- end -}}
 {{- if and (has "docker" $selectedMcps) (lookPath "docker") -}}
   {{- $_ := set $servers "MCP_DOCKER" (dict "command" "docker" "args" (list "mcp" "gateway" "run")) -}}

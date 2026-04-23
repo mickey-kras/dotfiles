@@ -487,6 +487,34 @@ profiles:
           - using-git-worktrees
           - verification-before-completion
           - writing-plans
+          - uiux-pro-max
+          - uiux-ui-styling
+          - uiux-design
+          - uiux-brand
+          - uiux-banner-design
+          - uiux-slides
+          - uiux-design-system
+          - shadcn-ui
+          - stitch-design
+          - stitch-loop
+          - react-components
+          - redesign
+          - remotion
+          - emil-design-eng
+          - design-md
+          - enhance-prompt
+          - figma-use
+          - figma-generate-design
+          - figma-implement-design
+          - figma-create-design-system-rules
+          - industrial-brutalist-ui
+          - minimalist-ui
+          - impeccable
+          - frontend-design
+          - high-end-visual-design
+          - taste-design
+          - design-taste-frontend
+          - full-output-enforcement
       agents:
         enabled:
           - delivery-orchestrator
@@ -530,11 +558,11 @@ profiles:
       settings:
         memory_provider: obsidian
         obsidian_vault_path: ""
-        install_claude_code: disabled
-        install_codex: disabled
-        install_cursor: disabled
-        install_gemini_cli: disabled
-        install_droid: disabled
+        install_claude_code: enabled
+        install_codex: enabled
+        install_cursor: enabled
+        install_gemini_cli: enabled
+        install_droid: enabled
         stitch_api_key: ""
 
 tooling:
