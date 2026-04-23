@@ -10,11 +10,11 @@ defaults:
     settings:
       memory_provider: obsidian
       obsidian_vault_path: ""
-      install_claude_code: disabled
-      install_codex: disabled
-      install_cursor: disabled
-      install_gemini_cli: disabled
-      install_droid: disabled
+      install_claude_code: enabled
+      install_codex: enabled
+      install_cursor: enabled
+      install_gemini_cli: enabled
+      install_droid: enabled
       stitch_api_key: ""
       bw_gate_install: enabled
 
@@ -52,7 +52,7 @@ settings_schema:
   install_claude_code:
     type: enum
     label: Install Claude Code CLI
-    default: disabled
+    default: enabled
     options:
       - value: disabled
         label: Disabled
@@ -61,7 +61,7 @@ settings_schema:
   install_codex:
     type: enum
     label: Install Codex CLI
-    default: disabled
+    default: enabled
     options:
       - value: disabled
         label: Disabled
@@ -70,7 +70,7 @@ settings_schema:
   install_cursor:
     type: enum
     label: Install Cursor CLI
-    default: disabled
+    default: enabled
     options:
       - value: disabled
         label: Disabled
@@ -79,7 +79,7 @@ settings_schema:
   install_gemini_cli:
     type: enum
     label: Install Gemini CLI
-    default: disabled
+    default: enabled
     options:
       - value: disabled
         label: Disabled
@@ -88,7 +88,7 @@ settings_schema:
   install_droid:
     type: enum
     label: Install Droid CLI
-    default: disabled
+    default: enabled
     options:
       - value: disabled
         label: Disabled
@@ -435,20 +435,14 @@ guardrails:
       - Bash(dd if=/dev/zero*)
       - Bash(chmod 777 *)
       - Bash(> /dev/sda*)
-    restricted:
-      - Bash(uv *)
-      - Bash(uvx *)
-      - Bash(npm install*)
-      - Bash(npm i*)
-      - Bash(npx *)
-      - Bash(pip install*)
-      - Bash(choco install*)
-      - Bash(winget install*)
 
 profiles:
+  # Single profile — the wizard's "profile picker" step is a no-op since this
+  # is the only choice. Everything in the catalog is selected by default; to
+  # opt out of specific items, override via chezmoi data (e.g. custom_disabled_mcps).
   full:
-    label: Full
-    description: Software development setup with the current shared AI toolchain enabled by default.
+    label: Default
+    description: Everything enabled by default. Disable items individually via chezmoi data overrides.
     selection:
       mcps:
         enabled:
