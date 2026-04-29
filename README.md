@@ -3,7 +3,7 @@
 
 Shared AI development dotfiles managed with `chezmoi`.
 
-This repo sets up one software-development toolchain across Claude Code, Codex, Cursor, Gemini CLI, Droid, and Obsidian.
+This repo sets up one software-development toolchain across Claude Code, Codex, Cursor, Gemini CLI, Kimi Code, Droid, and Obsidian.
 
 Supported platforms:
 - macOS: primary target
@@ -37,8 +37,8 @@ The bootstrap installs `chezmoi`, opens the setup wizard when `.NET` is availabl
 - One managed development setup
 - All managed MCP servers, skills, agents, rules, and permission groups enabled by default
 - Obsidian as the default memory provider
-- Optional installation of Claude Code, Codex, Cursor, Gemini CLI, and Droid
-- The same managed MCP surface rendered for Claude, Codex, Cursor, Gemini, and Droid
+- Optional installation of Claude Code, Codex, Cursor, Gemini CLI, Kimi Code, and Droid
+- The same managed MCP surface rendered for Claude, Codex, Cursor, Gemini, Kimi, and Droid
 
 `MCP` here means Model Context Protocol server.
 
@@ -54,7 +54,7 @@ Tabs:
 Everything starts selected. `Settings` contains:
 - display name, role summary, and stack summary
 - memory provider and Obsidian vault path
-- optional installs for Claude Code, Codex, Cursor, Gemini CLI, and Droid
+- optional installs for Claude Code, Codex, Cursor, Gemini CLI, Kimi Code, and Droid
 - `bw-gate` toggle on macOS
 - Stitch API key
 
@@ -64,6 +64,7 @@ Everything starts selected. `Settings` contains:
 - Cursor: `~/.cursor/mcp.json`, `~/.cursor/rules/global.mdc`
 - Codex: `~/.codex/config.toml`, `~/.codex/AGENTS.md`, `~/.codex/skills/`
 - Gemini CLI: `~/.gemini/settings.json`
+- Kimi Code: `~/.kimi/config.toml`, `~/.kimi/kimi.json`
 - Droid / Factory: `~/.factory/mcp.json`, `~/.factory/settings.json`, `~/.factory/droids/`
 - Obsidian: vault `.obsidian/` state from `obsidian/managed/config.json`
 

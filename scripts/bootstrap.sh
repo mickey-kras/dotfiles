@@ -171,6 +171,10 @@ have_droid() {
   command -v droid >/dev/null 2>&1
 }
 
+have_kimi_code() {
+  command -v kimi >/dev/null 2>&1
+}
+
 have_obsidian() {
   if [ -d "/Applications/Obsidian.app" ] || command -v obsidian >/dev/null 2>&1; then
     return 0
@@ -282,6 +286,59 @@ install_droid_cli() {
     printf "  ${G}+${R} Droid installed\n"
   else
     printf "  ${Y}>${R} Droid install did not complete - continue manually if needed\n"
+  fi
+}
+
+install_kimi_code_cli() {
+  if have_kimi_code; then
+    printf "  ${G}+${R} Kimi Code already installed\n"
+  else
+    printf "  ${Y}>${R} Installing Kimi Code CLI...\n"
+    if command -v uv >/dev/null 2>&1; then
+      uv tool install kimi-cli >/dev/null 2>&1 || true
+    elif command -v pipx >/dev/null 2>&1; then
+      pipx install kimi-cli >/dev/null 2>&1 || true
+    elif command -v pip3 >/dev/null 2>&1; then
+      pip3 install --user kimi-cli >/dev/null 2>&1 || true
+    fi
+    if have_kimi_code; then
+      printf "  ${G}+${R} Kimi Code installed\n"
+    else
+      printf "  ${Y}>${R} Kimi Code install did not complete - continue manually if needed\n"
+    fi
+  fi
+
+  # Ensure agent creds directory and placeholder env file exist
+  mkdir -p "$HOME/.agent_creds"
+  if [ ! -f "$HOME/.agent_creds/kimi.env" ]; then
+    cat > "$HOME/.agent_creds/kimi.env" <<'EOF'
+# Kimi Code CLI environment variables
+# Kimi uses OAuth by default; set KIMI_API_KEY here to override with an API key.
+# export KIMI_API_KEY="your-api-key-here"
+EOF
+    printf "  ${G}+${R} Created ~/.agent_creds/kimi.env (placeholder)\n"
+  fi
+
+  # Add shell profile integration idempotently
+  local profile_line='[ -f ~/.agent_creds/kimi.env ] && source ~/.agent_creds/kimi.env'
+  local shell_profile=""
+  if [ -f "$HOME/.zprofile" ]; then
+    shell_profile="$HOME/.zprofile"
+  elif [ -f "$HOME/.bashrc" ]; then
+    shell_profile="$HOME/.bashrc"
+  elif [ -f "$HOME/.bash_profile" ]; then
+    shell_profile="$HOME/.bash_profile"
+  fi
+
+  if [ -n "$shell_profile" ]; then
+    if ! grep -qF "$profile_line" "$shell_profile" 2>/dev/null; then
+      printf "\n# Kimi Code CLI credentials\n%s\n" "$profile_line" >> "$shell_profile"
+      printf "  ${G}+${R} Added Kimi env source to %s\n" "$shell_profile"
+    fi
+  else
+    printf "  ${Y}>${R} No shell profile found (~/.zprofile / ~/.bashrc / ~/.bash_profile).\n"
+    printf "  ${Y}>${R} Add this line manually to your shell profile:\n"
+    printf "  %s\n" "$profile_line"
   fi
 }
 
@@ -491,7 +548,7 @@ PY
 }
 
 write_chezmoi_config() {
-  python3 - "$CONFIG_STATE_JSON" "$USER_NAME" "$USER_ROLE_SUMMARY" "$USER_STACK_SUMMARY" "$MEMORY_PROVIDER" "$OBSIDIAN_VAULT_PATH" "$INSTALL_CLAUDE_CODE" "$INSTALL_CODEX" "$INSTALL_CURSOR" "$INSTALL_GEMINI_CLI" "$INSTALL_DROID" "$STITCH_API_KEY" > "$HOME/.config/chezmoi/chezmoi.toml" <<'PY'
+  python3 - "$CONFIG_STATE_JSON" "$USER_NAME" "$USER_ROLE_SUMMARY" "$USER_STACK_SUMMARY" "$MEMORY_PROVIDER" "$OBSIDIAN_VAULT_PATH" "$INSTALL_CLAUDE_CODE" "$INSTALL_CODEX" "$INSTALL_CURSOR" "$INSTALL_GEMINI_CLI" "$INSTALL_DROID" "$STITCH_API_KEY" "$INSTALL_KIMI_CODE" > "$HOME/.config/chezmoi/chezmoi.toml" <<'PY'
 import json
 import sys
 from pathlib import Path
@@ -508,6 +565,7 @@ config["install_cursor"] = sys.argv[9]
 config["install_gemini_cli"] = sys.argv[10]
 config["install_droid"] = sys.argv[11]
 config["stitch_api_key"] = sys.argv[12]
+config["install_kimi_code"] = sys.argv[13]
 
 order = [
     "user_name",
@@ -525,6 +583,7 @@ order = [
     "install_cursor",
     "install_gemini_cli",
     "install_droid",
+    "install_kimi_code",
     "stitch_api_key",
     "bw_gate_install",
 ]
@@ -566,6 +625,7 @@ INSTALL_CODEX="$(json_value "$CONFIG_STATE_JSON" install_codex)"
 INSTALL_CURSOR="$(json_value "$CONFIG_STATE_JSON" install_cursor)"
 INSTALL_GEMINI_CLI="$(json_value "$CONFIG_STATE_JSON" install_gemini_cli)"
 INSTALL_DROID="$(json_value "$CONFIG_STATE_JSON" install_droid)"
+INSTALL_KIMI_CODE="$(json_value "$CONFIG_STATE_JSON" install_kimi_code)"
 STITCH_API_KEY="$(json_value "$CONFIG_STATE_JSON" stitch_api_key)"
 
 EFFECTIVE_MCPS=()
@@ -661,6 +721,9 @@ if setting_enabled "$INSTALL_GEMINI_CLI"; then
 fi
 if setting_enabled "$INSTALL_DROID"; then
   install_droid_cli
+fi
+if setting_enabled "$INSTALL_KIMI_CODE"; then
+  install_kimi_code_cli
 fi
 if [ "$MEMORY_PROVIDER" = "obsidian" ] && ! have_obsidian; then
   printf "  ${D}Obsidian will be installed during chezmoi apply if it is still missing.${R}\n"

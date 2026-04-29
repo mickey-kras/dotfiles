@@ -15,6 +15,7 @@ defaults:
       install_cursor: enabled
       install_gemini_cli: enabled
       install_droid: enabled
+      install_kimi_code: enabled
       stitch_api_key: ""
       bw_gate_install: enabled
 
@@ -88,6 +89,15 @@ settings_schema:
   install_droid:
     type: enum
     label: Install Droid CLI
+    default: enabled
+    options:
+      - value: disabled
+        label: Disabled
+      - value: enabled
+        label: Enabled
+  install_kimi_code:
+    type: enum
+    label: Install Kimi Code CLI
     default: enabled
     options:
       - value: disabled
@@ -557,6 +567,7 @@ profiles:
         install_cursor: enabled
         install_gemini_cli: enabled
         install_droid: enabled
+        install_kimi_code: enabled
         stitch_api_key: ""
 
 tooling:

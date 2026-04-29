@@ -14,7 +14,7 @@ This is the only supported pack in the repo. Start from the default `full` selec
 
 - Memory defaults to Obsidian
 - The wizard auto-detects an existing vault path when possible and otherwise uses `~/Obsidian/memory-vault`
-- Optional CLI installs exist for Claude Code, Codex, Cursor, Gemini CLI, and Droid; they are off by default
+- Optional CLI installs exist for Claude Code, Codex, Cursor, Gemini CLI, Kimi Code, and Droid; they are off by default
 - macOS is the primary target, Linux is supported, and Windows is secondary through Git Bash
 
 ## Model guidance
