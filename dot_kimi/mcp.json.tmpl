@@ -1,0 +1,15 @@
+{{- $rawServers := includeTemplate "templates/managed-mcp-servers.json" . | fromJson -}}
+{{- $servers := dict -}}
+{{- range $name, $server := $rawServers -}}
+  {{- $normalized := dict "disabled" false -}}
+  {{- if hasKey $server "url" -}}
+    {{- $_ := set $normalized "type" "http" -}}
+  {{- else -}}
+    {{- $_ := set $normalized "type" "stdio" -}}
+  {{- end -}}
+  {{- range $key, $value := $server -}}
+    {{- $_ := set $normalized $key $value -}}
+  {{- end -}}
+  {{- $_ := set $servers $name $normalized -}}
+{{- end -}}
+{{- dict "mcpServers" $servers | toPrettyJson -}}
