@@ -292,53 +292,22 @@ install_droid_cli() {
 install_kimi_code_cli() {
   if have_kimi_code; then
     printf "  ${G}+${R} Kimi Code already installed\n"
+    return 0
+  fi
+
+  printf "  ${Y}>${R} Installing Kimi Code CLI...\n"
+  if command -v uv >/dev/null 2>&1; then
+    uv tool install kimi-cli >/dev/null 2>&1 || true
+  elif command -v pipx >/dev/null 2>&1; then
+    pipx install kimi-cli >/dev/null 2>&1 || true
+  elif command -v pip3 >/dev/null 2>&1; then
+    pip3 install --user kimi-cli >/dev/null 2>&1 || true
+  fi
+
+  if have_kimi_code; then
+    printf "  ${G}+${R} Kimi Code installed\n"
   else
-    printf "  ${Y}>${R} Installing Kimi Code CLI...\n"
-    if command -v uv >/dev/null 2>&1; then
-      uv tool install kimi-cli >/dev/null 2>&1 || true
-    elif command -v pipx >/dev/null 2>&1; then
-      pipx install kimi-cli >/dev/null 2>&1 || true
-    elif command -v pip3 >/dev/null 2>&1; then
-      pip3 install --user kimi-cli >/dev/null 2>&1 || true
-    fi
-    if have_kimi_code; then
-      printf "  ${G}+${R} Kimi Code installed\n"
-    else
-      printf "  ${Y}>${R} Kimi Code install did not complete - continue manually if needed\n"
-    fi
-  fi
-
-  # Ensure agent creds directory and placeholder env file exist
-  mkdir -p "$HOME/.agent_creds"
-  if [ ! -f "$HOME/.agent_creds/kimi.env" ]; then
-    cat > "$HOME/.agent_creds/kimi.env" <<'EOF'
-# Kimi Code CLI environment variables
-# Kimi uses OAuth by default; set KIMI_API_KEY here to override with an API key.
-# export KIMI_API_KEY="your-api-key-here"
-EOF
-    printf "  ${G}+${R} Created ~/.agent_creds/kimi.env (placeholder)\n"
-  fi
-
-  # Add shell profile integration idempotently
-  local profile_line='[ -f ~/.agent_creds/kimi.env ] && source ~/.agent_creds/kimi.env'
-  local shell_profile=""
-  if [ -f "$HOME/.zprofile" ]; then
-    shell_profile="$HOME/.zprofile"
-  elif [ -f "$HOME/.bashrc" ]; then
-    shell_profile="$HOME/.bashrc"
-  elif [ -f "$HOME/.bash_profile" ]; then
-    shell_profile="$HOME/.bash_profile"
-  fi
-
-  if [ -n "$shell_profile" ]; then
-    if ! grep -qF "$profile_line" "$shell_profile" 2>/dev/null; then
-      printf "\n# Kimi Code CLI credentials\n%s\n" "$profile_line" >> "$shell_profile"
-      printf "  ${G}+${R} Added Kimi env source to %s\n" "$shell_profile"
-    fi
-  else
-    printf "  ${Y}>${R} No shell profile found (~/.zprofile / ~/.bashrc / ~/.bash_profile).\n"
-    printf "  ${Y}>${R} Add this line manually to your shell profile:\n"
-    printf "  %s\n" "$profile_line"
+    printf "  ${Y}>${R} Kimi Code install did not complete - continue manually if needed\n"
   fi
 }
 
