@@ -35,11 +35,12 @@ test("normalizes hidden settings back to defaults", () => {
   assert.deepEqual(settings, {
     memory_provider: "builtin",
     obsidian_vault_path: "",
-    install_claude_code: "disabled",
-    install_codex: "disabled",
+    install_claude_code: "enabled",
+    install_codex: "enabled",
     install_cursor: "enabled",
-    install_gemini_cli: "disabled",
-    install_droid: "disabled",
+    install_gemini_cli: "enabled",
+    install_droid: "enabled",
+    install_kimi_code: "enabled",
     stitch_api_key: "",
     bw_gate_install: "enabled"
   });
