@@ -51,15 +51,6 @@ hard_bans:
     - Bash(dd if=/dev/zero*)
     - Bash(chmod 777 *)
     - Bash(> /dev/sda*)
-  restricted:
-    - Bash(uv *)
-    - Bash(uvx *)
-    - Bash(npm install*)
-    - Bash(npm i*)
-    - Bash(npx *)
-    - Bash(pip install*)
-    - Bash(choco install*)
-    - Bash(winget install*)
 
 mcp_catalog:
   playwright:
