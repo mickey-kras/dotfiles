@@ -6,12 +6,13 @@
 set -euo pipefail
 
 HOME_SLASHED="{{ replace "\\" "/" .chezmoi.homeDir }}"
+SOURCE_DIR="{{ replace "\\" "/" .chezmoi.sourceDir }}"
 {{ $runtime := includeTemplate "templates/resolved-state.json" . | fromJson -}}
 {{ $resolved := $runtime.resolved -}}
 MEMORY_PROVIDER="{{ index $resolved "settings" "memory_provider" }}"
 OBSIDIAN_VAULT_PATH="{{ index $resolved "settings" "obsidian_vault_path" }}"
 OBSIDIAN_SELECTED="{{ if has "obsidian" (index $resolved "mcps" "enabled") }}true{{ else }}false{{ end }}"
-MANAGED_CONFIG="$HOME_SLASHED/dotfiles/obsidian/managed/config.json"
+MANAGED_CONFIG="$SOURCE_DIR/obsidian/managed/config.json"
 
 is_windows_gitbash() {
   case "$(uname -s)" in

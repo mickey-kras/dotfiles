@@ -6,11 +6,12 @@
 set -euo pipefail
 
 HOME_SLASHED="{{ replace "\\" "/" .chezmoi.homeDir }}"
+SOURCE_DIR="{{ replace "\\" "/" .chezmoi.sourceDir }}"
 {{ $runtime := includeTemplate "templates/resolved-state.json" . | fromJson -}}
 {{ $resolved := $runtime.resolved -}}
 BW_GATE_INSTALL="{{ index $resolved "settings" "bw_gate_install" }}"
-DOTFILES_DIR="$HOME_SLASHED/dotfiles"
-SOURCE_FILE="$DOTFILES_DIR/scripts/lib/bw-gate/main.swift"
+DOTFILES_DIR="$SOURCE_DIR"
+SOURCE_FILE="$SOURCE_DIR/scripts/lib/bw-gate/main.swift"
 TARGET_DIR="$HOME_SLASHED/.local/bin"
 TARGET_FILE="$TARGET_DIR/bw-gate-helper"
 BUNDLE_ID="com.mickey-kras.bw-gate-helper"

@@ -6,10 +6,11 @@
 set -euo pipefail
 
 HOME_SLASHED="{{ replace "\\" "/" .chezmoi.homeDir }}"
+SOURCE_DIR="{{ replace "\\" "/" .chezmoi.sourceDir }}"
 {{ $runtime := includeTemplate "templates/resolved-state.json" . | fromJson -}}
 {{ $resolved := $runtime.resolved -}}
-DOTFILES_DIR="$HOME_SLASHED/dotfiles"
-MANAGED_SKILLS_DIR="$DOTFILES_DIR/packs/software-development/skills"
+DOTFILES_DIR="$SOURCE_DIR"
+MANAGED_SKILLS_DIR="$SOURCE_DIR/packs/software-development/skills"
 CLAUDE_SKILLS_DIR="$HOME_SLASHED/.claude/skills"
 CODEX_SKILLS_DIR="$HOME_SLASHED/.codex/skills"
 GEMINI_SKILLS_DIR="$HOME_SLASHED/.gemini/skills"
