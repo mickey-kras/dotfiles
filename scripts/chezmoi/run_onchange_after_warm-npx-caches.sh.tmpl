@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+# Pre-warms ~/.npm/_npx caches for MCP wrappers that resolve their entrypoint
+# from there (instead of invoking `npx` at runtime). Without this, the wrapper
+# scripts fail with "Could not find ... in ~/.npm/_npx" on a fresh machine.
+#
+# Currently warms:
+#   - @hexsleeves/tailscale-mcp-server (for ~/.local/bin/tailscale-mcp-server)
+#
+# hash: {{ include "templates/resolved-state.json" | sha256sum }}:{{ include "dot_local/bin/executable_tailscale-mcp-server" | sha256sum }}
+
+set -euo pipefail
+
+{{ $runtime := includeTemplate "templates/resolved-state.json" . | fromJson -}}
+{{ $resolved := $runtime.resolved -}}
+ENABLED_MCPS=(
+{{- range index $resolved "mcps" "enabled" }}
+  "{{ . }}"
+{{- end }}
+)
+
+is_enabled() {
+  local needle="$1"
+  local item
+  for item in "${ENABLED_MCPS[@]}"; do
+    [ "$item" = "$needle" ] && return 0
+  done
+  return 1
+}
+
+warm() {
+  local label="$1"; shift
+  local pkg="$1"; shift
+  echo "  > warming npx cache: $pkg"
+  if npx --yes --package="$pkg" node -e "" >/dev/null 2>&1; then
+    echo "  + warmed $label"
+  else
+    echo "  ! failed to warm $label (continuing)"
+  fi
+}
+
+if ! command -v npx >/dev/null 2>&1; then
+  echo "Skipping npx cache warming: npx not found."
+  exit 0
+fi
+
+if is_enabled tailscale; then
+  warm tailscale-mcp-server "@hexsleeves/tailscale-mcp-server@0.3.2"
+fi
