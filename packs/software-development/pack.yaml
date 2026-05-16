@@ -18,6 +18,8 @@ defaults:
       install_kimi_code: enabled
       stitch_api_key: ""
       bw_gate_install: enabled
+      dotfiles_authorship_rule: disabled
+      dotfiles_pr_workflow_rule: disabled
 
 ui:
   sections:
@@ -117,6 +119,24 @@ settings_schema:
         label: Enabled
       - value: disabled
         label: Disabled
+  dotfiles_authorship_rule:
+    type: enum
+    label: Add 'no AI authorship' rule to CLAUDE.md
+    default: disabled
+    options:
+      - value: disabled
+        label: Disabled
+      - value: enabled
+        label: Enabled
+  dotfiles_pr_workflow_rule:
+    type: enum
+    label: Add 'feature branches + squash-merge PRs' rule to CLAUDE.md
+    default: disabled
+    options:
+      - value: disabled
+        label: Disabled
+      - value: enabled
+        label: Enabled
 
 catalogs:
   mcps:

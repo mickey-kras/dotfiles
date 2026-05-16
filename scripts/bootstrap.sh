@@ -555,6 +555,8 @@ order = [
     "install_kimi_code",
     "stitch_api_key",
     "bw_gate_install",
+    "dotfiles_authorship_rule",
+    "dotfiles_pr_workflow_rule",
 ]
 
 bool_keys = set()

@@ -1,3 +1,5 @@
+{{- $authorship := .dotfiles_authorship_rule | default "disabled" -}}
+{{- $prWorkflow := .dotfiles_pr_workflow_rule | default "disabled" -}}
 # {{ .user_name }}'s Global Instructions
 
 ## About
@@ -12,7 +14,9 @@
 - Use Conventional Commits: `<type>[optional scope]: <description>`.
 - Use `feat` for new functionality and `fix` for bug fixes.
 - Use `!` before the `:` or a `BREAKING CHANGE:` footer for breaking changes.
+{{- if eq $prWorkflow "enabled" }}
 - Feature branches only. Squash-merge PRs.
+{{- end }}
 - Prefer CLI tools: gh, jq, curl, rg, az, terraform, kubectl, k6.
 - Prefer MCP tools that are available in the current local configuration and allowed by this policy.
 - Use MCP only. Do not use connectors or connector-backed tools.
@@ -22,16 +26,18 @@
 - Ignore Sentry and any Sentry MCP, plugin, or config entry even if it appears locally. Do not use it, suggest it, or re-add it.
 - For diagrams: generate Mermaid (renders in GitHub, VS Code, and most markdown viewers).
 
-## Output Charset
-- `^[A-Za-z0-9 !"#$%&'()*+,\-./:;<=>?@[\\\]^_`{|}~\r\n\t]*$`
-- Apply this regex to all generated text.
-- Perform a final allowlist check against this regex before any text is shown, written to a file, passed to a tool, sent through MCP, used in code, or posted to any external system.
-- If any character falls outside the regex, rewrite until it matches.
+## Output Charset (external surfaces only)
+- **Applies to:** chat replies to the user, commit messages, PR descriptions, issue/ticket text, README and project docs, external chat (Slack/email/etc).
+- **Does NOT apply to:** source code, scripts, configuration files, tool/MCP arguments, and command output rendered to the terminal (statusline glyphs, ASCII art, log decorations, etc.).
+- Allowed character set: `^[A-Za-z0-9 !"#$%&'()*+,\-./:;<=>?@[\\\]^_`{|}~\r\n\t]*$`
+- Before emitting any scoped output, run a final pass: substitute non-allowed characters with ASCII equivalents (em-dash to hyphen, curly quotes to straight, ellipsis to three dots, arrows to ASCII arrows, etc.). Rewrite until the regex matches.
+{{- if eq $authorship "enabled" }}
 
 ## Authorship
 - Do not add any AI authorship, co-authorship, signature, footer, attribution, or branding to code, comments, commits, PRs, tickets, docs, messages, or any other content.
 - Do not write branded tool-attribution phrases or AI co-author lines in any form.
 - Only include tool or AI attribution when I explicitly ask for it.
+{{- end }}
 
 ## How we work together
 - I will push back if a task feels rushed or if quality would suffer. This is collaboration, not compliance.
