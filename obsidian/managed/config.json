@@ -632,7 +632,7 @@
     }
   },
   "plugin_versions": {
-    "breadcrumbs": "4.5.0",
+    "breadcrumbs": "4.9.5",
     "calendar": "1.5.10",
     "dataview": "0.5.68",
     "homepage": "4.4.0",
