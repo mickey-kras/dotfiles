@@ -2,6 +2,8 @@
 {{- $resolved := $runtime.resolved -}}
 {{- $allow := index $resolved "permissions" "allow" | default (list) -}}
 {{- $deny := index $resolved "permissions" "deny" | default (list) -}}
+{{- $memoryProvider := index $resolved "settings" "memory_provider" | default "obsidian" -}}
+{{- $hasObsidianMcp := has "obsidian" (index $resolved "mcps" "enabled") -}}
 {
   "permissions": {
     "allow": [
@@ -79,5 +81,6 @@
   "statusLine": {
     "type": "command",
     "command": "bash $HOME/.claude/statusline-command.sh"
-  }
+  },
+  "autoMemoryEnabled": {{ if and (eq $memoryProvider "obsidian") $hasObsidianMcp }}false{{ else }}true{{ end }}
 }
