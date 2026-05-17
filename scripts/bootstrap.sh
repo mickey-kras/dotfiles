@@ -562,6 +562,21 @@ order = [
     "dotfiles_pr_workflow_rule",
 ]
 
+# selection_enabled_* keys override profile-driven selection in the chezmoi
+# templates. Emitting them in preset mode silently pins the selection to
+# whatever the profile happened to be at first install - if the user later
+# switches profiles via runtime_profile, the stale selection_enabled_* keys
+# would win. Skip them when the user is on a preset profile; the template
+# derives them from the profile each apply.
+SELECTION_KEYS = {
+    "selection_enabled_mcps",
+    "selection_enabled_skills",
+    "selection_enabled_agents",
+    "selection_enabled_rules",
+    "selection_enabled_permissions",
+}
+is_custom = config.get("profile_mode", "preset") == "custom"
+
 bool_keys = set()
 
 def toml_quote(value):
@@ -572,6 +587,8 @@ def toml_array(values):
 
 print("[data]")
 for key in order:
+    if key in SELECTION_KEYS and not is_custom:
+        continue
     value = config.get(key, "")
     if key in bool_keys:
         print(f"  {key} = {'true' if value else 'false'}")
