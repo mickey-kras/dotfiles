@@ -1,0 +1,91 @@
+#!/usr/bin/env bash
+# Installs system tools required by selected MCP servers (uv/uvx for aws+http,
+# firebase-tools for firebase, etc). Asks for explicit confirmation before
+# installing anything. Set DOTFILES_ASSUME_YES=1 to auto-confirm in CI / scripts.
+#
+# hash: {{ include "templates/resolved-state.json" | sha256sum }}
+
+set -euo pipefail
+
+{{ $runtime := includeTemplate "templates/resolved-state.json" . | fromJson -}}
+{{ $resolved := $runtime.resolved -}}
+ENABLED_MCPS=(
+{{- range index $resolved "mcps" "enabled" }}
+  "{{ . }}"
+{{- end }}
+)
+
+is_enabled() {
+  local needle="$1" item
+  for item in "${ENABLED_MCPS[@]}"; do
+    [ "$item" = "$needle" ] && return 0
+  done
+  return 1
+}
+
+# Build list of missing deps. Each entry: "label|install-command|notes"
+NEEDED=()
+
+if is_enabled aws || is_enabled http; then
+  if ! command -v uvx >/dev/null 2>&1; then
+    if [[ "$(uname -s)" == "Darwin" ]] && command -v brew >/dev/null 2>&1; then
+      NEEDED+=("uv (provides uvx; required by aws/http MCPs)|brew install uv")
+    elif command -v curl >/dev/null 2>&1; then
+      NEEDED+=("uv (provides uvx; required by aws/http MCPs)|curl -LsSf https://astral.sh/uv/install.sh | sh")
+    fi
+  fi
+fi
+
+if is_enabled firebase; then
+  if ! command -v firebase >/dev/null 2>&1; then
+    if command -v npm >/dev/null 2>&1; then
+      NEEDED+=("firebase-tools (required by firebase MCP)|npm install -g firebase-tools")
+    elif [[ "$(uname -s)" == "Darwin" ]] && command -v brew >/dev/null 2>&1; then
+      NEEDED+=("firebase-cli (required by firebase MCP)|brew install firebase-cli")
+    fi
+  fi
+fi
+
+if [ ${#NEEDED[@]} -eq 0 ]; then
+  exit 0
+fi
+
+printf "\n"
+printf "MCP dependencies missing on this machine:\n"
+for entry in "${NEEDED[@]}"; do
+  label="${entry%%|*}"
+  cmd="${entry#*|}"
+  printf "  - %s\n    install: %s\n" "$label" "$cmd"
+done
+printf "\n"
+
+if [ "${DOTFILES_ASSUME_YES:-0}" = "1" ]; then
+  REPLY="y"
+  printf "DOTFILES_ASSUME_YES=1 set; auto-confirming.\n"
+else
+  if ! [ -t 0 ] || ! [ -t 1 ]; then
+    printf "No TTY available; skipping install. Re-run 'chezmoi apply' interactively\n"
+    printf "or set DOTFILES_ASSUME_YES=1 to install these dependencies.\n"
+    exit 0
+  fi
+  printf "Install all of the above now? [y/N]: "
+  read -r REPLY
+fi
+
+case "$REPLY" in
+  [yY]|[yY][eE][sS])
+    for entry in "${NEEDED[@]}"; do
+      label="${entry%%|*}"
+      cmd="${entry#*|}"
+      printf "  > %s\n" "$cmd"
+      if eval "$cmd"; then
+        printf "  + installed %s\n" "$label"
+      else
+        printf "  ! install failed for %s; continuing\n" "$label"
+      fi
+    done
+    ;;
+  *)
+    printf "Skipped. Install manually later or re-run chezmoi apply.\n"
+    ;;
+esac
