@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
-# Installs system tools required by selected MCP servers (uv/uvx for aws+http,
-# firebase-tools for firebase, etc). Asks for explicit confirmation before
-# installing anything. Set DOTFILES_ASSUME_YES=1 to auto-confirm in CI / scripts.
+# Installs system tools required by selected MCP servers.
+# Each missing tool is shown with its purpose, the MCP that needs it, and the
+# exact command that will run; user confirms per-tool before anything installs.
+# Set DOTFILES_ASSUME_YES=1 to auto-confirm every prompt (for CI / scripted runs).
 #
 # hash: {{ include "templates/resolved-state.json" | sha256sum }}
 
@@ -23,69 +24,111 @@ is_enabled() {
   return 1
 }
 
-# Build list of missing deps. Each entry: "label|install-command|notes"
-NEEDED=()
+# Each candidate dep is a 5-field record separated by '|':
+#   1. binary to check (presence => skip)
+#   2. human-readable label
+#   3. comma-separated list of MCPs that require it
+#   4. one-line purpose
+#   5. install command (run via eval)
+CANDIDATES=()
 
 if is_enabled aws || is_enabled http; then
-  if ! command -v uvx >/dev/null 2>&1; then
-    if [[ "$(uname -s)" == "Darwin" ]] && command -v brew >/dev/null 2>&1; then
-      NEEDED+=("uv (provides uvx; required by aws/http MCPs)|brew install uv")
-    elif command -v curl >/dev/null 2>&1; then
-      NEEDED+=("uv (provides uvx; required by aws/http MCPs)|curl -LsSf https://astral.sh/uv/install.sh | sh")
-    fi
+  NEEDED_BY=""
+  is_enabled aws  && NEEDED_BY="aws"
+  is_enabled http && NEEDED_BY="${NEEDED_BY:+$NEEDED_BY, }http"
+  if [[ "$(uname -s)" == "Darwin" ]] && command -v brew >/dev/null 2>&1; then
+    INSTALL_CMD="brew install uv"
+  else
+    INSTALL_CMD="curl -LsSf https://astral.sh/uv/install.sh | sh"
   fi
+  CANDIDATES+=("uvx|uv (provides uvx)|${NEEDED_BY}|Python tool runner; the wrappers for the aws/http MCPs invoke 'uvx ...' to spawn the actual server|${INSTALL_CMD}")
 fi
 
 if is_enabled firebase; then
-  if ! command -v firebase >/dev/null 2>&1; then
-    if command -v npm >/dev/null 2>&1; then
-      NEEDED+=("firebase-tools (required by firebase MCP)|npm install -g firebase-tools")
-    elif [[ "$(uname -s)" == "Darwin" ]] && command -v brew >/dev/null 2>&1; then
-      NEEDED+=("firebase-cli (required by firebase MCP)|brew install firebase-cli")
-    fi
+  if command -v npm >/dev/null 2>&1; then
+    INSTALL_CMD="npm install -g firebase-tools"
+  elif [[ "$(uname -s)" == "Darwin" ]] && command -v brew >/dev/null 2>&1; then
+    INSTALL_CMD="brew install firebase-cli"
+  else
+    INSTALL_CMD=""
+  fi
+  if [ -n "$INSTALL_CMD" ]; then
+    CANDIDATES+=("firebase|firebase-tools|firebase|Firebase CLI; the firebase MCP shells out to 'firebase ...' for project operations|${INSTALL_CMD}")
   fi
 fi
 
-if [ ${#NEEDED[@]} -eq 0 ]; then
+# Filter to only deps that are actually missing
+MISSING=()
+for rec in "${CANDIDATES[@]}"; do
+  IFS='|' read -r bin _ _ _ _ <<< "$rec"
+  if ! command -v "$bin" >/dev/null 2>&1; then
+    MISSING+=("$rec")
+  fi
+done
+
+if [ ${#MISSING[@]} -eq 0 ]; then
   exit 0
 fi
 
-printf "\n"
-printf "MCP dependencies missing on this machine:\n"
-for entry in "${NEEDED[@]}"; do
-  label="${entry%%|*}"
-  cmd="${entry#*|}"
-  printf "  - %s\n    install: %s\n" "$label" "$cmd"
-done
-printf "\n"
-
-if [ "${DOTFILES_ASSUME_YES:-0}" = "1" ]; then
-  REPLY="y"
-  printf "DOTFILES_ASSUME_YES=1 set; auto-confirming.\n"
+# Color codes (also disabled when stdout is not a TTY)
+if [ -t 1 ]; then
+  C=$'\033[1;36m'; G=$'\033[1;32m'; Y=$'\033[1;33m'; D=$'\033[0;90m'; B=$'\033[1;37m'; R=$'\033[0m'
 else
-  if ! [ -t 0 ] || ! [ -t 1 ]; then
-    printf "No TTY available; skipping install. Re-run 'chezmoi apply' interactively\n"
-    printf "or set DOTFILES_ASSUME_YES=1 to install these dependencies.\n"
-    exit 0
-  fi
-  printf "Install all of the above now? [y/N]: "
-  read -r REPLY
+  C=""; G=""; Y=""; D=""; B=""; R=""
 fi
 
-case "$REPLY" in
-  [yY]|[yY][eE][sS])
-    for entry in "${NEEDED[@]}"; do
-      label="${entry%%|*}"
-      cmd="${entry#*|}"
-      printf "  > %s\n" "$cmd"
-      if eval "$cmd"; then
-        printf "  + installed %s\n" "$label"
+printf '\n'
+printf '%sMCP runtime dependencies%s\n' "$B" "$R"
+printf '%s%d %s missing on this machine. Each is gated by which MCPs you have enabled,%s\n' "$D" "${#MISSING[@]}" "$([ ${#MISSING[@]} -eq 1 ] && echo 'tool is' || echo 'tools are')" "$R"
+printf '%sand will only be needed if you actually use those MCPs.%s\n' "$D" "$R"
+printf '%sYou will be asked separately for each one.%s\n\n' "$D" "$R"
+
+# Auto-confirm flag (read once)
+ASSUME_YES="${DOTFILES_ASSUME_YES:-0}"
+
+has_tty() {
+  [ -t 0 ] && [ -t 1 ]
+}
+
+prompt_confirm() {
+  local prompt="$1"
+  if [ "$ASSUME_YES" = "1" ]; then
+    printf '%s [auto-yes]\n' "$prompt"
+    REPLY="y"
+    return
+  fi
+  if ! has_tty; then
+    printf '%s [no TTY; skipping]\n' "$prompt"
+    REPLY="n"
+    return
+  fi
+  printf '%s' "$prompt"
+  read -r REPLY || REPLY="n"
+}
+
+idx=0
+total=${#MISSING[@]}
+for rec in "${MISSING[@]}"; do
+  idx=$((idx + 1))
+  IFS='|' read -r bin label needed_by purpose install_cmd <<< "$rec"
+
+  printf '%s[%d/%d] %s%s%s\n' "$D" "$idx" "$total" "$C" "$label" "$R"
+  printf '       %sRequired by MCP:%s %s\n' "$D" "$R" "$needed_by"
+  printf '       %sPurpose:%s         %s\n' "$D" "$R" "$purpose"
+  printf '       %sInstall command:%s %s\n' "$D" "$R" "$install_cmd"
+
+  prompt_confirm "       ${Y}Install now? [y/N]: ${R}"
+  case "$REPLY" in
+    [yY]|[yY][eE][sS])
+      printf '       %s>%s running install...\n' "$Y" "$R"
+      if eval "$install_cmd" >/tmp/install-mcp-deps-$$.log 2>&1; then
+        printf '       %s+%s installed %s\n\n' "$G" "$R" "$label"
       else
-        printf "  ! install failed for %s; continuing\n" "$label"
+        printf '       %sx%s install failed for %s (see /tmp/install-mcp-deps-%d.log)\n\n' "$Y" "$R" "$label" "$$"
       fi
-    done
-    ;;
-  *)
-    printf "Skipped. Install manually later or re-run chezmoi apply.\n"
-    ;;
-esac
+      ;;
+    *)
+      printf '       %s>%s skipped; install manually later with: %s%s%s\n\n' "$D" "$R" "$C" "$install_cmd" "$R"
+      ;;
+  esac
+done
