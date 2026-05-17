@@ -64,8 +64,11 @@ if command -v claude >/dev/null 2>&1; then
       http|aws)
         command -v uvx >/dev/null 2>&1 && EFFECTIVE_MCP_NAMES+=("$name")
         ;;
-      github|tailscale|obsidian|magic|replicate|stitch)
+      github|tailscale|obsidian|replicate|stitch)
         command -v bw >/dev/null 2>&1 && EFFECTIVE_MCP_NAMES+=("$name")
+        ;;
+      magic|brave-search)
+        command -v op >/dev/null 2>&1 && EFFECTIVE_MCP_NAMES+=("$name")
         ;;
       firebase)
         command -v firebase >/dev/null 2>&1 && EFFECTIVE_MCP_NAMES+=("$name")
@@ -261,10 +264,19 @@ PY
   fi
 
   if contains_name "magic" "${EFFECTIVE_MCP_NAMES[@]}"; then
-    if command -v bw >/dev/null 2>&1; then
-      add_mcp magic magic -- node "$HOME/.local/bin/bw-mcp" mcp-magic API_KEY=MAGIC_API_KEY -- npx -y @21st-dev/magic@latest
+    if command -v op >/dev/null 2>&1; then
+      add_mcp magic magic -- sh -c "export API_KEY=\$(op read 'op://MCP-Secrets/mcp-magic/MAGIC_API_KEY') && exec npx -y @21st-dev/magic@latest"
     else
-      echo "  ! magic (Bitwarden CLI not found)"
+      echo "  ! magic (1Password CLI not found)"
+      FAILED=$((FAILED + 1))
+    fi
+  fi
+
+  if contains_name "brave-search" "${EFFECTIVE_MCP_NAMES[@]}"; then
+    if command -v op >/dev/null 2>&1; then
+      add_mcp brave-search brave-search -- sh -c "export BRAVE_API_KEY=\$(op read 'op://MCP-Secrets/mcp-brave-search/BRAVE_API_KEY') && exec npx -y @brave/brave-search-mcp-server@2.0.82"
+    else
+      echo "  ! brave-search (1Password CLI not found)"
       FAILED=$((FAILED + 1))
     fi
   fi

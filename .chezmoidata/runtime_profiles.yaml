@@ -252,7 +252,17 @@ mcp_catalog:
     executes_local_processes: true
     mutates_local_system: false
     prompt_injection_risk: medium
-    notes: 21st.dev Magic MCP via Bitwarden-wrapped API key.
+    notes: 21st.dev Magic MCP via 1Password-wrapped API key.
+  brave-search:
+    transport: stdio
+    needs_secrets: true
+    reads_remote: true
+    writes_remote: false
+    reads_local: false
+    executes_local_processes: true
+    mutates_local_system: false
+    prompt_injection_risk: medium
+    notes: Brave Search MCP via 1Password-wrapped API key.
   replicate:
     transport: stdio
     needs_secrets: true

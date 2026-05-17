@@ -671,7 +671,7 @@ else
   printf "  Optional installs: ${D}none${R}\n"
 fi
 NEEDS_BITWARDEN=false
-if contains_word github "${EFFECTIVE_MCPS[@]}" || contains_word aws "${EFFECTIVE_MCPS[@]}" || contains_word tailscale "${EFFECTIVE_MCPS[@]}" || contains_word obsidian "${EFFECTIVE_MCPS[@]}" || contains_word magic "${EFFECTIVE_MCPS[@]}" || contains_word replicate "${EFFECTIVE_MCPS[@]}"; then
+if contains_word github "${EFFECTIVE_MCPS[@]}" || contains_word aws "${EFFECTIVE_MCPS[@]}" || contains_word tailscale "${EFFECTIVE_MCPS[@]}" || contains_word obsidian "${EFFECTIVE_MCPS[@]}" || contains_word replicate "${EFFECTIVE_MCPS[@]}"; then
   NEEDS_BITWARDEN=true
 fi
 printf "  Effective MCPs: ${D}%s${R}\n" "$(join_by ', ' "${EFFECTIVE_MCPS[@]}")"
@@ -788,9 +788,6 @@ if [ "$NEEDS_BITWARDEN" = "true" ]; then
 
       # --- Ensure required Bitwarden items exist ---
       BW_ITEMS=()
-      if contains_word magic "${EFFECTIVE_MCPS[@]}"; then
-        BW_ITEMS+=("magic-api-key:Magic:https://21st.dev")
-      fi
       if contains_word replicate "${EFFECTIVE_MCPS[@]}"; then
         BW_ITEMS+=("replicate-api-token:Replicate:https://replicate.com")
       fi
@@ -822,9 +819,6 @@ if [ "$NEEDS_BITWARDEN" = "true" ]; then
           else
             EXISTING_SECRET=""
             case "$ITEM_NAME" in
-              magic-api-key)
-                EXISTING_SECRET="$(detect_existing_server_env_secret magic API_KEY)"
-                ;;
               replicate-api-token)
                 EXISTING_SECRET="$(detect_existing_server_env_secret replicate REPLICATE_API_TOKEN)"
                 ;;

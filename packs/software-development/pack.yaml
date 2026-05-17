@@ -266,12 +266,20 @@ catalogs:
         - bw
     magic:
       label: Magic
-      description: 21st.dev Magic MCP
+      description: 21st.dev Magic MCP via 1Password-backed API key
       transport: stdio
       needs_secrets: true
       prompt_injection_risk: medium
       required_tools:
-        - bw
+        - op
+    brave-search:
+      label: Brave Search
+      description: Brave Search MCP (web/news/image/video/local search) via 1Password-backed API key
+      transport: stdio
+      needs_secrets: true
+      prompt_injection_risk: medium
+      required_tools:
+        - op
     replicate:
       label: Replicate
       description: Replicate image and model tooling MCP
