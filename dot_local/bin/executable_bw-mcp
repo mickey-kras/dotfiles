@@ -9,17 +9,66 @@ function fail(message) {
   process.exit(1);
 }
 
+// Cache TTL in seconds for the resolved session. 0 disables the cache and
+// reverts to the strict "never on disk" behavior (one Touch ID per MCP start).
+// Cache file lives at $TMPDIR/bw-mcp-session-<uid> with mode 0600 and a TTL
+// marker; multiple MCPs spawned within the window share a single Touch ID
+// prompt instead of N prompts in parallel.
+const CACHE_TTL_S = (() => {
+  const raw = process.env.BW_MCP_CACHE_TTL;
+  if (raw === undefined) return 60; // sensible default
+  const n = parseInt(raw, 10);
+  return Number.isFinite(n) && n >= 0 ? n : 60;
+})();
+
+function cachePath() {
+  const tmp = process.env.TMPDIR || "/tmp";
+  const uid = typeof process.getuid === "function" ? process.getuid() : "user";
+  return path.join(tmp, `bw-mcp-session-${uid}`);
+}
+
+function readCache() {
+  if (CACHE_TTL_S <= 0) return "";
+  const p = cachePath();
+  try {
+    const stat = fs.statSync(p);
+    const ageS = (Date.now() - stat.mtimeMs) / 1000;
+    if (ageS > CACHE_TTL_S) return "";
+    // Reject group/world readable
+    if ((stat.mode & 0o077) !== 0) return "";
+    const raw = fs.readFileSync(p, "utf8").trim();
+    return raw || "";
+  } catch {
+    return "";
+  }
+}
+
+function writeCache(session) {
+  if (CACHE_TTL_S <= 0 || !session) return;
+  try {
+    const p = cachePath();
+    fs.writeFileSync(p, session, { mode: 0o600 });
+  } catch {
+    // best-effort; absence of cache just means we re-prompt next call
+  }
+}
+
 function getSession() {
-  // Policy: the Bitwarden session must never live in a file on disk.
-  //         It is resolved from the environment or from the Keychain
-  //         via bw-gate-helper (Touch ID / Mac password gated).
+  // Policy: short-lived session cache permitted at $TMPDIR/bw-mcp-session-<uid>
+  //         (mode 0600, default 60s TTL) to avoid Touch ID prompts on every MCP
+  //         start. Disable via BW_MCP_CACHE_TTL=0 to fall back to strict
+  //         "never on disk" behavior.
 
   // 1. Process environment (inherited from a shell that already holds one).
   if (process.env.BW_SESSION) {
     return process.env.BW_SESSION.trim();
   }
 
-  // 2. macOS Keychain via bw-gate-helper.
+  // 2. Short-lived TMPDIR cache (mode 0600, TTL-gated).
+  const cached = readCache();
+  if (cached) return cached;
+
+  // 3. macOS Keychain via bw-gate-helper.
   if (process.platform === "darwin") {
     const helperPath = path.join(os.homedir(), ".local/bin/bw-gate-helper");
     if (fs.existsSync(helperPath)) {
@@ -28,7 +77,9 @@ function getSession() {
         stdio: ["inherit", "pipe", "inherit"],
       });
       if (helper.status === 0 && helper.stdout) {
-        return helper.stdout.trim();
+        const session = helper.stdout.trim();
+        if (session) writeCache(session);
+        return session;
       }
     }
   }
