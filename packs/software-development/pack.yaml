@@ -385,25 +385,110 @@ catalogs:
         - Bash(grep *)
         - Bash(rg *)
         - Bash(jq *)
+    # ---- git ----
     git_safe:
-      label: Git Safe
+      label: Git Safe (read-only)
       allow:
         - Bash(git status*)
         - Bash(git diff*)
         - Bash(git log*)
-    gh_safe:
-      label: GitHub Safe
+        - Bash(git show*)
+        - Bash(git blame*)
+        - Bash(git reflog*)
+        - Bash(git ls-files*)
+        - Bash(git ls-tree*)
+        - Bash(git rev-parse*)
+        - Bash(git rev-list*)
+        - Bash(git config --get*)
+        - Bash(git config --list*)
+        - Bash(git remote -v*)
+        - Bash(git remote get-url*)
+        - Bash(git tag --list*)
+        - Bash(git tag -l*)
+        - Bash(git branch --list*)
+        - Bash(git branch -v*)
+        - Bash(git describe*)
+        - Bash(git worktree list*)
+    git_writes:
+      label: Git Writes (no history rewrite; destructive ops still denied by guardrails)
       allow:
-        - Bash(gh pr view*)
-        - Bash(gh pr checks*)
+        - Bash(git add*)
+        - Bash(git commit*)
+        - Bash(git fetch*)
+        - Bash(git pull*)
+        - Bash(git push*)
+        - Bash(git checkout*)
+        - Bash(git switch*)
+        - Bash(git merge*)
+        - Bash(git rebase*)
+        - Bash(git stash*)
+        - Bash(git tag*)
+        - Bash(git branch*)
+        - Bash(git remote*)
+        - Bash(git config*)
+        - Bash(git reset*)
+        - Bash(git revert*)
+        - Bash(git cherry-pick*)
+        - Bash(git submodule*)
+        - Bash(git worktree*)
+        - Bash(git restore*)
+        - Bash(git init*)
+        - Bash(git clone*)
     git_full:
-      label: Git Full
+      label: Git Full (opt-in; everything subject to guardrails)
       allow:
         - Bash(git *)
+
+    # ---- gh ----
+    gh_safe:
+      label: GitHub Safe (read-only)
+      allow:
+        - Bash(gh pr view*)
+        - Bash(gh pr list*)
+        - Bash(gh pr checks*)
+        - Bash(gh pr diff*)
+        - Bash(gh pr status*)
+        - Bash(gh issue view*)
+        - Bash(gh issue list*)
+        - Bash(gh repo view*)
+        - Bash(gh repo list*)
+        - Bash(gh release view*)
+        - Bash(gh release list*)
+        - Bash(gh run view*)
+        - Bash(gh run list*)
+        - Bash(gh workflow view*)
+        - Bash(gh workflow list*)
+        - Bash(gh auth status*)
+        - Bash(gh search*)
+        - Bash(gh api*)
+    gh_writes:
+      label: GitHub Writes (PRs/issues/releases; destructive ops denied by guardrails)
+      allow:
+        - Bash(gh pr*)
+        - Bash(gh issue*)
+        - Bash(gh release*)
+        - Bash(gh repo clone*)
+        - Bash(gh repo create*)
+        - Bash(gh repo edit*)
+        - Bash(gh repo fork*)
+        - Bash(gh repo rename*)
+        - Bash(gh repo sync*)
+        - Bash(gh auth*)
+        - Bash(gh ssh-key add*)
+        - Bash(gh ssh-key list*)
+        - Bash(gh workflow*)
+        - Bash(gh run*)
+        - Bash(gh label*)
+        - Bash(gh secret set*)
+        - Bash(gh secret list*)
+        - Bash(gh variable set*)
+        - Bash(gh variable list*)
     gh_full:
-      label: GitHub Full
+      label: GitHub Full (opt-in; everything subject to guardrails)
       allow:
         - Bash(gh *)
+
+    # ---- dev runtimes / file ops (kept) ----
     dev_runtime:
       label: Dev Runtime
       allow:
@@ -421,29 +506,171 @@ catalogs:
         - Bash(mv *)
         - Bash(touch *)
         - Bash(chmod +x *)
-    containers:
-      label: Containers
-      allow:
-        - Bash(docker *)
-    infra_local:
-      label: Infra Local
-      allow:
-        - Bash(az *)
-        - Bash(terraform *)
-        - Bash(kubectl *)
+        - Bash(ln *)
+        - Bash(ln -s*)
     package_runtime:
       label: Package Runtime
       allow:
         - Bash(npm *)
         - Bash(npx *)
         - Bash(pip *)
+
+    # ---- containers ----
+    containers_readonly:
+      label: Containers Read-Only
+      allow:
+        - Bash(docker ps*)
+        - Bash(docker images*)
+        - Bash(docker inspect*)
+        - Bash(docker logs*)
+        - Bash(docker stats*)
+        - Bash(docker version*)
+        - Bash(docker info*)
+        - Bash(docker compose ps*)
+        - Bash(docker compose logs*)
+        - Bash(docker compose config*)
+    containers_writes:
+      label: Containers Writes (destructive ops denied by guardrails)
+      allow:
+        - Bash(docker build*)
+        - Bash(docker run*)
+        - Bash(docker exec*)
+        - Bash(docker stop*)
+        - Bash(docker start*)
+        - Bash(docker restart*)
+        - Bash(docker rm *)
+        - Bash(docker pull*)
+        - Bash(docker push*)
+        - Bash(docker tag*)
+        - Bash(docker compose up*)
+        - Bash(docker compose down*)
+        - Bash(docker compose build*)
+        - Bash(docker compose exec*)
+    containers:
+      label: Containers Full (opt-in; everything subject to guardrails)
+      allow:
+        - Bash(docker *)
+
+    # ---- infra (terraform/kubectl/az) ----
+    infra_readonly:
+      label: Infra Read-Only
+      allow:
+        - Bash(kubectl get*)
+        - Bash(kubectl describe*)
+        - Bash(kubectl logs*)
+        - Bash(kubectl explain*)
+        - Bash(kubectl config view*)
+        - Bash(kubectl config get-contexts*)
+        - Bash(kubectl version*)
+        - Bash(kubectl api-resources*)
+        - Bash(kubectl api-versions*)
+        - Bash(kubectl top*)
+        - Bash(terraform init*)
+        - Bash(terraform validate*)
+        - Bash(terraform plan*)
+        - Bash(terraform show*)
+        - Bash(terraform fmt*)
+        - Bash(terraform state list*)
+        - Bash(terraform state show*)
+        - Bash(terraform output*)
+        - Bash(terraform workspace list*)
+        - Bash(terraform workspace show*)
+        - Bash(terraform version*)
+        - Bash(terraform providers*)
+        - Bash(az account show*)
+        - Bash(az account list*)
+        - Bash(az group show*)
+        - Bash(az group list*)
+        - Bash(az resource show*)
+        - Bash(az resource list*)
+        - Bash(az * show*)
+        - Bash(az * list*)
+    infra_writes:
+      label: Infra Writes (apply/run; destructive ops denied by guardrails)
+      allow:
+        - Bash(kubectl apply*)
+        - Bash(kubectl create*)
+        - Bash(kubectl edit*)
+        - Bash(kubectl patch*)
+        - Bash(kubectl scale*)
+        - Bash(kubectl rollout*)
+        - Bash(kubectl label*)
+        - Bash(kubectl annotate*)
+        - Bash(kubectl exec*)
+        - Bash(kubectl port-forward*)
+        - Bash(kubectl config use-context*)
+        - Bash(kubectl config set-context*)
+        - Bash(terraform apply*)
+        - Bash(terraform import*)
+        - Bash(terraform refresh*)
+        - Bash(terraform taint*)
+        - Bash(terraform untaint*)
+        - Bash(terraform workspace new*)
+        - Bash(terraform workspace select*)
+        - Bash(az login*)
+        - Bash(az logout*)
+        - Bash(az account set*)
+    infra_local:
+      label: Infra Full (opt-in; everything subject to guardrails)
+      allow:
+        - Bash(az *)
+        - Bash(terraform *)
+        - Bash(kubectl *)
+
+    # ---- cloud (aws / gcloud / firebase / wrangler) ----
+    cloud_readonly:
+      label: Cloud Read-Only
+      allow:
+        - Bash(aws s3 ls*)
+        - Bash(aws s3api list*)
+        - Bash(aws s3api get*)
+        - Bash(aws s3api head*)
+        - Bash(aws sts get-caller-identity*)
+        - Bash(aws * describe-*)
+        - Bash(aws * list-*)
+        - Bash(aws * get-*)
+        - Bash(gcloud auth list*)
+        - Bash(gcloud config list*)
+        - Bash(gcloud projects list*)
+        - Bash(gcloud projects describe*)
+        - Bash(gcloud * list*)
+        - Bash(gcloud * describe*)
+        - Bash(firebase projects:list*)
+        - Bash(firebase use*)
+        - Bash(wrangler whoami*)
+        - Bash(wrangler tail*)
+    cloud_writes:
+      label: Cloud Writes (deploys; destructive ops denied by guardrails)
+      allow:
+        - Bash(aws s3 cp*)
+        - Bash(aws s3 sync*)
+        - Bash(aws s3 mb*)
+        - Bash(aws s3api put-*)
+        - Bash(aws s3api copy-*)
+        - Bash(aws cloudformation deploy*)
+        - Bash(aws cloudformation create-*)
+        - Bash(aws cloudformation update-*)
+        - Bash(aws lambda update-*)
+        - Bash(aws lambda invoke*)
+        - Bash(gcloud auth*)
+        - Bash(gcloud config set*)
+        - Bash(gcloud * create*)
+        - Bash(gcloud * update*)
+        - Bash(gcloud * deploy*)
+        - Bash(firebase deploy*)
+        - Bash(firebase emulators:*)
+        - Bash(wrangler deploy*)
+        - Bash(wrangler dev*)
+        - Bash(wrangler publish*)
     cloud_extended:
-      label: Cloud Extended
+      label: Cloud Full (opt-in; everything subject to guardrails)
       allow:
         - Bash(aws *)
         - Bash(firebase *)
         - Bash(gcloud *)
         - Bash(wrangler *)
+
+    # ---- secrets / web ----
     secret_tools:
       label: Secret Tools
       allow:
@@ -646,14 +873,19 @@ profiles:
         enabled:
           - core_read_write
           - shell_readonly
-          - git_full
-          - gh_full
+          - git_safe
+          - git_writes
+          - gh_safe
+          - gh_writes
           - dev_runtime
           - local_file_mutation
-          - containers
-          - infra_local
+          - containers_readonly
+          - containers_writes
+          - infra_readonly
+          - infra_writes
           - package_runtime
-          - cloud_extended
+          - cloud_readonly
+          - cloud_writes
           - secret_tools
           - web_access
       settings:
