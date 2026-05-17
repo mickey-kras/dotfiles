@@ -459,12 +459,90 @@ catalogs:
 guardrails:
   hard_bans:
     shared:
+      # System privilege escalation
       - Bash(sudo *)
       - Bash(su *)
+
+      # Filesystem destruction
       - Bash(rm -rf /)
+      - Bash(rm -rf /*)
+      - Bash(rm -rf ~)
+      - Bash(rm -rf ~/*)
+      - Bash(rm -rf $HOME*)
+      - Bash(rm -rf .)
+      - Bash(rm -rf ./*)
+      - Bash(rm -rf ..)
       - Bash(dd if=/dev/zero*)
-      - Bash(chmod 777 *)
+      - Bash(dd if=/dev/random*)
       - Bash(> /dev/sda*)
+      - Bash(mkfs.*)
+      - Bash(chmod 777 *)
+      - Bash(chmod -R 777 *)
+
+      # Git history rewriting / destructive
+      - Bash(git push --force*)
+      - Bash(git push -f*)
+      - Bash(git push --force-with-lease*)
+      - Bash(git push --mirror*)
+      - Bash(git reset --hard*)
+      - Bash(git clean -f*)
+      - Bash(git clean -d*)
+      - Bash(git clean -x*)
+      - Bash(git branch -D *)
+      - Bash(git branch --delete --force*)
+      - Bash(git checkout --orphan*)
+      - Bash(git filter-branch*)
+      - Bash(git filter-repo*)
+      - Bash(git update-ref -d *)
+
+      # GitHub destructive
+      - Bash(gh repo delete*)
+      - Bash(gh release delete*)
+      - Bash(gh pr close*)
+      - Bash(gh issue close*)
+      - Bash(gh ssh-key delete*)
+      - Bash(gh secret remove*)
+      - Bash(gh variable delete*)
+
+      # Kubernetes destructive
+      - Bash(kubectl delete *)
+      - Bash(kubectl drain *)
+      - Bash(kubectl cordon *)
+
+      # Terraform destructive
+      - Bash(terraform destroy*)
+      - Bash(terraform state rm *)
+      - Bash(terraform state mv *)
+      - Bash(terraform workspace delete *)
+
+      # Cloud destructive (recursive / mass)
+      - Bash(aws s3 rm * --recursive*)
+      - Bash(aws s3 rb * --force*)
+      - Bash(aws s3api delete-objects*)
+      - Bash(aws ec2 terminate-instances*)
+      - Bash(aws rds delete-*)
+      - Bash(aws iam delete-*)
+      - Bash(gcloud * delete *)
+      - Bash(az * delete *)
+
+      # Containers destructive
+      - Bash(docker system prune*)
+      - Bash(docker volume rm *)
+      - Bash(docker volume prune*)
+      - Bash(docker network prune*)
+
+      # Package publishing (accidental release)
+      - Bash(npm publish*)
+      - Bash(pnpm publish*)
+      - Bash(yarn publish*)
+      - Bash(pip publish*)
+      - Bash(twine upload*)
+      - Bash(cargo publish*)
+
+      # Bypass checks
+      - Bash(* --no-verify*)
+      - Bash(git * --no-verify*)
+      - Bash(git commit * --no-gpg-sign*)
 
 profiles:
   # Single profile — the wizard's "profile picker" step is a no-op since this
