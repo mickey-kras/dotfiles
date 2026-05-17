@@ -52,14 +52,14 @@ def _render(template_path: Path, override_data: dict) -> str:
 
 def _full_state() -> dict:
     pack = pack_state.load_pack(str(SOURCE_DIR), "software-development")
-    selection = pack["profiles"]["full"]["selection"]
+    selection = pack["profiles"]["fullstack"]["selection"]
     return {
         "capability_pack": "software-development",
         "pack_id": "software-development",
-        "profile_selected": "full",
+        "profile_selected": "fullstack",
         "profile_mode": "preset",
-        "runtime_profile": "full",
-        "profile_base": "full",
+        "runtime_profile": "fullstack",
+        "profile_base": "fullstack",
         "selection_enabled_mcps": selection["mcps"]["enabled"],
         "selection_enabled_skills": selection["skills"]["enabled"],
         "selection_enabled_agents": selection["agents"]["enabled"],

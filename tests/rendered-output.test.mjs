@@ -46,11 +46,11 @@ function renderTemplate(templatePath, fixtureName) {
 const renderTest = hasChezmoi ? test : test.skip;
 
 renderTest("software-development full renders the managed host surfaces", () => {
-  const codex = renderTemplate(path.join(repoRoot, "dot_codex", "config.toml.tmpl"), "software-development-full.json");
-  const cursor = renderTemplate(path.join(repoRoot, "dot_cursor", "mcp.json.tmpl"), "software-development-full.json");
-  const claude = JSON.parse(renderTemplate(path.join(repoRoot, "dot_claude", "settings.json.tmpl"), "software-development-full.json"));
-  const gemini = JSON.parse(renderTemplate(path.join(repoRoot, "dot_gemini", "settings.json.tmpl"), "software-development-full.json"));
-  const factory = JSON.parse(renderTemplate(path.join(repoRoot, "dot_factory", "mcp.json.tmpl"), "software-development-full.json"));
+  const codex = renderTemplate(path.join(repoRoot, "dot_codex", "config.toml.tmpl"), "software-development-fullstack.json");
+  const cursor = renderTemplate(path.join(repoRoot, "dot_cursor", "mcp.json.tmpl"), "software-development-fullstack.json");
+  const claude = JSON.parse(renderTemplate(path.join(repoRoot, "dot_claude", "settings.json.tmpl"), "software-development-fullstack.json"));
+  const gemini = JSON.parse(renderTemplate(path.join(repoRoot, "dot_gemini", "settings.json.tmpl"), "software-development-fullstack.json"));
+  const factory = JSON.parse(renderTemplate(path.join(repoRoot, "dot_factory", "mcp.json.tmpl"), "software-development-fullstack.json"));
 
   assert.match(codex, /\[mcp_servers\.stitch\]/);
   assert.match(codex, /\[mcp_servers\.obsidian\]/);
@@ -70,9 +70,9 @@ renderTest("software-development full renders the managed host surfaces", () => 
 });
 
 renderTest("builtin memory keeps the rest of the toolchain but disables mcpvault", () => {
-  const codex = renderTemplate(path.join(repoRoot, "dot_codex", "config.toml.tmpl"), "software-development-full-builtin-memory.json");
-  const cursor = JSON.parse(renderTemplate(path.join(repoRoot, "dot_cursor", "mcp.json.tmpl"), "software-development-full-builtin-memory.json"));
-  const claude = JSON.parse(renderTemplate(path.join(repoRoot, "dot_claude", "settings.json.tmpl"), "software-development-full-builtin-memory.json"));
+  const codex = renderTemplate(path.join(repoRoot, "dot_codex", "config.toml.tmpl"), "software-development-fullstack-builtin-memory.json");
+  const cursor = JSON.parse(renderTemplate(path.join(repoRoot, "dot_cursor", "mcp.json.tmpl"), "software-development-fullstack-builtin-memory.json"));
+  const claude = JSON.parse(renderTemplate(path.join(repoRoot, "dot_claude", "settings.json.tmpl"), "software-development-fullstack-builtin-memory.json"));
 
   assert.match(codex, /@modelcontextprotocol\/server-memory@2026\.1\.26/);
   assert.doesNotMatch(codex, /@bitbonsai\/mcpvault@latest/);
@@ -81,6 +81,6 @@ renderTest("builtin memory keeps the rest of the toolchain but disables mcpvault
 });
 
 renderTest("Claude settings omit SessionStart hooks", () => {
-  const claude = JSON.parse(renderTemplate(path.join(repoRoot, "dot_claude", "settings.json.tmpl"), "software-development-full.json"));
+  const claude = JSON.parse(renderTemplate(path.join(repoRoot, "dot_claude", "settings.json.tmpl"), "software-development-fullstack.json"));
   assert.equal(claude.SessionStart, undefined, "SessionStart hooks are not managed by dotfiles");
 });

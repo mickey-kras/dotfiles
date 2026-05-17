@@ -202,9 +202,9 @@ function removeValues(values, valuesToRemove = []) {
 }
 
 export function legacyDataToSelection(pack, legacyData = {}) {
-  const defaultProfile = pack.defaults?.profile || "full";
+  const defaultProfile = pack.defaults?.profile || "backend";
   const runtimeProfile = legacyData.runtime_profile || defaultProfile;
-  const baseProfile = legacyData.profile_base || pack.defaults?.profile || "full";
+  const baseProfile = legacyData.profile_base || pack.defaults?.profile || "backend";
   const profileId = runtimeProfile === "custom" ? baseProfile : runtimeProfile;
 
   const selection = getProfileSelection(pack, profileId);
@@ -258,7 +258,7 @@ function resolvedHardBans(pack, profileId) {
 }
 
 export function resolveState(pack, inputState) {
-  const requestedProfileId = inputState?.profile?.selected || pack.defaults?.profile || "full";
+  const requestedProfileId = inputState?.profile?.selected || pack.defaults?.profile || "backend";
   const requestedMode = inputState?.profile?.mode || "preset";
   const normalizedSelection = normalizeSelection(pack, inputState?.selection || {});
   const matchedProfile = matchProfile(pack, normalizedSelection);

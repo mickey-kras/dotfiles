@@ -26,7 +26,7 @@ class TestListPacks(unittest.TestCase):
                         "Software delivery pack across planning, implementation, testing, "
                         "review, docs, and incident response."
                     ),
-                    "default_profile": "full",
+                    "default_profile": "backend",
                 }
             ],
         )
@@ -37,8 +37,8 @@ class TestLoadPack(unittest.TestCase):
     def test_loads_software_development(self):
         pack = pack_state.load_pack(SOURCE_DIR, "software-development")
         self.assertEqual(pack["id"], "software-development")
-        self.assertEqual(pack["defaults"]["profile"], "full")
-        self.assertIn("full", pack["profiles"])
+        self.assertEqual(pack["defaults"]["profile"], "backend")
+        self.assertIn("backend", pack["profiles"])
         self.assertIn("mcps", pack["catalogs"])
 
 
@@ -85,7 +85,7 @@ class TestNormalizeSelection(unittest.TestCase):
 class TestFindMatchingProfile(unittest.TestCase):
     def test_finds_full_profile(self):
         pack = pack_state.load_pack(SOURCE_DIR, "software-development")
-        profile_selection = pack["profiles"]["full"]["selection"]
+        profile_selection = pack["profiles"]["fullstack"]["selection"]
         matched = pack_state.find_matching_profile(
             pack,
             {
@@ -93,7 +93,7 @@ class TestFindMatchingProfile(unittest.TestCase):
                 "state": {"selection": profile_selection},
             },
         )
-        self.assertEqual(matched, "full")
+        self.assertEqual(matched, "fullstack")
 
     def test_returns_empty_for_custom_selection(self):
         pack = pack_state.load_pack(SOURCE_DIR, "software-development")
@@ -120,10 +120,10 @@ class TestFindMatchingProfile(unittest.TestCase):
 class TestLegacyConfig(unittest.TestCase):
     def test_includes_all_pack_settings(self):
         pack = pack_state.load_pack(SOURCE_DIR, "software-development")
-        selection = pack["profiles"]["full"]["selection"]
+        selection = pack["profiles"]["fullstack"]["selection"]
         state = {
             "capability_pack": "software-development",
-            "profile_selected": "full",
+            "profile_selected": "fullstack",
             "profile_mode": "preset",
             "selection_enabled_mcps": selection["mcps"]["enabled"],
             "selection_enabled_skills": selection["skills"]["enabled"],
@@ -181,14 +181,14 @@ class TestCliInterface(unittest.TestCase):
         )
         self.assertEqual(result.returncode, 0)
         pack = json.loads(result.stdout)
-        self.assertEqual(pack["defaults"]["profile"], "full")
+        self.assertEqual(pack["defaults"]["profile"], "backend")
 
     def test_bootstrap_state_cli(self):
         pack = pack_state.load_pack(SOURCE_DIR, "software-development")
-        selection = pack["profiles"]["full"]["selection"]
+        selection = pack["profiles"]["fullstack"]["selection"]
         state = {
             "capability_pack": "software-development",
-            "profile_selected": "full",
+            "profile_selected": "fullstack",
             "profile_mode": "preset",
             "selection_enabled_mcps": selection["mcps"]["enabled"],
             "selection_enabled_skills": selection["skills"]["enabled"],

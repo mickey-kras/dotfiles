@@ -1,6 +1,6 @@
 {
   "capability_pack": "software-development",
-  "profile_selected": "full",
+  "profile_selected": "fullstack",
   "profile_mode": "preset",
   "selection_enabled_mcps": [
     "playwright",
@@ -79,13 +79,13 @@
     "secret_tools",
     "web_access"
   ],
-  "memory_provider": "builtin",
-  "obsidian_vault_path": "",
+  "memory_provider": "obsidian",
+  "obsidian_vault_path": "/Users/mikhailkrasilnikov/Notes",
   "install_claude_code": "disabled",
   "install_codex": "disabled",
   "install_cursor": "disabled",
   "install_gemini_cli": "disabled",
   "install_droid": "disabled",
-  "stitch_api_key": "",
+  "stitch_api_key": "test-stitch-key",
   "bw_gate_install": "enabled"
 }

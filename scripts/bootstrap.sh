@@ -97,9 +97,9 @@ if ! command -v dotnet >/dev/null 2>&1 || ! dotnet --list-sdks 2>/dev/null | gre
   fi
 fi
 
-RUNTIME_PROFILE="full"
+RUNTIME_PROFILE="backend"
 CAPABILITY_PACK="software-development"
-PROFILE_BASE="full"
+PROFILE_BASE="backend"
 USER_NAME=""
 USER_ROLE_SUMMARY=""
 USER_STACK_SUMMARY=""

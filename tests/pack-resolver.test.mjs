@@ -20,8 +20,8 @@ const pack = loadPack(repoRoot, "software-development");
 
 test("loads the software-development pack", () => {
   assert.equal(pack.id, "software-development");
-  assert.equal(pack.defaults.profile, "full");
-  assert.ok(pack.profiles.full);
+  assert.equal(pack.defaults.profile, "backend");
+  assert.ok(pack.profiles.fullstack);
   assert.ok(pack.catalogs.mcps.github);
 });
 
@@ -42,18 +42,20 @@ test("normalizes hidden settings back to defaults", () => {
     install_droid: "enabled",
     install_kimi_code: "enabled",
     stitch_api_key: "",
-    bw_gate_install: "enabled"
+    bw_gate_install: "enabled",
+    dotfiles_authorship_rule: "disabled",
+    dotfiles_pr_workflow_rule: "disabled"
   });
 });
 
 test("matches the full profile after normalization", () => {
-  const full = getProfileSelection(pack, "full");
+  const full = getProfileSelection(pack, "fullstack");
   full.mcps.enabled = [...full.mcps.enabled].reverse();
-  assert.equal(matchProfile(pack, full), "full");
+  assert.equal(matchProfile(pack, full), "fullstack");
 });
 
 test("marks edited settings as custom", () => {
-  const full = getProfileSelection(pack, "full");
+  const full = getProfileSelection(pack, "fullstack");
   full.settings = {
     ...full.settings,
     memory_provider: "builtin",
@@ -63,7 +65,7 @@ test("marks edited settings as custom", () => {
   const resolved = resolveState(pack, {
     pack_id: pack.id,
     profile: {
-      selected: "full",
+      selected: "fullstack",
       mode: "preset"
     },
     selection: full
@@ -71,13 +73,13 @@ test("marks edited settings as custom", () => {
 
   assert.equal(resolved.profile.mode, "custom");
   assert.equal(resolved.resolved.profile, "custom");
-  assert.equal(resolved.resolved.profile_basis, "full");
+  assert.equal(resolved.resolved.profile_basis, "fullstack");
 });
 
 test("derives custom install settings from legacy fields", () => {
   const derived = legacyDataToSelection(pack, {
     runtime_profile: "custom",
-    profile_base: "full",
+    profile_base: "fullstack",
     install_claude_code: "enabled",
     install_cursor: "enabled",
     install_droid: "enabled",
@@ -86,7 +88,7 @@ test("derives custom install settings from legacy fields", () => {
     stitch_api_key: "test-key"
   });
 
-  assert.equal(derived.profile.selected, "full");
+  assert.equal(derived.profile.selected, "fullstack");
   assert.equal(derived.profile.mode, "custom");
   assert.equal(derived.selection.settings.install_claude_code, "enabled");
   assert.equal(derived.selection.settings.install_cursor, "enabled");
@@ -95,18 +97,20 @@ test("derives custom install settings from legacy fields", () => {
   assert.equal(derived.selection.settings.stitch_api_key, "test-key");
 });
 
-test("preserves preset parity for the legacy full profile", () => {
+test("preserves preset parity for the legacy fullstack profile", () => {
   const resolved = resolveLegacyState(pack, {
-    runtime_profile: "full",
+    runtime_profile: "fullstack",
     memory_provider: "obsidian",
     obsidian_vault_path: "/vault",
     stitch_api_key: "test-key"
   });
 
-  assert.equal(resolved.profile.selected, "full");
+  assert.equal(resolved.profile.selected, "fullstack");
   assert.equal(resolved.resolved.profile, "custom");
   assert.equal(resolved.resolved.settings.obsidian_vault_path, "/vault");
-  assert.ok(resolved.resolved.permissions.allow.includes("Bash(git *)"));
+  // Default fullstack profile uses tight per-subcommand allows (no Bash(git *));
+  // verify a representative safe-write subcommand is present instead.
+  assert.ok(resolved.resolved.permissions.allow.includes("Bash(git commit*)"));
 });
 
 test("flags missing required settings for enabled tools", () => {
@@ -129,8 +133,8 @@ test("flags missing required settings for enabled tools", () => {
 test("prefers explicit selection state over legacy flat fields", () => {
   const state = stateFromFlatData(pack, {
     capability_pack: "software-development",
-    runtime_profile: "full",
-    profile_selected: "full",
+    runtime_profile: "fullstack",
+    profile_selected: "fullstack",
     profile_mode: "preset",
     selection_enabled_mcps: ["git", "filesystem"],
     selection_enabled_skills: ["writing-plans"],
@@ -143,7 +147,7 @@ test("prefers explicit selection state over legacy flat fields", () => {
     install_droid: "enabled"
   });
 
-  assert.equal(state.profile.selected, "full");
+  assert.equal(state.profile.selected, "fullstack");
   assert.deepEqual(state.selection.mcps.enabled, ["git", "filesystem"]);
   assert.equal(state.selection.settings.obsidian_vault_path, "/ignored");
   assert.equal(state.selection.settings.install_cursor, "enabled");
